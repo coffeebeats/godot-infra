@@ -88,6 +88,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true # Required to initialize 'osxcross'.
 
       - name: Mount cache for artifact
         id: cache-artifact
