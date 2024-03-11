@@ -22,7 +22,6 @@ on:
         type: string
         description: "The MoltenVK version to package."
         required: true
-        default: 1.2.6
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."

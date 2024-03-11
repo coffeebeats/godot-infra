@@ -33,12 +33,10 @@ on:
         type: number
         description: "OSX SDK version"
         required: true
-        default: 14.2
       xcode-version:
         type: number
         description: "Xcode version"
         required: true
-        default: 15.2
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."
@@ -48,7 +46,7 @@ on:
         type: string
         description: "The runner's operating system."
         required: false
-        default: macos-13
+        default: macos-latest
 
 env:
   dir: .
