@@ -1,37 +1,57 @@
-name: "🧱🏗️ godot-infra: Package 'MoltenVK' SDK"
+name: "🏗️ godot-infra: Package 'MacOS' SDK"
+
+# See https://developer.apple.com/support/xcode.
 
 on:
   workflow_call:
     inputs:
-      moltenvk-version:
-        type: string
-        description: "The MoltenVK version to package."
+      osx-version:
+        type: number
+        description: "OSX SDK version"
+        required: true
+      xcode-version:
+        type: number
+        description: "Xcode version"
         required: true
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."
         required: false
         default: 7
+      os:
+        type: string
+        description: "The runner's operating system."
+        required: false
+        default: macos-latest
     outputs:
       name:
-        description: "The name of the 'MoltenVK' SDK artifact."
+        description: "The name of the 'MacOS' SDK artifact."
         value: ${{ jobs.package-cached-sdk.outputs.name }}
   workflow_dispatch:
     inputs:
-      moltenvk-version:
-        type: string
-        description: "The MoltenVK version to package."
+      osx-version:
+        type: number
+        description: "OSX SDK version"
+        required: true
+      xcode-version:
+        type: number
+        description: "Xcode version"
         required: true
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."
         required: false
         default: 7
+      os:
+        type: string
+        description: "The runner's operating system."
+        required: false
+        default: macos-latest
 
 env:
-  GH_TOKEN: ${{ github.token }}
-  key: "moltenvk-${{ inputs.moltenvk-version }}"
-  path: "moltenvk-sdk-${{ inputs.moltenvk-version }}.tar.gz"
+  dir: .
+  name: MacOSX${{ inputs.osx-version }}.sdk.tar.gz
+  key: macos-sdk-osx-${{ inputs.osx-version }}-xcode-${{ inputs.xcode-version }}
 
 jobs:
   package-cached-sdk:
@@ -39,7 +59,7 @@ jobs:
     timeout-minutes: 4
 
     outputs:
-      name: ${{ env.path }}
+      name: ${{ env.name }}
       cache-hit: ${{ steps.cache-artifact.outputs.cache-hit }}
 
     steps:
@@ -48,14 +68,14 @@ jobs:
         uses: actions/cache@v4
         with:
           key: ${{ env.key }}
-          path: ${{ env.path }}
+          path: ${{ env.dir }}/${{ env.name }}
 
       # Publish the cached artifact
       - uses: actions/upload-artifact@v4
         if: steps.cache-artifact.outputs.cache-hit == 'true'
         with:
-          name: ${{ env.path }}
-          path: ${{ env.path }}
+          name: ${{ env.name }}
+          path: ${{ env.dir }}/${{ env.name }}
           retention-days: ${{ inputs.retention }}
           if-no-files-found: error
 
@@ -63,8 +83,8 @@ jobs:
     needs: [package-cached-sdk]
     if: needs.package-cached-sdk.outputs.cache-hit != 'true'
 
-    runs-on: ubuntu-latest
-    timeout-minutes: 4
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: 8
 
     steps:
       - uses: actions/checkout@v4
@@ -74,23 +94,20 @@ jobs:
         uses: actions/cache@v4
         with:
           key: ${{ env.key }}
-          path: ${{ env.path }}
-
-      - name: Verify artifact cache status
-        if: steps.cache-artifact.outputs.cache-hit == 'true'
-        run: exit 1
+          path: ${{ env.dir }}/${{ env.name }}
 
       # Package the SDK
-      - uses: "./.github/actions/archive-moltenvk-sdk"
+      - uses: "./.github/actions/archive-macos-sdk"
         if: steps.cache-artifact.outputs.cache-hit != 'true'
         with:
-          out: ${{ env.path }}
-          moltenvk-version: ${{ inputs.moltenvk-version }}
+          dir: ${{ env.dir }}
+          osx-version: ${{ inputs.osx-version }}
+          xcode-version: ${{ inputs.xcode-version }}
 
       # Publish the artifact
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.path }}
-          path: ${{ env.path }}
+          name: ${{ env.name }}
+          path: ${{ env.dir }}/${{ env.name }}
           retention-days: ${{ inputs.retention }}
           if-no-files-found: error
