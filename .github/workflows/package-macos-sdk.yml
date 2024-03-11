@@ -22,7 +22,7 @@ on:
         type: string
         description: "The runner's operating system."
         required: false
-        default: macos-latest
+        default: macos-13
     outputs:
       name:
         description: "The name of the 'MacOS' SDK artifact."
@@ -46,7 +46,7 @@ on:
         type: string
         description: "The runner's operating system."
         required: false
-        default: macos-latest
+        default: macos-13
 
 env:
   dir: .
