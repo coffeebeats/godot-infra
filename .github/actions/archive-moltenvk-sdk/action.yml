@@ -20,10 +20,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Verify runner OS
-      shell: bash
-      run: '[[ "${{ runner.os }}" != "macOS" ]] && exit 1 || :'
-
     - name: Determine output filename
       id: archive
       shell: bash
