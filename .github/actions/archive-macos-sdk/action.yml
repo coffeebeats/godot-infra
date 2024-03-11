@@ -1,4 +1,4 @@
-name: "🧱🏗️ godot-infra: Create 'macOS' SDK archive"
+name: "🏗️ godot-infra: Create 'macOS' SDK archive"
 
 inputs:
   osx-version:
@@ -49,4 +49,8 @@ runs:
           thirdparty/osxcross/tools/gen_sdk_package.sh
 
         mkdir -p ${{ inputs.dir }}
-        mv ${{ steps.archive.outputs.name }} ${{ inputs.dir }}
+
+        # Only move the file if necessary.
+        if [[ ! -f "${{ inputs.dir }}/${{ steps.archive.outputs.name }}" ]]; then
+          mv ${{ steps.archive.outputs.name }} ${{ inputs.dir }}
+        fi
