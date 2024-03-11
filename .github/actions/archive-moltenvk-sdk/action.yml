@@ -39,7 +39,7 @@ runs:
 
     - name: Mount cache for archive
       id: cache-archive
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         key: moltenvk-${{ inputs.moltenvk-version }}
         path: ${{ steps.archive.outputs.path }}
