@@ -30,6 +30,7 @@ on:
         default: 7
 
 env:
+  GH_TOKEN: ${{ github.token }}
   key: "moltenvk-${{ inputs.moltenvk-version }}"
   path: "moltenvk-sdk-${{ inputs.moltenvk-version }}.tar.gz"
 
@@ -78,7 +79,6 @@ jobs:
 
       - name: Verify artifact cache status
         if: steps.cache-artifact.outputs.cache-hit == 'true'
-        shell: bash
         run: exit 1
 
       # Package the SDK
