@@ -1,0 +1,97 @@
+name: "🧱🏗️ godot-infra: Package 'MoltenVK' SDK"
+
+on:
+  workflow_call:
+    inputs:
+      moltenvk-version:
+        type: string
+        description: "The MoltenVK version to package."
+        required: true
+      retention:
+        type: number
+        description: "The number of days to retain the packaged SDK for."
+        required: false
+        default: 7
+    outputs:
+      name:
+        description: "The name of the 'MoltenVK' SDK artifact."
+        value: ${{ jobs.package-cached-sdk.outputs.name }}
+  workflow_dispatch:
+    inputs:
+      moltenvk-version:
+        type: string
+        description: "The MoltenVK version to package."
+        required: true
+        default: 1.2.6
+      retention:
+        type: number
+        description: "The number of days to retain the packaged SDK for."
+        required: false
+        default: 7
+
+env:
+  key: "moltenvk-${{ inputs.moltenvk-version }}"
+  path: "moltenvk-sdk-${{ inputs.moltenvk-version }}.tar.gz"
+
+jobs:
+  package-cached-sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    outputs:
+      name: ${{ env.path }}
+      cache-hit: ${{ steps.cache-artifact.outputs.cache-hit }}
+
+    steps:
+      - name: Mount cache for artifact
+        id: cache-artifact
+        uses: actions/cache@v4
+        with:
+          key: ${{ env.key }}
+          path: ${{ env.path }}
+
+      # Publish the cached artifact
+      - uses: actions/upload-artifact@v4
+        if: steps.cache-artifact.outputs.cache-hit == 'true'
+        with:
+          name: ${{ env.path }}
+          path: ${{ env.path }}
+          retention-days: ${{ inputs.retention }}
+          if-no-files-found: error
+
+  package-sdk:
+    needs: [package-cached-sdk]
+    if: needs.package-cached-sdk.outputs.cache-hit != 'true'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mount cache for artifact
+        id: cache-artifact
+        uses: actions/cache@v4
+        with:
+          key: ${{ env.key }}
+          path: ${{ env.path }}
+
+      - name: Verify artifact cache status
+        if: steps.cache-artifact.outputs.cache-hit == 'true'
+        shell: bash
+        run: exit 1
+
+      # Package the SDK
+      - uses: "./.github/actions/archive-moltenvk-sdk"
+        if: steps.cache-artifact.outputs.cache-hit != 'true'
+        with:
+          out: ${{ env.path }}
+          moltenvk-version: ${{ inputs.moltenvk-version }}
+
+      # Publish the artifact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.path }}
+          path: ${{ env.path }}
+          retention-days: ${{ inputs.retention }}
+          if-no-files-found: error

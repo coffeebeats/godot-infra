@@ -1,0 +1,81 @@
+name: "🧱🏗️ godot-infra: Create 'MoltenVK' SDK archive"
+
+inputs:
+  out:
+    description: "The filename to write the archive to."
+    required: false
+    default: moltenvk.tar.gz
+  moltenvk-version:
+    description: "The MoltenVK version to archive."
+    required: true
+
+outputs:
+  name:
+    description: "The name of the 'MoltenVK' SDK artifact."
+    value: ${{ steps.archive.outputs.name }}
+  path:
+    description: "The path to the 'MoltenVK' SDK artifact."
+    value: ${{ steps.archive.outputs.path }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Verify runner OS
+      shell: bash
+      run: '[[ "${{ runner.os }}" != "macOS" ]] && exit 1 || :'
+
+    - name: Determine output filename
+      id: archive
+      shell: bash
+      run: |
+        OUT="${{ inputs.out }}"
+        if [[ "$OUT" != *".tar.gz" ]]; then
+          echo "Invalid compression; only 'gz' is supported!"
+          exit 1
+        fi
+
+        echo "name=$(basename $OUT)" >> "$GITHUB_OUTPUT"
+        echo "path=$OUT" >> "$GITHUB_OUTPUT"
+
+    - name: Mount cache for archive
+      id: cache-archive
+      uses: actions/cache@v4
+      with:
+        key: moltenvk-${{ inputs.moltenvk-version }}
+        path: ${{ steps.archive.outputs.path }}
+
+    # See https://github.com/KhronosGroup/MoltenVK#building-moltenvk
+    - name: Package SDK
+      if: steps.cache-archive.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        gh release download \
+          v${{ inputs.moltenvk-version }} \
+          --repo KhronosGroup/MoltenVK \
+          --clobber \
+          --pattern MoltenVK-macos.tar
+
+        tar -xf MoltenVK-macos.tar
+
+        # Extract the only required library; see
+        # https://github.com/godotengine/godot/blob/4.2/platform/macos/detect.py#L77-L88.
+
+        OUT_DIR=moltenvk/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64
+
+        mkdir -p "$OUT_DIR"
+
+        mv MoltenVK/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/* $OUT_DIR
+
+        rm -rf MoltenVK
+
+        find moltenvk \
+          -type f \
+          -o -type l \
+          -o -type d | \
+          tail -n +2 | \
+          sed s,^moltenvk/,, | \
+          tar \
+            -czf ${{ steps.archive.outputs.path }} \
+            --no-recursion \
+            -C moltenvk \
+            -T -
