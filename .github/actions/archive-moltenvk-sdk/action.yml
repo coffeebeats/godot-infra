@@ -62,7 +62,7 @@ runs:
 
         mv MoltenVK/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/* $OUT_DIR
 
-        rm -rf MoltenVK
+        rm -rf MoltenVK*
 
         find moltenvk \
           -type f \
