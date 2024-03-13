@@ -97,10 +97,10 @@ jobs:
         shell: bash
 
     steps:
-      # NOTE: The 'GDBuild' image requires >14GB disk space to build, so to enable
-      # building in this workflow, free additional disk space on the runner. See
+      # NOTE: The 'godot-infra' image requires >14GB disk space to build, so to
+      # enable building in this workflow, free additional disk space on the
+      # runner. For more details see
       # https://github.com/actions/runner-images/issues/2606#issuecomment-772683150
-      # for details.
       - name: Free additional disk space
         shell: bash
         run: |
