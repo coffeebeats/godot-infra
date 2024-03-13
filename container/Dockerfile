@@ -265,6 +265,33 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- \
 RUN cargo install --locked --bin rcodesign apple-codesign
 
 # ---------------------------------------------------------------------------- #
+#                       Image: Setup - @coffeebeats tools                      #
+# ---------------------------------------------------------------------------- #
+
+FROM img-os-base as img-setup-godot-tools
+
+# ------------------------------ Install: gdenv ------------------------------ #
+
+ARG GDENV_VERSION=""
+RUN export GDENV_HOME="/gdenv" GDENV_VERSION=$GDENV_VERSION; \
+    curl https://raw.githubusercontent.com/coffeebeats/gdenv/main/scripts/install.sh | sh -s -- --no-modify-path; \
+    command -v /gdenv/bin/gdenv
+
+# ------------------------------ Install: gdpack ----------------------------- #
+
+ARG GDPACK_VERSION=""
+RUN export GDPACK_HOME="/gdpack" GDPACK_VERSION=$GDPACK_VERSION; \
+    curl https://raw.githubusercontent.com/coffeebeats/gdpack/main/scripts/install.sh | sh -s -- --no-modify-path; \
+    command -v /gdpack/bin/gdpack
+
+# ----------------------------- Install: gdbuild ----------------------------- #
+
+ARG GDBUILD_VERSION=""
+RUN export GDBUILD_HOME="/gdbuild" GDBUILD_VERSION=$GDBUILD_VERSION; \
+    curl https://raw.githubusercontent.com/coffeebeats/gdbuild/main/scripts/install.sh | sh -s -- --no-modify-path; \
+    command -v /gdbuild/bin/gdbuild
+
+# ---------------------------------------------------------------------------- #
 #                          Image: Export dependencies                          #
 # ---------------------------------------------------------------------------- #
 
@@ -325,30 +352,32 @@ WORKDIR $WORKSPACE
 USER ubuntu
 
 
-# ------------------------------ Install: gdenv ------------------------------ #
+# ------------------------ Install: @coffeebeats tools ----------------------- #
 
-ARG GDENV_VERSION=""
-VOLUME "$WORKSPACE/.gdenv"
+COPY --from=img-setup-godot-tools --chown=ubuntu "/gdenv/bin/*" "$WORKSPACE_BIN_DIR"
+
 ENV GDENV_HOME="$WORKSPACE/.gdenv" PATH="$WORKSPACE/.gdenv/bin:$PATH"
-RUN GDENV_VERSION=$GDENV_VERSION; \
-    curl https://raw.githubusercontent.com/coffeebeats/gdenv/main/scripts/install.sh | bash -s -- --no-modify-path
+
+RUN mkdir -p $GDENV_HOME
+VOLUME "$WORKSPACE/.gdenv"
 
 # ------------------------------ Install: gdpack ----------------------------- #
 
-ARG GDPACK_VERSION=""
-VOLUME "$WORKSPACE/.gdpack"
+COPY --from=img-setup-godot-tools --chown=ubuntu "/gdpack/bin/*" "$WORKSPACE_BIN_DIR"
+
 ENV GDPACK_HOME="$WORKSPACE/.gdpack" PATH="$WORKSPACE/.gdpack/bin:$PATH"
-RUN GDPACK_VERSION=$GDPACK_VERSION; \
-    curl https://raw.githubusercontent.com/coffeebeats/gdpack/main/scripts/install.sh | bash -s -- --no-modify-path
+
+RUN mkdir -p $GDPACK_HOME
+VOLUME "$WORKSPACE/.gdpack"
 
 # ----------------------------- Install: gdbuild ----------------------------- #
 
-ARG GDBUILD_VERSION=""
-VOLUME "$WORKSPACE/.gdbuild"
-ENV GDBUILD_HOME="$WORKSPACE/.gdbuild" PATH="$WORKSPACE/.gdbuild/bin:$PATH"
-RUN GDBUILD_VERSION=$GDBUILD_VERSION; \
-    curl https://raw.githubusercontent.com/coffeebeats/gdbuild/main/scripts/install.sh | bash -s -- --no-modify-path
+COPY --from=img-setup-godot-tools --chown=ubuntu "/gdbuild/bin/*" "$WORKSPACE_BIN_DIR"
 
+ENV GDBUILD_HOME="$WORKSPACE/.gdbuild" PATH="$WORKSPACE/.gdbuild/bin:$PATH"
+
+RUN mkdir -p $GDBUILD_HOME
+VOLUME "$WORKSPACE/.gdbuild"
 
 # ------------------------- Define: Entrypoint script ------------------------ #
 
