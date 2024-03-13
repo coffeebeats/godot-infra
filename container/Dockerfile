@@ -145,8 +145,8 @@ RUN test -f "/osxcross-src/tarballs/MacOSX${MACOS_VERSION}.sdk.tar.gz" || \
 ENV \
     TARGET_DIR="/osxcross" \
     SDK_VERSION="$MACOS_VERSION" \
-    OSX_VERSION_MIN=$MACOS_VERSION_MINIMUM \
-    OSXCROSS_ENABLE_WERROR_IMPLICIT_FUNCTION_DECLARATION=1
+    OSX_VERSION_MIN="$MACOS_VERSION_MINIMUM" \
+    OSXCROSS_ENABLE_WERROR_IMPLICIT_FUNCTION_DECLARATION="1"
 
 WORKDIR /osxcross-src
 
@@ -209,14 +209,14 @@ ARG OSXCROSS_SDK
 LABEL macos="$MACOS_VERSION" macos_min="$MACOS_VERSION_MINIMUM" osxcross_sdk="$OSXCROSS_SDK"
 
 ENV \
-    MACOS_VERSION=$MACOS_VERSION \
-    MACOS_VERSION_MINIMUM=$MACOS_VERSION_MINIMUM \
+    MACOS_VERSION="$MACOS_VERSION" \
+    MACOS_VERSION_MINIMUM="$MACOS_VERSION_MINIMUM" \
     OSXCROSS_ROOT="/usr/local/lib/osxcross" \
     # NOTE: Godot expects $OSXCROSS_ROOT to mirror an osxcross repository. As such,
     # the target directory for the darwin toolchains must be `$OSXCROSS_ROOT/target/...`.
     # See https://github.com/godotengine/godot/blob/c3ed7af12347aa04a3d3bb91bc726170e894758e/platform/macos/detect.py#L136-L140.
-    PATH="/usr/local/lib/osxcross/target/bin:${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib/osxcross/target/lib:${LD_LIBRARY_PATH}"
+    PATH="/usr/local/lib/osxcross/target/bin:$PATH" \
+    LD_LIBRARY_PATH="/usr/local/lib/osxcross/target/lib:$LD_LIBRARY_PATH"
 
 # Fixes a linker error (see https://ttys3.dev/post/rust-cross-compile-mac-osx-target-under-linux/):
 # "x86_64-apple-darwin*-ld: error while loading shared libraries:
@@ -323,6 +323,32 @@ WORKDIR $WORKSPACE
 
 # See https://bugs.launchpad.net/cloud-images/+bug/2005129
 USER ubuntu
+
+
+# ------------------------------ Install: gdenv ------------------------------ #
+
+ARG GDENV_VERSION=""
+VOLUME "$WORKSPACE/.gdenv"
+ENV GDENV_HOME="$WORKSPACE/.gdenv" PATH="$WORKSPACE/.gdenv/bin:$PATH"
+RUN GDENV_VERSION=$GDENV_VERSION; \
+    curl https://raw.githubusercontent.com/coffeebeats/gdenv/main/scripts/install.sh | bash -s -- --no-modify-path
+
+# ------------------------------ Install: gdpack ----------------------------- #
+
+ARG GDPACK_VERSION=""
+VOLUME "$WORKSPACE/.gdpack"
+ENV GDPACK_HOME="$WORKSPACE/.gdpack" PATH="$WORKSPACE/.gdpack/bin:$PATH"
+RUN GDPACK_VERSION=$GDPACK_VERSION; \
+    curl https://raw.githubusercontent.com/coffeebeats/gdpack/main/scripts/install.sh | bash -s -- --no-modify-path
+
+# ----------------------------- Install: gdbuild ----------------------------- #
+
+ARG GDBUILD_VERSION=""
+VOLUME "$WORKSPACE/.gdbuild"
+ENV GDBUILD_HOME="$WORKSPACE/.gdbuild" PATH="$WORKSPACE/.gdbuild/bin:$PATH"
+RUN GDBUILD_VERSION=$GDBUILD_VERSION; \
+    curl https://raw.githubusercontent.com/coffeebeats/gdbuild/main/scripts/install.sh | bash -s -- --no-modify-path
+
 
 # ------------------------- Define: Entrypoint script ------------------------ #
 
