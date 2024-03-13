@@ -1,0 +1,222 @@
+name: "🏗️ godot-infra: Build and push 'godot-infra' image"
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        description: "The version to release."
+        required: true
+      llvm-version:
+        type: number
+        description: "The 'LLVM' version to install in the image."
+        required: true
+      moltenvk-version:
+        type: string
+        description: "The 'MoltenVK' SDK version to install in the image."
+        required: true
+      moltenvk-xcode-version:
+        type: number
+        description: "The 'Xcode' version to build the 'MoltenVK' SDK with (deprecated)."
+      osx-version:
+        type: number
+        description: "The 'MacOS' SDK version to install in the image."
+        required: true
+      osx-xcode-version:
+        type: number
+        description: "The 'Xcode' version to build the 'MacOS' SDK with."
+      osx-version-min:
+        type: number
+        description: "The minimum 'MacOS' SDK version to support."
+        required: true
+      osxcross-sdk:
+        type: string
+        description: "The 'darwin*' SDK name for the 'osx-version' specified."
+        required: true
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: "The version to release."
+        required: true
+      llvm-version:
+        type: number
+        description: "The 'LLVM' version to install in the image."
+        required: true
+      moltenvk-version:
+        type: string
+        description: "The 'MoltenVK' SDK version to install in the image."
+        required: true
+      moltenvk-xcode-version:
+        type: number
+        description: "The 'Xcode' version to build the 'MoltenVK' SDK with (deprecated)."
+        required: true
+      osx-version:
+        type: number
+        description: "The 'MacOS' SDK version to install in the image."
+        required: true
+      osx-xcode-version:
+        type: number
+        description: "The 'Xcode' version to build the 'MacOS' SDK with."
+        required: true
+      osx-version-min:
+        type: number
+        description: "The minimum 'MacOS' SDK version to support."
+        required: true
+      osxcross-sdk:
+        type: string
+        description: "The 'darwin*' SDK name for the 'osx-version' specified."
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  package-macos-sdk:
+    uses: "./.github/workflows/package-macos-sdk.yml"
+    secrets: "inherit"
+    with:
+      osx-version: ${{ fromJson(inputs.osx-version) }}
+      xcode-version: ${{ fromJson(inputs.osx-xcode-version) }}
+
+  package-moltenvk-sdk:
+    uses: "./.github/workflows/package-moltenvk-sdk.yml"
+    secrets: "inherit"
+    with:
+      moltenvk-version: ${{ inputs.moltenvk-version }}
+
+  build_image:
+    needs: ["package-macos-sdk", "package-moltenvk-sdk"]
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # NOTE: The 'GDBuild' image requires >14GB disk space to build, so to enable
+      # building in this workflow, free additional disk space on the runner. See
+      # https://github.com/actions/runner-images/issues/2606#issuecomment-772683150
+      # for details.
+      - name: Free additional disk space
+        shell: bash
+        run: |
+          sudo rm -rf /usr/local/lib/android # Free ~10 GB; removes Android support
+          sudo rm -rf /usr/share/dotnet # Free ~20GB; removes .NET support
+
+      - uses: actions/checkout@v4
+
+      # ------------------------ Install @coffeebeats tools ------------------------ #
+
+      - name: Install 'gdenv'
+        uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
+
+      - name: Install 'gdpack'
+        uses: coffeebeats/gdpack/.github/actions/setup-gdpack@main
+
+      - name: Install 'gdbuild'
+        uses: coffeebeats/gdbuild/.github/actions/setup-gdbuild@main
+
+      # --------------------------- Set up build contexts -------------------------- #
+
+      # Extract macOS SDK
+      - name: Download 'macOS' SDK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.package-macos-sdk.outputs.name }}
+          path: "thirdparty/osxcross/tarballs"
+
+      # Extract MoltenVK SDK
+      - name: Download 'MoltenVK' SDK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.package-moltenvk-sdk.outputs.name }}
+
+      - name: Copy 'MoltenVK' SDK into context
+        run: tar -C thirdparty/moltenvk -xf ${{ needs.package-moltenvk-sdk.outputs.name }}
+
+      # ------------------------------ Build the image ----------------------------- #
+
+      # Update buildah to support nice container file features; see
+      # https://podman.io/getting-started/installation for context.
+      - name: Update 'buildah' to latest
+        run: |
+          sudo mkdir -p /etc/apt/keyrings
+
+          curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/Debian_Unstable/Release.key \
+            | gpg --dearmor \
+            | sudo tee /etc/apt/keyrings/devel_kubic_libcontainers_unstable.gpg > /dev/null
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/devel_kubic_libcontainers_unstable.gpg]\
+              https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/Debian_Unstable/ /" \
+            | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:unstable.list > /dev/null
+
+          sudo apt-get update
+          sudo apt-get -y install buildah
+
+      - name: Log in to ghcr.io
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io/${{ github.repository_owner }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - uses: redhat-actions/buildah-build@v2
+        id: build
+        with:
+          image: godot-infra
+          containerfiles: container/Dockerfile
+          context: container
+          tags: "${{ inputs.version }} latest"
+          layers: true
+          extra-args: |
+            --build-context gdpack=tools/gdpack
+            --build-context osxcross=thirdparty/osxcross
+            --build-context vulkan=thirdparty/moltenvk
+            --cache-from ghcr.io/${{ github.repository_owner }}/godot-infra-cache
+            --cache-to ghcr.io/${{ github.repository_owner }}/godot-infra-cache
+            --cache-ttl 1w
+            --skip-unused-stages
+            --squash
+          build-args: |
+            BASE_IMG=docker.io/library/ubuntu:mantic
+            LLVM_VERSION=${{ inputs.llvm-version }}
+            MACOS_VERSION=${{ inputs.osx-version }}
+            MACOS_VERSION_MINIMUM=${{ inputs.osx-version-min }}
+            OSXCROSS_SDK=${{ inputs.osxcross-sdk }}
+
+      # Push the image to GHCR (Image Registry)
+      - uses: redhat-actions/push-to-registry@v2
+        id: push
+        with:
+          image: ${{ steps.build.outputs.image }}
+          tags: ${{ steps.build.outputs.tags }}
+          registry: ghcr.io/${{ github.repository_owner }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+          extra-args: |
+            --disable-content-trust
+
+      - name: Display 'push' outputs
+        run: echo "${{ toJSON(steps.push.outputs) }}"
+
+  # NOTE: In order to conserve package storage, remove all but the
+  # latest versions of 'godot-infra'.
+  remove_stale_packages:
+    needs: ["build_image"]
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    steps:
+      # After publishing, delete older version(s) to save space.
+      - uses: actions/delete-package-versions@v5
+        with:
+          owner: "coffeebeats"
+          package-name: "godot-infra"
+          package-type: "container"
+          # NOTE: This should match the number of target platforms for the image.
+          min-versions-to-keep: 1
