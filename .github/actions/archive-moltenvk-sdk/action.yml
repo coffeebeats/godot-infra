@@ -1,4 +1,4 @@
-name: "🏗️ godot-infra: Create 'MoltenVK' SDK archive"
+name: "📁 godot-infra: Create 'MoltenVK' SDK archive"
 
 inputs:
   out:

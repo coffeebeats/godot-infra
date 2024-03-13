@@ -1,4 +1,4 @@
-name: "🏗️ godot-infra: Create 'macOS' SDK archive"
+name: "📁 godot-infra: Create 'macOS' SDK archive"
 
 inputs:
   osx-version:
