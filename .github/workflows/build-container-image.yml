@@ -108,6 +108,8 @@ jobs:
           sudo rm -rf /usr/share/dotnet # Free ~20GB; removes .NET support
 
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       # ------------------------ Install @coffeebeats tools ------------------------ #
 
