@@ -1,4 +1,4 @@
-name: "🏗️ godot-infra: Package 'MoltenVK' SDK"
+name: "📦 godot-infra: Package 'MoltenVK' SDK"
 
 on:
   workflow_call:
