@@ -113,9 +113,13 @@ jobs:
 
       - name: Install 'gdenv'
         uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
+        with:
+          skip-install: true
 
       - name: Install 'gdpack'
         uses: coffeebeats/gdpack/.github/actions/setup-gdpack@main
+        with:
+          skip-install: true
 
       - name: Install 'gdbuild'
         uses: coffeebeats/gdbuild/.github/actions/setup-gdbuild@main
