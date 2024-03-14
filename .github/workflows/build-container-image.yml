@@ -226,3 +226,12 @@ jobs:
           package-type: "container"
           # NOTE: This should match the number of target platforms for the image.
           min-versions-to-keep: 1
+
+      - uses: actions/delete-package-versions@v5
+        with:
+          owner: "coffeebeats"
+          package-name: "godot-infra-cache"
+          package-type: "container"
+          # Keep roughly twice the number of layers. This is arbitrary and can
+          # be revisited to save on or increase cache space.
+          min-versions-to-keep: 50
