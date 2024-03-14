@@ -1,0 +1,30 @@
+name: "🎮 godot-infra: Publish 'itch.io' project"
+description: "Publishes a game project to 'itch.io'."
+
+inputs:
+  path:
+    description: "The path to the directory containing the project files."
+    required: true
+  version:
+    description: "The version of the game project."
+    required: true
+  itch-project:
+    description: "The name of the 'itch.io' project (e.g. 'user/game')."
+    required: true
+  itch-channel:
+    description: "The name of the 'itch.io' project channel (e.g. 'windows-stable')."
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check if 'butler' is installed
+      shell: bash
+      run: command -v butler >/dev/null 2>&1 || exit 1
+
+    - name: Publish game executable to 'itch.io'
+      shell: bash
+      run: butler push \
+        --if-changed ${{ inputs.path }} \
+        --userversion ${{ inputs.version }} \
+        ${{ inputs.project }}:${{ inputs.itch-channel }}
