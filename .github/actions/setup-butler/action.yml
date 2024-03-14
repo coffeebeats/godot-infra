@@ -1,0 +1,70 @@
+name: "🎮 itch.io: Install 'butler' executable"
+description: "Install the specified version of 'butler'."
+
+# NOTE: See https://docs.itch.ovh/butler/master/installing.html.
+
+inputs:
+  version:
+    description: "The version of 'butler' to install."
+    required: false
+    default: "latest"
+  install-dir:
+    description: "The 'butler' installation directory."
+    required: false
+    default: "$HOME/.butler"
+  modify-path:
+    description: "Whether to add the 'butler' command to 'PATH'."
+    required: false
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Export the installation directory environment variable
+      shell: bash
+      run: echo "BUTLER_HOME=$(realpath ${{ inputs.install-dir }})" >> $GITHUB_ENV
+
+    - name: Cache the 'butler' executable
+      id: cache-butler
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.BUTLER_HOME }}
+        key: butler-${{ runner.os }}-${{ inputs.version }}
+
+    - name: Download the 'butler' executable
+      if: steps.cache-butler.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        case ${{ runner.os }} in
+          Linux) platform="linux-amd64"
+          macOS) platform="darwin-amd64"
+          Windows) platform="windows-amd64"
+        esac
+
+        curl -L -o butler.zip "https://broth.itch.ovh/butler/${platform}/${{ inputs.version }}/archive/default"
+        unzip butler.zip
+        chmod +x butler
+
+        mkdir -p "$BUTLER_HOME/bin"
+        mv butler "$BUTLER_HOME/bin"
+
+    - name: Update the 'PATH' environment variable
+      if: inputs.modify-path == 'true'
+      shell: bash
+      run: echo "$BUTLER_HOME/bin" >> $GITHUB_PATH
+
+    - name: Validate 'butler' executable was set up correctly
+      shell: bash
+      run: |
+        if [[ "$(${{ env.BUTLER_HOME }}/bin/butler -V)" != "v"* ]]; then
+          echo "Failed to install 'butler@v${{ inputs.version }}'!"
+          exit 1
+        fi
+
+        if [[ \
+          "${{ inputs.modify-path }}" == "true" && \
+          "$(command -v butler >/dev/null 2>&1; echo $?)" -ne 0 \
+        ]]; then
+          echo "Failed to add 'butler' to \$PATH!"
+          exit 1
+        fi
