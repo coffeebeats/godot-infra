@@ -114,7 +114,7 @@ jobs:
       # ------------------------ Install @coffeebeats tools ------------------------ #
 
       - name: Install 'gdenv'
-        uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
+        uses: coffeebeats/gdenv/.github/actions/setup-gdenv@coffeebeats-patch-1
         with:
           skip-install: true
 
