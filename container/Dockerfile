@@ -351,7 +351,6 @@ WORKDIR $WORKSPACE
 # See https://bugs.launchpad.net/cloud-images/+bug/2005129
 USER ubuntu
 
-
 # ------------------------ Install: @coffeebeats tools ----------------------- #
 
 COPY --from=img-setup-godot-tools --chown=ubuntu "/gdenv/bin/*" "$WORKSPACE_BIN_DIR"
