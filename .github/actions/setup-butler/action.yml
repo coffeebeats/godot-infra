@@ -1,4 +1,4 @@
-name: "🎮 itch.io: Install 'butler' executable"
+name: "🎮 godot-infra: Install 'butler' executable"
 description: "Install the specified version of 'butler'."
 
 # NOTE: See https://docs.itch.ovh/butler/master/installing.html.
