@@ -170,44 +170,44 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - uses: redhat-actions/buildah-build@v2
-        id: build
-        with:
-          image: godot-infra
-          containerfiles: container/Dockerfile
-          context: container
-          tags: "${{ inputs.version }} latest"
-          layers: true
-          extra-args: |
-            --build-context gdpack=tools/gdpack
-            --build-context osxcross=thirdparty/osxcross
-            --build-context vulkan=thirdparty/moltenvk
-            --cache-from ghcr.io/${{ github.repository_owner }}/godot-infra-cache
-            --cache-to ghcr.io/${{ github.repository_owner }}/godot-infra-cache
-            --cache-ttl 168h
-            --skip-unused-stages
-            --squash
-          build-args: |
-            BASE_IMG=docker.io/library/ubuntu:mantic
-            LLVM_VERSION=${{ inputs.llvm-version }}
-            MACOS_VERSION=${{ inputs.osx-version }}
-            MACOS_VERSION_MINIMUM=${{ inputs.osx-version-min }}
-            OSXCROSS_SDK=${{ inputs.osxcross-sdk }}
+      # - uses: redhat-actions/buildah-build@v2
+      #   id: build
+      #   with:
+      #     image: godot-infra
+      #     containerfiles: container/Dockerfile
+      #     context: container
+      #     tags: "${{ inputs.version }} latest"
+      #     layers: true
+      #     extra-args: |
+      #       --build-context gdpack=tools/gdpack
+      #       --build-context osxcross=thirdparty/osxcross
+      #       --build-context vulkan=thirdparty/moltenvk
+      #       --cache-from ghcr.io/${{ github.repository_owner }}/godot-infra-cache
+      #       --cache-to ghcr.io/${{ github.repository_owner }}/godot-infra-cache
+      #       --cache-ttl 168h
+      #       --skip-unused-stages
+      #       --squash
+      #     build-args: |
+      #       BASE_IMG=docker.io/library/ubuntu:mantic
+      #       LLVM_VERSION=${{ inputs.llvm-version }}
+      #       MACOS_VERSION=${{ inputs.osx-version }}
+      #       MACOS_VERSION_MINIMUM=${{ inputs.osx-version-min }}
+      #       OSXCROSS_SDK=${{ inputs.osxcross-sdk }}
 
-      # Push the image to GHCR (Image Registry)
-      - uses: redhat-actions/push-to-registry@v2
-        id: push
-        with:
-          image: ${{ steps.build.outputs.image }}
-          tags: ${{ steps.build.outputs.tags }}
-          registry: ghcr.io/${{ github.repository_owner }}
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-          extra-args: |
-            --disable-content-trust
+      # # Push the image to GHCR (Image Registry)
+      # - uses: redhat-actions/push-to-registry@v2
+      #   id: push
+      #   with:
+      #     image: ${{ steps.build.outputs.image }}
+      #     tags: ${{ steps.build.outputs.tags }}
+      #     registry: ghcr.io/${{ github.repository_owner }}
+      #     username: ${{ github.actor }}
+      #     password: ${{ github.token }}
+      #     extra-args: |
+      #       --disable-content-trust
 
-      - name: Display 'push' outputs
-        run: echo "${{ toJSON(steps.push.outputs) }}"
+      # - name: Display 'push' outputs
+      #   run: echo "${{ toJSON(steps.push.outputs) }}"
 
   # NOTE: In order to conserve package storage, remove all but the
   # latest versions of 'godot-infra'.
