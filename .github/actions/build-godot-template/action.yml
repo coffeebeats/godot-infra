@@ -1,0 +1,66 @@
+name: "🏗️ godot-infra: Build 'godot' export template"
+description: "Compiles a 'godot' export template."
+
+inputs:
+  platform:
+    description: "The 'godot' platform to build for."
+    required: true
+  project-dir:
+    description: "The path to the game project directory."
+    required: false
+    default: "."
+  manifest-name:
+    description: "The name of the 'gdbuild' manifest (relative to 'project-dir')."
+    required: false
+    default: "gdbuild.toml"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check environment requirements
+      shell: bash
+      run: |
+        [[ -z "$GDENV_HOME" || ! -d "$GDENV_HOME" ]] && echo "Missing 'gdenv'; exit 1" || :
+        [[ -z "$GDBUILD_HOME" || ! -d "$GDBUILD_HOME" ]] && echo "Missing 'gdbuild'; exit 1" || :
+
+    - name: Set up 'podman'
+      uses: ./.github/actions/setup-podman
+      with:
+        install-buildah: false
+        install-podman: true
+        login: true
+
+    - name: Cache the 'godot' export template
+      id: cache-template
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/.godot-infra
+        key: template-${{ runner.os }}-${{ inputs.platform }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/**/*.toml', inputs.project-dir)) }}
+        restore-keys: |
+          template-${{ runner.os }}-${{ inputs.platform }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
+          template-${{ runner.os }}-${{ inputs.platform }}-
+
+    - name: Cache the 'SCons' build directory
+      id: cache-scons
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/.scons
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ hashFiles(format('{0}/**/*', inputs.project-dir)) }}
+        restore-keys: |
+          scons-${{ runner.os }}-${{ inputs.version }}-
+
+    - name: Compile 'godot' export template
+      shell: bash
+      run: |
+        podman run \
+          -v /home/runner/.godot-infra:/home/ubuntu/godot-infra/dist:Z \
+          -v /home/runner/.scons:/home/ubuntu/godot-infra/.scons:Z \
+          -v $(realpath ${{ inputs.project-dir }}):/home/ubuntu/godot-infra/project:ro,Z \
+          $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):/home/ubuntu/godot-infra/.gdenv:Z") \
+          $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):/home/ubuntu/godot-infra/.gdbuild:Z") \
+          ghcr.io/${{ github.repository_owner }}/godot-infra:latest \
+          gdbuild template \
+          --verbose \
+          --path /home/ubuntu/godot-infra/project/${{ inputs.manifest-name }} \
+          --out /home/ubuntu/godot-infra/dist \
+          ${{ inputs.platform }}
