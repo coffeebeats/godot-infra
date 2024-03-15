@@ -1,13 +1,19 @@
 name: "📁 godot-infra: Create 'MoltenVK' SDK archive"
 
 inputs:
+  version:
+    description: "The 'MoltenVK' version to archive."
+    required: true
+  xcode-version:
+    description: "The 'Xcode' version to use for building/extracting."
+    required:
+  osx-version-min:
+    description: "The minimum supported 'macOS' version."
+    required: true
   out:
     description: "The filename to write the archive to."
     required: false
     default: moltenvk.tar.gz
-  moltenvk-version:
-    description: "The MoltenVK version to archive."
-    required: true
 
 outputs:
   name:
@@ -20,6 +26,10 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Verify runner OS
+      shell: bash
+      run: '[[ "${{ runner.os }}" != "macOS" ]] && exit 1 || :'
+
     - name: Determine output filename
       id: archive
       shell: bash
@@ -37,41 +47,58 @@ runs:
       id: cache-archive
       uses: actions/cache@v4
       with:
-        key: moltenvk-${{ inputs.moltenvk-version }}
+        key: moltenvk-${{ inputs.version }}-osx-min-${{ inputs.osx-version-min }}-xcode-${{ inputs.xcode-version }}
         path: ${{ steps.archive.outputs.path }}
+
+    - name: Switch 'Xcode' versions
+      if: steps.cache-archive.outputs.cache-hit != 'true' && inputs.xcode-version != ''
+      shell: bash
+      run: |
+        sudo xcode-select -s /Applications/Xcode_${{ inputs.xcode-version }}.app
+        xcodebuild -version
+
+    - uses: actions/checkout@v4
+      if: steps.cache-archive.outputs.cache-hit != 'true'
+      with:
+        repository: "KhronosGroup/MoltenVK"
+        ref: "v${{ inputs.version }}"
+        path: "MoltenVK"
 
     # See https://github.com/KhronosGroup/MoltenVK#building-moltenvk
     - name: Package SDK
       if: steps.cache-archive.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        gh release download \
-          v${{ inputs.moltenvk-version }} \
-          --repo KhronosGroup/MoltenVK \
-          --clobber \
-          --pattern MoltenVK-macos.tar
+        cd MoltenVK
 
-        tar -xf MoltenVK-macos.tar
+        ./fetchDependencies --macos
+
+        # FIXME: https://github.com/godotengine/godot/issues/68512
+        MACOSX_DEPLOYMENT_TARGET=${{ inputs.osx-version-min }} \
+        OTHER_CFLAGS='-fno-objc-msgsend-selector-stubs' \
+        make || :  # here, 'make' always returns non-zero exit code
+
+        make macos
+
+        cd ..
 
         # Extract the only required library; see
         # https://github.com/godotengine/godot/blob/4.2/platform/macos/detect.py#L77-L88.
 
-        OUT_DIR=moltenvk/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64
+        OUT_DIR=dist/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64
 
         mkdir -p "$OUT_DIR"
 
-        mv MoltenVK/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/* $OUT_DIR
+        mv MoltenVK/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/* "$OUT_DIR"
 
-        rm -rf MoltenVK*
-
-        find moltenvk \
+        find dist \
           -type f \
           -o -type l \
           -o -type d | \
           tail -n +2 | \
-          sed s,^moltenvk/,, | \
+          sed s,^dist/,, | \
           tar \
             -czf ${{ steps.archive.outputs.path }} \
             --no-recursion \
-            -C moltenvk \
+            -C dist \
             -T -
