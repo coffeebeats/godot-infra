@@ -122,6 +122,11 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # Free ~10 GB; removes Android support
           sudo rm -rf /usr/share/dotnet # Free ~20GB; removes .NET support
+          sudo rm -rf /usr/local/share/powershell # Free ~1.2GB; removes PowerShell support
+          sudo rm -rf /usr/local/share/chromium # Free ~0.5GB; removes Chromium support
+
+          # Free ~1.3GB; removes Java support
+          sudo rm -rf $JAVA_HOME_8_X64 $JAVA_HOME_11_X64 $JAVA_HOME_17_X64 $JAVA_HOME_21_X64
 
       - uses: actions/checkout@v4
         with:
@@ -195,7 +200,6 @@ jobs:
           tags: "${{ inputs.version }} latest"
           layers: true
           extra-args: |
-            --build-context gdpack=tools/gdpack
             --build-context osxcross=thirdparty/osxcross
             --build-context vulkan=thirdparty/moltenvk
             --cache-from ghcr.io/${{ github.repository_owner }}/godot-infra-cache
