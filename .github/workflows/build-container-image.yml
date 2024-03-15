@@ -8,28 +8,37 @@ on:
         description: "The version to release."
         required: true
       llvm-version:
-        type: number
+        type: string
         description: "The 'LLVM' version to install in the image."
         required: true
       moltenvk-version:
         type: string
         description: "The 'MoltenVK' SDK version to install in the image."
         required: true
+      moltenvk-xcode-version:
+        type: string
+        description: "The 'Xcode' version to build the 'MoltenVK' SDK with."
+        required: true
       osx-version:
-        type: number
+        type: string
         description: "The 'MacOS' SDK version to install in the image."
         required: true
       osx-xcode-version:
-        type: number
+        type: string
         description: "The 'Xcode' version to build the 'MacOS' SDK with."
       osx-version-min:
-        type: number
+        type: string
         description: "The minimum 'MacOS' SDK version to support."
         required: true
       osxcross-sdk:
         type: string
         description: "The 'darwin*' SDK name for the 'osx-version' specified."
         required: true
+      os:
+        type: string
+        description: "The runner's operating system."
+        required: false
+        default: ubuntu-latest
   workflow_dispatch:
     inputs:
       version:
@@ -37,29 +46,38 @@ on:
         description: "The version to release."
         required: true
       llvm-version:
-        type: number
+        type: string
         description: "The 'LLVM' version to install in the image."
         required: true
       moltenvk-version:
         type: string
         description: "The 'MoltenVK' SDK version to install in the image."
         required: true
+      moltenvk-xcode-version:
+        type: string
+        description: "The 'Xcode' version to build the 'MoltenVK' SDK with."
+        required: true
       osx-version:
-        type: number
+        type: string
         description: "The 'MacOS' SDK version to install in the image."
         required: true
       osx-xcode-version:
-        type: number
+        type: string
         description: "The 'Xcode' version to build the 'MacOS' SDK with."
         required: true
       osx-version-min:
-        type: number
+        type: string
         description: "The minimum 'MacOS' SDK version to support."
         required: true
       osxcross-sdk:
         type: string
         description: "The 'darwin*' SDK name for the 'osx-version' specified."
         required: true
+      os:
+        type: string
+        description: "The runner's operating system."
+        required: false
+        default: ubuntu-latest
 
 permissions:
   contents: write
@@ -70,14 +88,16 @@ jobs:
     uses: "./.github/workflows/package-macos-sdk.yml"
     secrets: "inherit"
     with:
-      osx-version: ${{ fromJson(inputs.osx-version) }}
-      xcode-version: ${{ fromJson(inputs.osx-xcode-version) }}
+      version: ${{ inputs.osx-version }}
+      xcode-version: ${{ inputs.osx-xcode-version }}
 
   package-moltenvk-sdk:
     uses: "./.github/workflows/package-moltenvk-sdk.yml"
     secrets: "inherit"
     with:
-      moltenvk-version: ${{ inputs.moltenvk-version }}
+      version: ${{ inputs.moltenvk-version }}
+      osx-version-min: ${{ inputs.osx-version-min }}
+      xcode-version: ${{ inputs.moltenvk-xcode-version }}
 
   build_image:
     needs: ["package-macos-sdk", "package-moltenvk-sdk"]
