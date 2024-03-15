@@ -32,15 +32,7 @@ runs:
       shell: bash
       run: echo "name=MacOSX${{ inputs.osx-version }}.sdk.tar.gz" >> "$GITHUB_OUTPUT"
 
-    - name: Mount cache for archive
-      id: cache-archive
-      uses: actions/cache@v4
-      with:
-        key: macos-sdk-osx-${{ inputs.osx-version }}-xcode-${{ inputs.xcode-version }}
-        path: ${{ inputs.dir }}/${{ steps.archive.outputs.name }}
-
     - name: Create macOS SDK archive
-      if: steps.cache-archive.outputs.cache-hit != 'true'
       shell: bash
       run: |
         SDK_VERSION=${{ inputs.osx-version }} \
