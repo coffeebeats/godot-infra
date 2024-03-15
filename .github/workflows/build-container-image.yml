@@ -15,17 +15,10 @@ on:
         type: string
         description: "The 'MoltenVK' SDK version to install in the image."
         required: true
-      moltenvk-xcode-version:
-        type: string
-        description: "The 'Xcode' version to build the 'MoltenVK' SDK with."
-        required: true
       osx-version:
         type: string
         description: "The 'MacOS' SDK version to install in the image."
         required: true
-      osx-xcode-version:
-        type: string
-        description: "The 'Xcode' version to build the 'MacOS' SDK with."
       osx-version-min:
         type: string
         description: "The minimum 'MacOS' SDK version to support."
@@ -33,6 +26,10 @@ on:
       osxcross-sdk:
         type: string
         description: "The 'darwin*' SDK name for the 'osx-version' specified."
+        required: true
+      xcode-version:
+        type: string
+        description: "The 'Xcode' version to build 'macOS'-related SDKs with."
         required: true
       os:
         type: string
@@ -58,17 +55,9 @@ on:
         type: string
         description: "The 'MoltenVK' SDK version to install in the image."
         required: true
-      moltenvk-xcode-version:
-        type: string
-        description: "The 'Xcode' version to build the 'MoltenVK' SDK with."
-        required: true
       osx-version:
         type: string
         description: "The 'MacOS' SDK version to install in the image."
-        required: true
-      osx-xcode-version:
-        type: string
-        description: "The 'Xcode' version to build the 'MacOS' SDK with."
         required: true
       osx-version-min:
         type: string
@@ -77,6 +66,10 @@ on:
       osxcross-sdk:
         type: string
         description: "The 'darwin*' SDK name for the 'osx-version' specified."
+        required: true
+      xcode-version:
+        type: string
+        description: "The 'Xcode' version to build 'macOS'-related SDKs with."
         required: true
       os:
         type: string
@@ -99,7 +92,7 @@ jobs:
     secrets: "inherit"
     with:
       version: ${{ inputs.osx-version }}
-      xcode-version: ${{ inputs.osx-xcode-version }}
+      xcode-version: ${{ inputs.xcode-version }}
 
   package-moltenvk-sdk:
     uses: "./.github/workflows/package-moltenvk-sdk.yml"
@@ -107,7 +100,7 @@ jobs:
     with:
       version: ${{ inputs.moltenvk-version }}
       osx-version-min: ${{ inputs.osx-version-min }}
-      xcode-version: ${{ inputs.moltenvk-xcode-version }}
+      xcode-version: ${{ inputs.xcode-version }}
 
   build_image:
     needs: ["package-macos-sdk", "package-moltenvk-sdk"]
