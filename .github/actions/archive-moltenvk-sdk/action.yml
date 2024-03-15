@@ -43,22 +43,14 @@ runs:
         echo "name=$(basename $OUT)" >> "$GITHUB_OUTPUT"
         echo "path=$OUT" >> "$GITHUB_OUTPUT"
 
-    - name: Mount cache for archive
-      id: cache-archive
-      uses: actions/cache@v4
-      with:
-        key: moltenvk-${{ inputs.version }}-osx-min-${{ inputs.osx-version-min }}-xcode-${{ inputs.xcode-version }}
-        path: ${{ steps.archive.outputs.path }}
-
     - name: Switch 'Xcode' versions
-      if: steps.cache-archive.outputs.cache-hit != 'true' && inputs.xcode-version != ''
+      if: inputs.xcode-version != ''
       shell: bash
       run: |
         sudo xcode-select -s /Applications/Xcode_${{ inputs.xcode-version }}.app
         xcodebuild -version
 
     - uses: actions/checkout@v4
-      if: steps.cache-archive.outputs.cache-hit != 'true'
       with:
         repository: "KhronosGroup/MoltenVK"
         ref: "v${{ inputs.version }}"
@@ -66,7 +58,6 @@ runs:
 
     # See https://github.com/KhronosGroup/MoltenVK#building-moltenvk
     - name: Package SDK
-      if: steps.cache-archive.outputs.cache-hit != 'true'
       shell: bash
       run: |
         cd MoltenVK
