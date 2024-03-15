@@ -120,37 +120,13 @@ jobs:
       - name: Free additional disk space
         shell: bash
         run: |
-          echo "\nchecking '/usr/local/share/*':"
-          du -sh /usr/local/share/*
+          sudo rm -rf /usr/local/lib/android # Free ~10 GB; removes Android support
+          sudo rm -rf /usr/share/dotnet # Free ~20GB; removes .NET support
+          sudo rm -rf /usr/local/share/powershell # Free ~1.2GB; removes PowerShell support
+          sudo rm -rf /usr/local/share/chromium # Free ~0.5GB; removes Chromium support
 
-          echo "\nchecking 'JAVA_HOME_8_X64':"
-          du -sh $JAVA_HOME_8_X64
-
-          echo "\nchecking 'JAVA_HOME_11_X64':"
-          du -sh $JAVA_HOME_11_X64
-
-          echo "\nchecking 'JAVA_HOME_17_X64':"
-          du -sh $JAVA_HOME_17_X64
-
-          echo "\nchecking 'JAVA_HOME_21_X64':"
-          du -sh $JAVA_HOME_21_X64
-
-          echo "\nchecking '/usr/local/share/chromedriver-linux64/*':"
-          du -sh /usr/local/share/chromedriver-linux64/*
-
-          echo "\nchecking '/usr/local/share/edge_driver/*':"
-          du -sh /usr/local/share/edge_driver/*
-
-          echo "\nchecking '/usr/local/share/gecko_driver/*':"
-          du -sh /usr/local/share/gecko_driver/*
-
-          echo "\nchecking '/usr/share/java/selenium-server.jar/*':"
-          du -sh /usr/share/java/selenium-server.jar/*
-
-          # sudo rm -rf /usr/local/lib/android # Free ~10 GB; removes Android support
-          # sudo rm -rf /usr/share/dotnet # Free ~20GB; removes .NET support
-
-          exit 1
+          # Free ~1.3GB; removes Java support
+          sudo rm -rf $JAVA_HOME_8_X64 $JAVA_HOME_11_X64 $JAVA_HOME_17_X64 $JAVA_HOME_21_X64
 
       - uses: actions/checkout@v4
         with:
