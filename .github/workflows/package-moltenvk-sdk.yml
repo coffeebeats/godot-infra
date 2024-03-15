@@ -90,7 +90,7 @@ jobs:
     if: needs.package-cached-sdk.outputs.cache-hit != 'true'
 
     runs-on: ${{ inputs.os }}
-    timeout-minutes: 4
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
