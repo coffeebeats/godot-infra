@@ -35,7 +35,7 @@ env:
 
 jobs:
   package-cached-sdk:
-    runs-on: ubuntu-latest
+    runs-on: macos-13
     timeout-minutes: 4
 
     outputs:
