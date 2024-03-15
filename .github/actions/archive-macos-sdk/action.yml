@@ -1,7 +1,7 @@
 name: "📁 godot-infra: Create 'macOS' SDK archive"
 
 inputs:
-  osx-version:
+  version:
     description: "The macOS SDK version to build with."
     required: true
   xcode-version:
@@ -30,20 +30,12 @@ runs:
     - name: Determine output filename
       id: archive
       shell: bash
-      run: echo "name=MacOSX${{ inputs.osx-version }}.sdk.tar.gz" >> "$GITHUB_OUTPUT"
-
-    - name: Mount cache for archive
-      id: cache-archive
-      uses: actions/cache@v4
-      with:
-        key: macos-sdk-osx-${{ inputs.osx-version }}-xcode-${{ inputs.xcode-version }}
-        path: ${{ inputs.dir }}/${{ steps.archive.outputs.name }}
+      run: echo "name=MacOSX${{ inputs.version }}.sdk.tar.gz" >> "$GITHUB_OUTPUT"
 
     - name: Create macOS SDK archive
-      if: steps.cache-archive.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        SDK_VERSION=${{ inputs.osx-version }} \
+        SDK_VERSION=${{ inputs.version }} \
         SDK_COMPRESSOR=gz \
         XCODEDIR=/Applications/Xcode_${{ inputs.xcode-version }}.app \
           thirdparty/osxcross/tools/gen_sdk_package.sh

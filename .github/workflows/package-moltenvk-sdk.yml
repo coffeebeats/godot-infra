@@ -3,39 +3,75 @@ name: "📦 godot-infra: Package 'MoltenVK' SDK"
 on:
   workflow_call:
     inputs:
-      moltenvk-version:
+      version:
         type: string
-        description: "The MoltenVK version to package."
+        description: "The 'MoltenVK' version to package."
+        required: true
+      xcode-version:
+        type: string
+        description: "The 'Xcode' version to use for building/extracting."
+        required: true
+      osx-version-min:
+        type: string
+        description: "The minimum supported 'macOS' version."
         required: true
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."
         required: false
         default: 7
+      os:
+        type: string
+        description: "The runner's operating system."
+        required: false
+        default: macos-13
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
     outputs:
       name:
         description: "The name of the 'MoltenVK' SDK artifact."
         value: ${{ jobs.package-cached-sdk.outputs.name }}
   workflow_dispatch:
     inputs:
-      moltenvk-version:
+      version:
         type: string
-        description: "The MoltenVK version to package."
+        description: "The 'MoltenVK' version to package."
+        required: true
+      xcode-version:
+        type: string
+        description: "The 'Xcode' version to use for building/extracting."
+        required: true
+      osx-version-min:
+        type: string
+        description: "The minimum supported 'macOS' version."
         required: true
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."
         required: false
         default: 7
+      os:
+        type: string
+        description: "The runner's operating system."
+        required: false
+        default: macos-13
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
 
 env:
   GH_TOKEN: ${{ github.token }}
-  key: "moltenvk-${{ inputs.moltenvk-version }}"
-  path: "moltenvk-sdk-${{ inputs.moltenvk-version }}.tar.gz"
+  key: "moltenvk-${{ inputs.version }}-osx-min-${{ inputs.osx-version-min }}-xcode-${{ inputs.xcode-version }}"
+  path: "moltenvk-sdk-${{ inputs.version }}.tar.gz"
 
 jobs:
   package-cached-sdk:
-    runs-on: macos-13
+    runs-on: ${{ inputs.os }}
     timeout-minutes: 4
 
     outputs:
@@ -63,8 +99,8 @@ jobs:
     needs: [package-cached-sdk]
     if: needs.package-cached-sdk.outputs.cache-hit != 'true'
 
-    runs-on: ubuntu-latest
-    timeout-minutes: 4
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: ${{ inputs.timeout }}
 
     steps:
       - uses: actions/checkout@v4
@@ -85,7 +121,9 @@ jobs:
         if: steps.cache-artifact.outputs.cache-hit != 'true'
         with:
           out: ${{ env.path }}
-          moltenvk-version: ${{ inputs.moltenvk-version }}
+          version: ${{ inputs.version }}
+          osx-version-min: ${{ inputs.osx-version-min }}
+          xcode-version: ${{ inputs.xcode-version }}
 
       # Publish the artifact
       - uses: actions/upload-artifact@v4
