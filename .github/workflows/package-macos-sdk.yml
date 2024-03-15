@@ -23,6 +23,11 @@ on:
         description: "The runner's operating system."
         required: false
         default: macos-13
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
     outputs:
       name:
         description: "The name of the 'MacOS' SDK artifact."
@@ -47,6 +52,11 @@ on:
         description: "The runner's operating system."
         required: false
         default: macos-13
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
 
 env:
   dir: .
@@ -84,7 +94,7 @@ jobs:
     if: needs.package-cached-sdk.outputs.cache-hit != 'true'
 
     runs-on: ${{ inputs.os }}
-    timeout-minutes: 8
+    timeout-minutes: ${{ inputs.timeout }}
 
     steps:
       - uses: actions/checkout@v4
