@@ -3,9 +3,17 @@ name: "📦 godot-infra: Package 'MoltenVK' SDK"
 on:
   workflow_call:
     inputs:
-      moltenvk-version:
+      version:
         type: string
-        description: "The MoltenVK version to package."
+        description: "The 'MoltenVK' version to package."
+        required: true
+      xcode-version:
+        type: string
+        description: "The 'Xcode' version to use for building/extracting."
+        required: true
+      osx-version-min:
+        type: string
+        description: "The minimum supported 'macOS' version."
         required: true
       retention:
         type: number
@@ -18,9 +26,17 @@ on:
         value: ${{ jobs.package-cached-sdk.outputs.name }}
   workflow_dispatch:
     inputs:
-      moltenvk-version:
+      version:
         type: string
-        description: "The MoltenVK version to package."
+        description: "The 'MoltenVK' version to package."
+        required: true
+      xcode-version:
+        type: string
+        description: "The 'Xcode' version to use for building/extracting."
+        required: true
+      osx-version-min:
+        type: string
+        description: "The minimum supported 'macOS' version."
         required: true
       retention:
         type: number
@@ -30,8 +46,8 @@ on:
 
 env:
   GH_TOKEN: ${{ github.token }}
-  key: "moltenvk-${{ inputs.moltenvk-version }}"
-  path: "moltenvk-sdk-${{ inputs.moltenvk-version }}.tar.gz"
+  key: "moltenvk-${{ inputs.version }}-osx-min-${{ inputs.osx-version-min }}-xcode-${{ inputs.xcode-version }}"
+  path: "moltenvk-sdk-${{ inputs.version }}.tar.gz"
 
 jobs:
   package-cached-sdk:
@@ -85,7 +101,7 @@ jobs:
         if: steps.cache-artifact.outputs.cache-hit != 'true'
         with:
           out: ${{ env.path }}
-          moltenvk-version: ${{ inputs.moltenvk-version }}
+          version: ${{ inputs.version }}
 
       # Publish the artifact
       - uses: actions/upload-artifact@v4
