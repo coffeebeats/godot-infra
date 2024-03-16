@@ -80,10 +80,6 @@ runs:
           -v $(realpath ${{ inputs.project-dir }}):$WORKSPACE_DIR/project:ro,Z \
           $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):$WORKSPACE_DIR/.gdenv:Z") \
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
-          ghcr.io/${{ github.repository_owner }}/godot-infra:latest \
-          gdbuild template \
-          --verbose \
-          --config $WORKSPACE_DIR/project/${{ inputs.manifest-name }} \
-          --out $WORKSPACE_DIR/tmp \
-          ${{ inputs.platform }} && \
-          mv $WORKSPACE_DIR/tmp/* $WORKSPACE_DIR/dist
+          ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
+          "mkdir $WORKSPACE_DIR/tmp && touch $WORKSPACE_DIR/tmp/file && \
+          mv $WORKSPACE_DIR/tmp/* $WORKSPACE_DIR/dist"
