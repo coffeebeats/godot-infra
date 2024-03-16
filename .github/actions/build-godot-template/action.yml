@@ -5,6 +5,10 @@ inputs:
   platform:
     description: "The 'godot' platform to build for."
     required: true
+  profile:
+    description: "The execution profile to build with."
+    required: false
+    default: release
   project-dir:
     description: "The path to the game project directory."
     required: false
@@ -83,6 +87,9 @@ runs:
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
           "gdbuild template \
           --verbose \
+          $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
+          $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
+          $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
           --config $WORKSPACE_DIR/project/${{ inputs.manifest-name }} \
           --out $WORKSPACE_DIR/tmp \
           ${{ inputs.platform }} && \
