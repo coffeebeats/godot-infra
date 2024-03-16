@@ -77,9 +77,7 @@ jobs:
 
       - name: Package the export template
         shell: bash
-        run: tar \
-          -czf ${{ steps.config-artifact.outputs.name }} \
-          ${{ steps.build-template.outputs.path }}
+        run: tar -czf ${{ steps.config-artifact.outputs.name }} ${{ steps.build-template.outputs.path }}
 
       # Publish the artifact
       - uses: actions/upload-artifact@v4
