@@ -15,7 +15,7 @@ inputs:
     default: "gdbuild.toml"
 
 outputs:
-  artifacts:
+  path:
     description: "The directory containing the export template artifacts."
     value: ${{ steps.config.outputs.runner-dist }}
 

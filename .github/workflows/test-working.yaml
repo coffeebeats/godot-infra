@@ -68,8 +68,23 @@ jobs:
           platform: windows
           project-dir: ./example
 
-      # ---------------------------- Inspect the results --------------------------- #
+      # ------------------------ Package the export template ----------------------- #
 
-      - name: Inspect the results
+      - name: Configure the artifact name
+        id: config-artifact
         shell: bash
-        run: ls ${{ steps.build-template.outputs.directory }}
+        run: echo "name=godot-${{ inputs.platform }}-template.tar.gz" >> $GITHUB_OUTPUT
+
+      - name: Package the export template
+        shell: bash
+        run: tar \
+          -czf ${{ steps.config-artifact.outputs.name }} \
+          ${{ steps.build-template.outputs.path }}
+
+      # Publish the artifact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.config-artifact.outputs.name }}
+          path: ${{ steps.config-artifact.outputs.name }}
+          retention-days: 7
+          if-no-files-found: error

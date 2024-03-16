@@ -212,7 +212,6 @@ CMD+=("--build-arg GDPACK_VERSION=${GDPACK_VERSION:-}")
 CMD+=("--build-arg GDBUILD_VERSION=${GDBUILD_VERSION:-}")
 
 # Define: Platform-specific arguments
-# IF/THEN: .github/workflows/release-gdbuild.yml
 CMD+=("--build-arg LLVM_VERSION=${LLVM_VERSION:-17}")
 CMD+=("--build-arg MACOS_VERSION=${MACOS_VERSION:-"14"}")
 CMD+=("--build-arg MACOS_VERSION_MINIMUM=${MACOS_VERSION_MINIMUM:-}")
@@ -222,7 +221,7 @@ CMD+=("--build-arg OSXCROSS_SDK=${OSXCROSS_SDK:-}")
 TAGS+=("$VERSION")
 TAGS+=("latest")
 for t in "${TAGS[@]}"; do
-    CMD+=("-t localhost/gdbuild:$t")
+    CMD+=("-t localhost/godot-infra:$t")
 done
 
 CMD+=("--platform linux/$HOST_ARCH")
