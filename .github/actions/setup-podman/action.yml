@@ -50,6 +50,6 @@ runs:
       if: inputs.login == 'true'
       uses: redhat-actions/podman-login@v1
       with:
-        registry: ghcr.io/${{ github.repository_owner }}
+        registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ github.token }}
