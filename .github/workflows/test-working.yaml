@@ -54,18 +54,12 @@ jobs:
 
       # ------------------------ Compile the export template ----------------------- #
 
-      - name: Set up 'podman'
-        uses: ./.github/actions/setup-podman
-        with:
-          install-buildah: true
-          install-podman: false
-          login: true
-
       - name: Compile the export template
         uses: ./.github/actions/build-godot-template
         id: build-template
         with:
           platform: windows
+          profile: release
           project-dir: ./example
 
       # ------------------------ Package the export template ----------------------- #

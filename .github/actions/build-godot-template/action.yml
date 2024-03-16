@@ -62,6 +62,12 @@ runs:
           scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
           scons-${{ runner.os }}-${{ inputs.platform }}-
 
+    - name: Set up 'podman'
+      if: steps.cache-template.outputs.cache-hit != 'true'
+      uses: ./.github/actions/setup-podman
+      with:
+        login: true
+
     - name: Compile 'godot' export template
       if: steps.cache-template.outputs.cache-hit != 'true'
       shell: bash
