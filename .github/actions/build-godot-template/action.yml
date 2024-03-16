@@ -37,19 +37,6 @@ runs:
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
 
-    - name: Check environment requirements
-      shell: bash
-      run: |
-        [[ -z "$GDENV_HOME" || ! -d "$GDENV_HOME" ]] && echo "Missing 'gdenv'; exit 1" || :
-        [[ -z "$GDBUILD_HOME" || ! -d "$GDBUILD_HOME" ]] && echo "Missing 'gdbuild'; exit 1" || :
-
-    - name: Set up 'podman'
-      uses: ./.github/actions/setup-podman
-      with:
-        install-buildah: false
-        install-podman: true
-        login: true
-
     - name: Cache the 'godot' export template
       id: cache-template
       uses: actions/cache@v4
@@ -70,6 +57,7 @@ runs:
           scons-${{ runner.os }}-${{ inputs.version }}-
 
     - name: Compile 'godot' export template
+      if: steps.cache-template.outputs.cache-hit != 'true'
       shell: bash
       run: |
         mkdir -p ${{ steps.config.outputs.runner-dist }}
@@ -86,7 +74,6 @@ runs:
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
           "gdbuild template \
-          --verbose \
           $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
           $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
           $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
