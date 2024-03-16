@@ -61,6 +61,6 @@ runs:
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest \
           gdbuild template \
           --verbose \
-          --path /home/ubuntu/godot-infra/project/${{ inputs.manifest-name }} \
+          --config /home/ubuntu/godot-infra/project/${{ inputs.manifest-name }} \
           --out /home/ubuntu/godot-infra/dist \
           ${{ inputs.platform }}
