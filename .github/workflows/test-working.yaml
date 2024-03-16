@@ -3,6 +3,11 @@ name: "🧪 godot-infra: Placeholder workflow for testing"
 on:
   workflow_dispatch:
     inputs:
+      platform:
+        type: string
+        description: "The platform to build the export template for."
+        required: false
+        default: ubuntu-latest
       os:
         type: string
         description: "The runner's operating system."
@@ -20,5 +25,36 @@ jobs:
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
     steps:
-      - shell: bash
-        run: exit 0
+      - uses: actions/checkout@v4
+
+      # ------------------------ Install @coffeebeats tools ------------------------ #
+
+      - name: Install 'gdenv'
+        uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
+        with:
+          skip-install: true
+
+      - name: Install 'gdbuild'
+        uses: coffeebeats/gdbuild/.github/actions/setup-gdbuild@main
+
+      # ------------------------ Compile the export template ----------------------- #
+
+      - name: Set up 'podman'
+        uses: ./.github/actions/setup-podman
+        with:
+          install-buildah: true
+          install-podman: false
+          login: true
+
+      - name: Compile the export template
+        uses: ./.github/actions/build-godot-template
+        id: build-template
+        with:
+          platform: windows
+          project-dir: ./example
+
+      # ---------------------------- Inspect the results --------------------------- #
+
+      - name: Inspect the results
+        shell: bash
+        run: ls ${{ steps.build-template.outputs.directory }}

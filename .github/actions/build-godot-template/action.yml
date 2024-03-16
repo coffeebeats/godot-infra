@@ -14,6 +14,11 @@ inputs:
     required: false
     default: "gdbuild.toml"
 
+outputs:
+  directory:
+    description: "The directory containing the export template artifacts."
+    value: /home/runner/.godot-infra
+
 runs:
   using: "composite"
   steps:
