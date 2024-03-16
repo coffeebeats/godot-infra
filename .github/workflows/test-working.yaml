@@ -32,7 +32,10 @@ jobs:
       - name: Install 'gdenv'
         uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
         with:
-          skip-install: true
+          # NOTE: The editor and source code must be pre-installed, otherwise 'gdenv'
+          # will fail moving the downloaded artifact into the mounted volume.
+          project-dir: ./example
+          install-src: true
 
       - name: Install 'gdbuild'
         uses: coffeebeats/gdbuild/.github/actions/setup-gdbuild@main
