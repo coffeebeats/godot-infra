@@ -74,6 +74,7 @@ runs:
         WORKSPACE_DIR="${{ steps.config.outputs.container-workspace }}"
 
         podman run \
+          --userns keep-id:uid=1000,gid=1000 \
           -v ${{ steps.config.outputs.runner-dist }}:$WORKSPACE_DIR/dist:Z \
           -v ${{ steps.config.outputs.runner-scons }}:$WORKSPACE_DIR/.scons:Z \
           -v $(realpath ${{ inputs.project-dir }}):$WORKSPACE_DIR/project:ro,Z \
