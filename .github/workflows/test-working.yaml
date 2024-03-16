@@ -8,6 +8,11 @@ on:
         description: "The platform to build the export template for."
         required: false
         default: windows
+      profile:
+        type: string
+        description: "The profile to build the export template with."
+        required: false
+        default: release
       os:
         type: string
         description: "The runner's operating system."
@@ -17,7 +22,7 @@ on:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
         required: false
-        default: 60
+        default: 90
 
 jobs:
   todo:
@@ -58,8 +63,8 @@ jobs:
         uses: ./.github/actions/build-godot-template
         id: build-template
         with:
-          platform: windows
-          profile: release
+          platform: ${{ inputs.platform }}
+          profile: ${{ inputs.profile }}
           project-dir: ./example
 
       # ------------------------ Package the export template ----------------------- #
