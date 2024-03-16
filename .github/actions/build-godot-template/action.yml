@@ -15,13 +15,24 @@ inputs:
     default: "gdbuild.toml"
 
 outputs:
-  directory:
+  artifacts:
     description: "The directory containing the export template artifacts."
-    value: /home/runner/.godot-infra
+    value: ${{ steps.config.outputs.runner-dist }}
 
 runs:
   using: "composite"
   steps:
+    - name: Export the output directory
+      id: config
+      shell: bash
+      run: |
+        # Runner paths
+        echo "runner-dist=$HOME/.godot-infra" >> "$GITHUB_OUTPUT"
+        echo "runner-scons=$HOME/.scons" >> "$GITHUB_OUTPUT"
+
+        # Container paths
+        echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
+
     - name: Check environment requirements
       shell: bash
       run: |
@@ -39,7 +50,7 @@ runs:
       id: cache-template
       uses: actions/cache@v4
       with:
-        path: /home/runner/.godot-infra
+        path: ${{ steps.config.outputs.runner-dist }}
         key: template-${{ runner.os }}-${{ inputs.platform }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/**/*.toml', inputs.project-dir)) }}
         restore-keys: |
           template-${{ runner.os }}-${{ inputs.platform }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
@@ -49,7 +60,7 @@ runs:
       id: cache-scons
       uses: actions/cache@v4
       with:
-        path: /home/runner/.scons
+        path: ${{ steps.config.outputs.runner-scons }}
         key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ hashFiles(format('{0}/**/*', inputs.project-dir)) }}
         restore-keys: |
           scons-${{ runner.os }}-${{ inputs.version }}-
@@ -57,15 +68,21 @@ runs:
     - name: Compile 'godot' export template
       shell: bash
       run: |
+        mkdir -p ${{ steps.config.outputs.runner-dist }}
+        mkdir -p ${{ steps.config.outputs.runner-scons }}
+
+        WORKSPACE_DIR="${{ steps.config.outputs.container-workspace }}"
+
         podman run \
-          -v /home/runner/.godot-infra:/home/ubuntu/godot-infra/dist:Z \
-          -v /home/runner/.scons:/home/ubuntu/godot-infra/.scons:Z \
-          -v $(realpath ${{ inputs.project-dir }}):/home/ubuntu/godot-infra/project:ro,Z \
-          $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):/home/ubuntu/godot-infra/.gdenv:Z") \
-          $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):/home/ubuntu/godot-infra/.gdbuild:Z") \
+          -v ${{ steps.config.outputs.runner-dist }}:$WORKSPACE_DIR/dist:Z \
+          -v ${{ steps.config.outputs.runner-scons }}:$WORKSPACE_DIR/.scons:Z \
+          -v $(realpath ${{ inputs.project-dir }}):$WORKSPACE_DIR/project:ro,Z \
+          $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):$WORKSPACE_DIR/.gdenv:Z") \
+          $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest \
           gdbuild template \
           --verbose \
-          --config /home/ubuntu/godot-infra/project/${{ inputs.manifest-name }} \
-          --out /home/ubuntu/godot-infra/dist \
-          ${{ inputs.platform }}
+          --config $WORKSPACE_DIR/project/${{ inputs.manifest-name }} \
+          --out $WORKSPACE_DIR/tmp \
+          ${{ inputs.platform }} && \
+          mv $WORKSPACE_DIR/tmp/* $WORKSPACE_DIR/dist
