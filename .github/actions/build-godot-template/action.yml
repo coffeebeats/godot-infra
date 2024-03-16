@@ -9,6 +9,10 @@ inputs:
     description: "The execution profile to build with."
     required: false
     default: release
+  out-dir:
+    description: "The directory in which to place the export templates."
+    required: false
+    default: "dist"
   project-dir:
     description: "The path to the game project directory."
     required: false
@@ -31,30 +35,21 @@ runs:
       shell: bash
       run: |
         # Runner paths
-        echo "runner-dist=$HOME/.godot-infra" >> "$GITHUB_OUTPUT"
+        echo "runner-dist=$(realpath ${{ inputs.out-dir }})" >> "$GITHUB_OUTPUT"
         echo "runner-scons=$HOME/.scons" >> "$GITHUB_OUTPUT"
 
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
-
-    - name: Cache the 'godot' export template
-      id: cache-template
-      uses: actions/cache@v4
-      with:
-        path: ${{ steps.config.outputs.runner-dist }}
-        key: template-${{ runner.os }}-${{ inputs.platform }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/**/*.toml', inputs.project-dir)) }}
-        restore-keys: |
-          template-${{ runner.os }}-${{ inputs.platform }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
-          template-${{ runner.os }}-${{ inputs.platform }}-
 
     - name: Cache the 'SCons' build directory
       id: cache-scons
       uses: actions/cache@v4
       with:
         path: ${{ steps.config.outputs.runner-scons }}
-        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ hashFiles(format('{0}/**/*', inputs.project-dir)) }}
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/*.toml', inputs.project-dir)) }}
         restore-keys: |
-          scons-${{ runner.os }}-${{ inputs.version }}-
+          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
+          scons-${{ runner.os }}-${{ inputs.platform }}-
 
     - name: Compile 'godot' export template
       if: steps.cache-template.outputs.cache-hit != 'true'
