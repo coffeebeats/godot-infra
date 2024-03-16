@@ -7,7 +7,7 @@ on:
         type: string
         description: "The platform to build the export template for."
         required: false
-        default: ubuntu-latest
+        default: windows
       os:
         type: string
         description: "The runner's operating system."
