@@ -4,10 +4,8 @@ description: "Configures the 'GitHub' hosted runner for use with 'godot-infra'."
 runs:
   using: "composite"
   steps:
-    # NOTE: The 'godot-infra' image requires >14GB disk space to build, so to
-    # enable building in this workflow, free additional disk space on the
-    # runner. For more details see
-    # https://github.com/actions/runner-images/issues/2606#issuecomment-772683150
+    # NOTE: Free additional disk space on the runner. For more details see
+    # https://github.com/actions/runner-images/issues/2606#issuecomment-772683150.
     - name: Free additional disk space
       if: runner.os == 'Linux'
       shell: bash
