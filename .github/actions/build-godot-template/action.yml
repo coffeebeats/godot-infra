@@ -41,7 +41,18 @@ runs:
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
 
+    - name: Cache the 'godot' export template
+      id: cache-template
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.config.outputs.runner-dist }}
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/*.toml', inputs.project-dir)) }}
+        restore-keys: |
+          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
+          scons-${{ runner.os }}-${{ inputs.platform }}-
+
     - name: Cache the 'SCons' build directory
+      if: steps.cache-template.outputs.cache-hit != 'true'
       id: cache-scons
       uses: actions/cache@v4
       with:
