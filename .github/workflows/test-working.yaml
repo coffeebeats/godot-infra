@@ -3,16 +3,6 @@ name: "🧪 godot-infra: Placeholder workflow for testing"
 on:
   workflow_dispatch:
     inputs:
-      platform:
-        type: string
-        description: "The platform to build the export template for."
-        required: false
-        default: windows
-      profile:
-        type: string
-        description: "The profile to build the export template with."
-        required: false
-        default: release
       os:
         type: string
         description: "The runner's operating system."
@@ -22,7 +12,7 @@ on:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
         required: false
-        default: 90
+        default: 60
 
 jobs:
   todo:
@@ -30,58 +20,5 @@ jobs:
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
     steps:
-      - name: Free additional disk space
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          sudo rm -rf /usr/local/lib/android # Free ~10 GB; removes Android support
-          sudo rm -rf /usr/share/dotnet # Free ~20GB; removes .NET support
-          sudo rm -rf /usr/local/share/powershell # Free ~1.2GB; removes PowerShell support
-          sudo rm -rf /usr/local/share/chromium # Free ~0.5GB; removes Chromium support
-
-          # Free ~1.3GB; removes Java support
-          sudo rm -rf $JAVA_HOME_8_X64 $JAVA_HOME_11_X64 $JAVA_HOME_17_X64 $JAVA_HOME_21_X64
-
-      - uses: actions/checkout@v4
-
-      # ------------------------ Install @coffeebeats tools ------------------------ #
-
-      - name: Install 'gdenv'
-        uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
-        with:
-          # NOTE: The editor and source code must be pre-installed, otherwise 'gdenv'
-          # will fail moving the downloaded artifact into the mounted volume.
-          project-dir: ./example
-          install-src: true
-
-      - name: Install 'gdbuild'
-        uses: coffeebeats/gdbuild/.github/actions/setup-gdbuild@main
-
-      # ------------------------ Compile the export template ----------------------- #
-
-      - name: Compile the export template
-        uses: ./.github/actions/build-godot-template
-        id: build-template
-        with:
-          platform: ${{ inputs.platform }}
-          profile: ${{ inputs.profile }}
-          project-dir: ./example
-
-      # ------------------------ Package the export template ----------------------- #
-
-      - name: Configure the artifact name
-        id: config-artifact
-        shell: bash
-        run: echo "name=godot-${{ inputs.platform }}-template.tar.gz" >> $GITHUB_OUTPUT
-
-      - name: Package the export template
-        shell: bash
-        run: tar -C ${{ steps.build-template.outputs.path }} -czf ${{ steps.config-artifact.outputs.name }} .
-
-      # Publish the artifact
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.config-artifact.outputs.name }}
-          path: ${{ steps.config-artifact.outputs.name }}
-          retention-days: 7
-          if-no-files-found: error
+      - shell: bash
+        run: exit 0
