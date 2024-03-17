@@ -17,3 +17,10 @@ mono_crash.*.json
 # Third party-related ignores
 thirdparty/moltenvk/*
 !thirdparty/moltenvk/.gitkeep
+
+# Dependency-related ignores
+**/dist
+**/.gdbuild
+**/.gdenv
+**/.gdpack
+**/.scons

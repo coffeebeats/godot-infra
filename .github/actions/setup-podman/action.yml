@@ -13,7 +13,7 @@ inputs:
     required: false
     default: true
   login:
-    description: "Whether to log in to the 'ghcr.io/coffeebeats' registry."
+    description: "Whether to log in to the 'ghcr.io' registry."
     required: false
     default: true
 
@@ -50,6 +50,6 @@ runs:
       if: inputs.login == 'true'
       uses: redhat-actions/podman-login@v1
       with:
-        registry: ghcr.io/${{ github.repository_owner }}
+        registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ github.token }}
