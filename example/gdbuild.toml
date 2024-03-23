@@ -1,0 +1,20 @@
+[godot]
+  version_file = ".godot-version"
+
+[template.scons]
+  cache_path = "$WORKSPACE/.scons"
+  command    = ["python3", "-m", "SCons"]
+
+[template.platform.windows]
+  use_mingw = true
+
+[template.platform.macos]
+  env    = {OSXCROSS_ROOT = "/usr/local/lib/osxcross/target"}
+  vulkan = {sdk_path = "/usr/local/lib/vulkan-sdk/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64", use_volk = false}
+
+[template.platform.macos.scons]
+  # NOTE: As of Godot 4.0.3, the 'SCons' configuration does not correctly
+  # detect clang usage via 'OSXCross'. Add in the missing "common
+  # warnings" here (see https://github.com/godotengine/godot/blob/2267646bf4c29acf1342951d8726626817c742bd/SConstruct#L727-L730).
+  ccflags    = ["-Wno-ordered-compare-function-pointers"]
+  extra_args = ["osxcross_sdk=darwin23"]

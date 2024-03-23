@@ -72,6 +72,23 @@ RUN \
     update-alternatives --set 'i686-w64-mingw32-gcc' "/usr/bin/i686-w64-mingw32-gcc-posix" && \
     update-alternatives --set 'i686-w64-mingw32-g++' "/usr/bin/i686-w64-mingw32-g++-posix"
 
+# ------------------------- Install: Linux toolchain ------------------------- #
+
+RUN \
+    # Install Linux toolchain dependencies
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libxcursor-dev \
+    libxinerama-dev \
+    libgl1-mesa-dev \
+    libglu-dev \
+    libasound2-dev \
+    libpulse-dev \
+    libudev-dev \
+    libxi-dev \
+    libxrandr-dev
+
 # ----------------------------- Define: Workspace ---------------------------- #
 
 # Switch to 'ubuntu' user for workspace directory creation.
@@ -111,7 +128,6 @@ FROM img-os-base AS img-setup-osxcross
 # ------------------------ Install: Build dependencies ----------------------- #
 
 RUN apt-get install -y --no-install-recommends \
-    gcc \
     cmake \
     git \
     libssl-dev \
