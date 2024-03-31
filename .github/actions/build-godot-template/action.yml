@@ -46,10 +46,10 @@ runs:
       uses: actions/cache@v4
       with:
         path: ${{ steps.config.outputs.runner-dist }}
-        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/*.toml', inputs.project-dir)) }}
+        key: template-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/*.toml', inputs.project-dir)) }}
         restore-keys: |
-          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
-          scons-${{ runner.os }}-${{ inputs.platform }}-
+          template-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
+          template-${{ runner.os }}-${{ inputs.platform }}-
 
     - name: Cache the 'SCons' build directory
       if: steps.cache-template.outputs.cache-hit != 'true'
@@ -86,10 +86,14 @@ runs:
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
           "gdbuild template \
+          --verbose \
           $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
           $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
           $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
           --config $WORKSPACE_DIR/project/${{ inputs.manifest-name }} \
-          --out $WORKSPACE_DIR/tmp \
-          ${{ inputs.platform }} && \
-          mv $WORKSPACE_DIR/tmp/* $WORKSPACE_DIR/dist"
+          --out $WORKSPACE_DIR/dist \
+          ${{ inputs.platform }}
+
+    - name: Print 'godot' export template info
+      shell: bash
+      run: ls ${{ steps.config.outputs.runner-dist }}
