@@ -176,7 +176,7 @@ jobs:
             --cache-from ghcr.io/${{ github.repository_owner }}/godot-infra-cache
             --cache-to ghcr.io/${{ github.repository_owner }}/godot-infra-cache
             --cache-ttl 168h
-            --disable-compression false
+            --disable-compression=false
             --platform linux/amd64
             --skip-unused-stages
             --squash
