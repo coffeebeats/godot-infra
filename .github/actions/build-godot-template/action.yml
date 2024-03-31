@@ -92,7 +92,7 @@ runs:
           $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
           --config $WORKSPACE_DIR/project/${{ inputs.manifest-name }} \
           --out $WORKSPACE_DIR/dist \
-          ${{ inputs.platform }}
+          ${{ inputs.platform }}"
 
     - name: Print 'godot' export template info
       shell: bash
