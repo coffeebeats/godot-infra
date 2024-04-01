@@ -96,4 +96,4 @@ runs:
 
     - name: Print 'godot' export template info
       shell: bash
-      run: ls ${{ steps.config.outputs.runner-dist }}
+      run: ls -ls ${{ steps.config.outputs.runner-dist }}
