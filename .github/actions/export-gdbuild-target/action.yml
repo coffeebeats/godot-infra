@@ -46,31 +46,26 @@ runs:
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
 
-        CMD=(gdbuild target)
-
-        CMD+=(--project ${{ inputs.project-dir }})
-        CMD+=(--platform ${{ inputs.platform }})
-
-        for f in "$(printf "${{ inputs.features }}" | tr -s ', ' \\n)"; do
-          CMD+=(--feature $f)
+        FEATURES=()
+        for f in $(printf "${{ inputs.features }}" | tr -s ', ' \\n); do
+          FEATURES+=(--feature $f)
         done
 
-        case ${{ inputs.profile }} in
-          'release')
-            CMD+=(--release)
-          'release_debug')
-            CMD+=(--release_debug)
-        esac
-
-        if [[ '${{ inputs.manifest-path }}' != '' ]]; then
-          CMD+=(--config ${{ inputs.project-dir }}/${{ inputs.manifest-path }})
-        fi
-
-        CMD+=(--print-hash ${{ inputs.target }})
-
-        TARGET_HASH="$($CMD[@])"
+        TARGET_HASH="$(
+          gdbuild target \
+            --project ${{ inputs.project-dir }} \
+            --platform ${{ inputs.platform }} \
+            ${FEATURES[@]} \
+            $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
+            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
+            $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
+            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config ${{ inputs.project-dir }}/${{ inputs.manifest-path }}) \
+            --print-hash \
+            ${{ inputs.target }}
+        )"
 
         # 'gdbuild' properties
+        echo target-features="${FEATURES[@]}" >> "$GITHUB_OUTPUT"
         echo "target-hash=$TARGET_HASH" >> "$GITHUB_OUTPUT"
 
     - name: Cache the exported target artifacts
@@ -86,30 +81,17 @@ runs:
       run: |
         mkdir -p ${{ steps.config.outputs.runner-dist }}
 
-        CMD=(gdbuild target --verbose)
-
-        CMD+=(--out ${{ steps.config.outputs.runner-dist }})
-        CMD+=(--platform ${{ inputs.platform }})
-        CMD+=(--project ${{ inputs.project-dir }})
-
-        for f in "$(printf "${{ inputs.features }}" | tr -s ', ' \\n)"; do
-          CMD+=(--feature $f)
-        done
-
-        case ${{ inputs.profile }} in
-          'release')
-            CMD+=(--release)
-          'release_debug')
-            CMD+=(--release_debug)
-        esac
-
-        if [[ '${{ inputs.manifest-path }}' != '' ]]; then
-          CMD+=(--config ${{ inputs.project-dir }}/${{ inputs.manifest-path }})
-        fi
-
-        CMD+=(${{ inputs.target }})
-
-        "CMD[@]"
+        gdbuild target \
+          --verbose \
+          --project ${{ inputs.project-dir }} \
+          --platform ${{ inputs.platform }} \
+          --out ${{ steps.config.outputs.runner-dist }} \
+          ${{ steps.config.outputs.target-features }} \
+          $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
+          $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
+          $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
+          $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config ${{ inputs.project-dir }}/${{ inputs.manifest-path }}) \
+          ${{ inputs.target }}
 
     - name: Print exported target artifacts info
       shell: bash
