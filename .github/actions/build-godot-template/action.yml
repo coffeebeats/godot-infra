@@ -60,9 +60,6 @@ runs:
             ${{ inputs.platform }} 
         )"
 
-        echo "$TEMPLATE_HASH"
-        exit 1
-
         # 'gdbuild' properties
         echo template-features="${FEATURES[@]}" >> "$GITHUB_OUTPUT"
         echo "template-hash=$TEMPLATE_HASH" >> "$GITHUB_OUTPUT"
@@ -111,7 +108,7 @@ runs:
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
           "gdbuild template \
           --verbose \
-          --project ${{ inputs.project-dir }} \
+          --project $WORKSPACE_DIR/project \
           ${{ steps.config.outputs.template-features }} \
           $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
           $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
