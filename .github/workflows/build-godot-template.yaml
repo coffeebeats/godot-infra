@@ -1,4 +1,4 @@
-name: "🤖 godot-infra: Compile 'godot' export template"
+name: "🏗️ godot-infra: Compile 'godot' export template"
 
 on:
   workflow_call:
@@ -12,6 +12,11 @@ on:
         description: "The profile to build the export template with."
         required: false
         default: release
+      features:
+        type: string
+        description: "A space-, comma- or new line-separated list of features to enable."
+        required: false
+        default: ""
       publish:
         type: boolean
         description: "Whether to publish an artifact to the workflow."
@@ -45,6 +50,11 @@ on:
         description: "The profile to build the export template with."
         required: false
         default: release
+      features:
+        type: string
+        description: "A space-, comma- or new line-separated list of features to enable."
+        required: false
+        default: ""
       publish:
         type: boolean
         description: "Whether to publish an artifact to the workflow."
@@ -96,6 +106,7 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
           profile: ${{ inputs.profile }}
+          features: ${{ inputs.features }}
           project-dir: ./example
 
       # ------------------------ Package the export template ----------------------- #
