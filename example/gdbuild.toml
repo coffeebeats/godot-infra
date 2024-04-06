@@ -15,7 +15,7 @@
     {glob = ["**/*.svg"], embed = true},
   ]
 
-[target.client.release]
+[target.client.profile.release]
   # EncryptionKey is the encryption key to embed in the export template.
   encryption_key = "$SCRIPT_AES256_ENCRYPTION_KEY"
   encrypt        = true
