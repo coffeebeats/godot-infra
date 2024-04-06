@@ -33,7 +33,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Export the output directory
+    - name: Set up action configuration
       id: config
       shell: bash
       run: |
@@ -44,25 +44,28 @@ runs:
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
 
-        FEATURES=()
+        CMD=(gdbuild template)
+
         for f in "$(printf "${{ inputs.features }}" | tr -s ', ' \\n)"; do
-          FEATURES+=("--feature $f")
+          CMD+=(--feature $f)
         done
 
-        TEMPLATE_HASH="$( \
-          gdbuild template \
-            --project ${{ inputs.project-dir }} \
-            $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
-            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
-            $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
-            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo "--config ${{ inputs.project-dir }}/${{ inputs.manifest-path }}") \
-            $([[ '${FEATURES[@]}' != '' ]] && echo "${FEATURES[@]}" | xargs) \
-            --print-hash \
-            ${{ inputs.platform }} \
-        )"
+        case ${{ inputs.profile }} in
+          'release')
+            CMD+=(--release)
+          'release_debug')
+            CMD+=(--release_debug)
+        esac
+
+        if [[ '${{ inputs.manifest-path }}' != '' ]]; then
+          CMD+=(--config ${{ inputs.project-dir }}/${{ inputs.manifest-path }})
+        fi
+
+        CMD+=(--print-hash ${{ inputs.platform }})
+
+        TEMPLATE_HASH="$($CMD[@])"
 
         # 'gdbuild' properties
-        echo template-features="${FEATURES[@]}" >> "$GITHUB_OUTPUT"
         echo "template-hash=$TEMPLATE_HASH" >> "$GITHUB_OUTPUT"
 
     - name: Cache the 'godot' export template
@@ -98,6 +101,29 @@ runs:
 
         WORKSPACE_DIR="${{ steps.config.outputs.container-workspace }}"
 
+        CMD=(gdbuild template --verbose)
+
+        CMD+=(--out $WORKSPACE_DIR/dist)
+
+        for f in "$(printf "${{ inputs.features }}" | tr -s ', ' \\n)"; do
+          CMD+=(--feature $f)
+        done
+
+        case ${{ inputs.profile }} in
+          'release')
+            CMD+=(--release)
+          'release_debug')
+            CMD+=(--release_debug)
+        esac
+
+        if [[ '${{ inputs.manifest-path }}' != '' ]]; then
+          CMD+=(--config ${{ inputs.project-dir }}/${{ inputs.manifest-path }})
+        fi
+
+        CMD+=(${{ inputs.platform }})
+
+        TEMPLATE_HASH="$($CMD[@])"
+
         podman run \
           --userns keep-id:uid=1000,gid=1000 \
           -v ${{ steps.config.outputs.runner-dist }}:$WORKSPACE_DIR/dist:Z \
@@ -107,15 +133,7 @@ runs:
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
           -e SCONS_CACHE=$WORKSPACE_DIR/.scons \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
-          "gdbuild template \
-          --verbose \
-          $([[ "${{ steps.config.outputs.template-features }}" != '' ]] && echo "${{ steps.config.outputs.template-features }}" | xargs) \
-          $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
-          $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
-          $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
-          $([[ '${{ inputs.manifest-path }}' != '' ]] && echo "--config $WORKSPACE_DIR/project/${{ inputs.manifest-path }}") \
-          --out $WORKSPACE_DIR/dist \
-          ${{ inputs.platform }}"
+          "$CMD[@]"
 
     - name: Print 'godot' export template info
       shell: bash
