@@ -1,0 +1,98 @@
+name: "🤖 godot-infra: Export 'gdbuild' target"
+description: "Exports a 'gdbuild' target."
+
+inputs:
+  target:
+    description: "The name of the 'gdbuild' target to export."
+    required: true
+  platform:
+    description: "The 'godot' platform to build for."
+    required: true
+  profile:
+    description: "The execution profile to build with."
+    required: false
+    default: release
+  features:
+    description: "A space-, comma- or new line-separated list of features to enable."
+    required: false
+    default: ""
+  out-dir:
+    description: "The directory in which to place the exported artifacts."
+    required: false
+    default: "dist"
+  project-dir:
+    description: "The path to the game project directory."
+    required: false
+    default: "."
+  manifest-path:
+    description: "A specific 'gdbuild' manifest filename (relative to 'project-dir')."
+    required: false
+
+outputs:
+  path:
+    description: "The directory containing the exported artifacts."
+    value: ${{ steps.config.outputs.runner-dist }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Export the output directory
+      id: config
+      shell: bash
+      run: |
+        # Runner paths
+        echo "runner-dist=$(realpath ${{ inputs.out-dir }})" >> "$GITHUB_OUTPUT"
+
+        # Container paths
+        echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
+
+        FEATURES=()
+        for f in "$(printf "${{ inputs.features }}" | tr -s ', ' \\n)"; do
+          FEATURES+=("--feature $f")
+        done
+
+        TARGET_HASH="$( \
+          gdbuild target \
+            --project ${{ inputs.project-dir }} \
+            --platform ${{ inputs.platform }} \
+            $([[ "${FEATURES[@]}" != '' ]] && echo "${FEATURES[@]}" | xargs) \
+            $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
+            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
+            $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
+            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo "--config ${{ inputs.project-dir }}/${{ inputs.manifest-path }}") \
+            --print-hash \
+            ${{ inputs.target }} \
+        )"
+
+        # 'gdbuild' properties
+        echo target-features="${FEATURES[@]}" >> "$GITHUB_OUTPUT"
+        echo "target-hash=$TARGET_HASH" >> "$GITHUB_OUTPUT"
+
+    - name: Cache the exported target artifacts
+      id: cache-target
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.config.outputs.runner-dist }}
+        key: target-${{ runner.os }}-${{ steps.config.outputs.target-hash }}
+
+    - name: Export the target
+      if: steps.cache-target.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        mkdir -p ${{ steps.config.outputs.runner-dist }}
+
+        gdbuild target \
+          --verbose \
+          --project ${{ inputs.project-dir }} \
+          --platform ${{ inputs.platform }} \
+          --out ${{ steps.config.outputs.runner-dist }} \
+          $([[ "${FEATURES[@]}" != '' ]] && echo "${FEATURES[@]}" | xargs) \
+          $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
+          $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
+          $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
+          $([[ '${{ inputs.manifest-path }}' != '' ]] && echo "--config ${{ inputs.project-dir }}/${{ inputs.manifest-path }}") \
+          ${{ inputs.target }}
+
+    - name: Print exported target artifacts info
+      shell: bash
+      run: ls -ls ${{ steps.config.outputs.runner-dist }}
