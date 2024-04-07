@@ -16,9 +16,8 @@
   ]
 
 [target.client.profile.release]
-  # EncryptionKey is the encryption key to embed in the export template.
-  encryption_key = "aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f"
-  encrypt        = true
+  # NOTE: Set the encryption key via the 'SCRIPT_AES256_ENCRYPTION_KEY' variable.
+  encrypt = true
 
 [template]
   # A path to a 'custom.py' file which defines export template build options.
