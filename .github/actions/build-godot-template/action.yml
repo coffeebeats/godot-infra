@@ -44,7 +44,7 @@ runs:
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
 
-    - name: Build the template command
+    - name: Build run command
       id: template
       uses: coffeebeats/gdbuild/.github/actions/run-template@feat/run-target
       with:
@@ -54,7 +54,6 @@ runs:
         out-dir: ${{ inputs.out-dir }}
         project-dir: ${{ inputs.project-dir }}
         manifest-path: ${{ inputs.manifest-path }}
-        verbose: true
         execute: false
 
     - name: Cache the 'SCons' build directory
@@ -74,6 +73,19 @@ runs:
       with:
         login: true
 
+    - name: Build run command (within 'godot-infra' container)
+      id: template-container
+      uses: coffeebeats/gdbuild/.github/actions/run-template@feat/run-target
+      with:
+        platform: ${{ inputs.platform }}
+        profile: ${{ inputs.profile }}
+        features: ${{ inputs.features }}
+        out-dir: ${{ steps.config.outputs.container-workspace }}/dist
+        project-dir: ${{ steps.config.outputs.container-workspace }}/project
+        manifest-path: ${{ inputs.manifest-path }}
+        verbose: true
+        execute: false
+
     - name: Compile 'godot' export template
       shell: bash
       run: |
@@ -91,7 +103,7 @@ runs:
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
           -e SCONS_CACHE=$WORKSPACE_DIR/.scons \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
-          "${{ steps.template.outputs.command }}"
+          "${{ steps.template-container.outputs.command }}"
 
     - name: Print 'godot' export template info
       shell: bash
