@@ -128,17 +128,6 @@ jobs:
         with:
           project-dir: ${{ inputs.project-dir }}
 
-      # ------------------------ Compile the export template ----------------------- #
-
-      - name: Compile the export template
-        uses: ./.github/actions/build-godot-template
-        id: build-template
-        with:
-          platform: ${{ inputs.platform }}
-          profile: ${{ inputs.profile }}
-          features: ${{ inputs.features }}
-          project-dir: ${{ inputs.project-dir }}
-
       # ----------------------------- Export the target ---------------------------- #
 
       # Extract macOS SDK
