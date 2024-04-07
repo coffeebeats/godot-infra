@@ -97,6 +97,9 @@ jobs:
     outputs:
       name: ${{ steps.config-artifact.outputs.name }}
 
+    env:
+      SCRIPT_AES256_ENCRYPTION_KEY: ${{ secrets.SCRIPT_AES256_ENCRYPTION_KEY }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -118,8 +121,6 @@ jobs:
       - name: Compile the export template
         uses: ./.github/actions/build-godot-template
         id: build-template
-        env:
-          SCRIPT_AES256_ENCRYPTION_KEY: ${{ secrets.SCRIPT_AES256_ENCRYPTION_KEY }}
         with:
           platform: ${{ inputs.platform }}
           profile: ${{ inputs.profile }}
