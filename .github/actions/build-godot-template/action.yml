@@ -67,12 +67,6 @@ runs:
           scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-
           scons-${{ runner.os }}-${{ inputs.platform }}-
 
-    - name: Set up 'podman'
-      if: steps.template.outputs.cache-hit != 'true'
-      uses: ./.github/actions/setup-podman
-      with:
-        login: true
-
     - name: Build run command (within 'godot-infra' container)
       id: template-container
       uses: coffeebeats/gdbuild/.github/actions/run-template@feat/run-target
@@ -87,6 +81,11 @@ runs:
         skip-cache: true # Cache already mounted correctly by prior command.
         skip-hash: true # Hash already computed correctly by prior command.
         verbose: true
+
+    - name: Set up 'podman'
+      uses: ./.github/actions/setup-podman
+      with:
+        login: true
 
     - name: Compile 'godot' export template
       shell: bash
