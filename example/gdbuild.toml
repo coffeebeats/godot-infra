@@ -11,7 +11,7 @@
   runnable = true
 
   pack_files = [
-    {glob = ["**/*.gd", "**/*.tscn", "**/*.import"], embed = true, encrypt = true},
+    {glob = ["**/*.gd", "**/*.tscn"], embed = true, encrypt = true},
     {glob = ["**/*.svg"], embed = true},
   ]
 
