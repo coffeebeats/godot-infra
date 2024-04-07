@@ -165,18 +165,13 @@ jobs:
       - name: Configure the artifact name
         id: config-artifact
         shell: bash
-        run: echo "name=${{ inputs.target }}-${{ inputs.platform }}-${{ inputs.profile }}.tar.gz" >> $GITHUB_OUTPUT
-
-      - name: Package the export template
-        if: fromJson(format('{0}', inputs.publish))
-        shell: bash
-        run: tar -C ${{ steps.export-target.outputs.path }} -czf ${{ steps.config-artifact.outputs.name }} .
+        run: echo "name=${{ inputs.target }}-${{ inputs.platform }}-${{ inputs.profile }}" >> $GITHUB_OUTPUT
 
       # Publish the artifact
       - uses: actions/upload-artifact@v4
         if: fromJson(format('{0}', inputs.publish))
         with:
           name: ${{ steps.config-artifact.outputs.name }}
-          path: ${{ steps.config-artifact.outputs.name }}
+          path: ${{ steps.export-target.outputs.path }}
           retention-days: 7
           if-no-files-found: error
