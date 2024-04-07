@@ -46,7 +46,7 @@ runs:
 
     - name: Build run command
       id: template
-      uses: coffeebeats/gdbuild/.github/actions/run-template@feat/run-target
+      uses: coffeebeats/gdbuild/.github/actions/run-template@main
       with:
         platform: ${{ inputs.platform }}
         profile: ${{ inputs.profile }}
@@ -69,7 +69,7 @@ runs:
 
     - name: Build run command (within 'godot-infra' container)
       id: template-container
-      uses: coffeebeats/gdbuild/.github/actions/run-template@feat/run-target
+      uses: coffeebeats/gdbuild/.github/actions/run-template@main
       with:
         execute: false
         platform: ${{ inputs.platform }}

@@ -51,7 +51,7 @@ runs:
 
     - name: Build run command
       id: target
-      uses: coffeebeats/gdbuild/.github/actions/run-target@feat/run-target
+      uses: coffeebeats/gdbuild/.github/actions/run-target@main
       with:
         target: ${{ inputs.target }}
         platform: ${{ inputs.platform }}
