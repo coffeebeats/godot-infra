@@ -142,7 +142,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.path }}
-          path: ${{ runner.temp }}/${{ needs.build.outputs.path }}
+          path: ${{ runner.temp }}
           merge-multiple: true
 
       - name: Export the target
