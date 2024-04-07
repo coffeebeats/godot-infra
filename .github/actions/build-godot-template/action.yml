@@ -49,13 +49,14 @@ runs:
       id: template
       uses: coffeebeats/gdbuild/.github/actions/run-template@main
       with:
+        execute: false
+        verbose: true
         platform: ${{ inputs.platform }}
         profile: ${{ inputs.profile }}
         features: ${{ inputs.features }}
         out-dir: ${{ steps.config.outputs.runner-dist }}
         project-dir: ${{ steps.config.outputs.runner-project }}
         manifest-path: ${{ inputs.manifest-path }}
-        execute: false
 
     - name: Execute run command for cached template
       if: steps.template.outputs.cache-hit == 'true'
@@ -83,15 +84,15 @@ runs:
       uses: coffeebeats/gdbuild/.github/actions/run-template@main
       with:
         execute: false
+        verbose: true
+        skip-cache: true # Cache already mounted correctly by prior command.
+        skip-hash: true # Hash already computed correctly by prior command.
         platform: ${{ inputs.platform }}
         profile: ${{ inputs.profile }}
         features: ${{ inputs.features }}
         out-dir: ${{ steps.config.outputs.container-workspace }}/dist
         project-dir: ${{ steps.config.outputs.container-workspace }}/project
         manifest-path: ${{ inputs.manifest-path }}
-        skip-cache: true # Cache already mounted correctly by prior command.
-        skip-hash: true # Hash already computed correctly by prior command.
-        verbose: true
 
     - name: Set up 'podman'
       if: steps.template.outputs.cache-hit != 'true'
