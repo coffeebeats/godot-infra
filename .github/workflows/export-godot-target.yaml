@@ -148,6 +148,8 @@ jobs:
       - name: Export the target
         uses: ./.github/actions/export-gdbuild-target
         id: export-target
+        env:
+          SCRIPT_AES256_ENCRYPTION_KEY: ${{ secrets.SCRIPT_AES256_ENCRYPTION_KEY }}
         with:
           target: ${{ inputs.target }}
           platform: ${{ inputs.platform }}
