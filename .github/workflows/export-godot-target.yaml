@@ -120,6 +120,9 @@ jobs:
     outputs:
       name: ${{ steps.config-artifact.outputs.name }}
 
+    env:
+      SCRIPT_AES256_ENCRYPTION_KEY: ${{ secrets.SCRIPT_AES256_ENCRYPTION_KEY }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -148,8 +151,6 @@ jobs:
       - name: Export the target
         uses: ./.github/actions/export-gdbuild-target
         id: export-target
-        env:
-          SCRIPT_AES256_ENCRYPTION_KEY: ${{ secrets.SCRIPT_AES256_ENCRYPTION_KEY }}
         with:
           target: ${{ inputs.target }}
           platform: ${{ inputs.platform }}
