@@ -137,12 +137,13 @@ jobs:
 
       # ----------------------------- Export the target ---------------------------- #
 
-      # Extract macOS SDK
+      # Download and extract export template.
       - name: Download 'godot' export template
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.path }}
           path: ${{ runner.temp }}/${{ needs.build.outputs.path }}
+          merge-multiple: true
 
       - name: Export the target
         uses: ./.github/actions/export-gdbuild-target
