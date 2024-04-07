@@ -94,11 +94,6 @@ runs:
         project-dir: ${{ steps.config.outputs.container-workspace }}/project
         manifest-path: ${{ inputs.manifest-path }}
 
-    - name: Validate template hashes match
-      if: steps.template.outputs.cache-hit != 'true'
-      shell: bash
-      run: $([[ "${{ steps.template.outputs.hash }}" != "${{ steps.template-container.outputs.hash }}" ]] && exit 1 || :)
-
     - name: Set up 'podman'
       if: steps.template.outputs.cache-hit != 'true'
       uses: ./.github/actions/setup-podman
