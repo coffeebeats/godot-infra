@@ -44,52 +44,37 @@ runs:
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
 
-        FEATURES=()
-        for f in $(printf "${{ inputs.features }}" | tr -s ', ' \\n); do
-          FEATURES+=(--feature $f)
-        done
-
-        TEMPLATE_HASH="$(
-          gdbuild template \
-            --project ${{ inputs.project-dir }} \
-            ${FEATURES[@]} \
-            $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
-            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
-            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config '${{ inputs.project-dir }}/${{ inputs.manifest-path }}') \
-            --print-hash \
-            ${{ inputs.platform }} 
-        )"
-
-        # 'gdbuild' properties
-        echo template-features="${FEATURES[@]}" >> "$GITHUB_OUTPUT"
-        echo "template-hash=$TEMPLATE_HASH" >> "$GITHUB_OUTPUT"
-
-    - name: Cache the 'godot' export template
-      id: cache-template
-      uses: actions/cache@v4
+    - name: Build the template command
+      id: template
+      uses: coffeebeats/gdbuild/.github/actions/run-template@feat/run-target
       with:
-        path: ${{ steps.config.outputs.runner-dist }}
-        key: template-${{ runner.os }}-${{ steps.config.outputs.template-hash }}
+        platform: ${{ inputs.platform }}
+        profile: ${{ inputs.profile }}
+        features: ${{ inputs.features }}
+        out-dir: ${{ inputs.out-dir }}
+        project-dir: ${{ inputs.project-dir }}
+        manifest-path: ${{ inputs.manifest-path }}
+        verbose: true
+        execute: false
 
     - name: Cache the 'SCons' build directory
-      if: steps.cache-template.outputs.cache-hit != 'true'
+      if: steps.template.outputs.cache-hit != 'true'
       id: cache-scons
       uses: actions/cache@v4
       with:
         path: ${{ steps.config.outputs.runner-scons }}
-        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/*.toml', inputs.project-dir)) }}-${{ steps.config.outputs.template-hash }}
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ steps.template.outputs.hash }}
         restore-keys: |
-          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/*.toml', inputs.project-dir)) }}-
+          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-
           scons-${{ runner.os }}-${{ inputs.platform }}-
 
     - name: Set up 'podman'
-      if: steps.cache-template.outputs.cache-hit != 'true'
+      if: steps.template.outputs.cache-hit != 'true'
       uses: ./.github/actions/setup-podman
       with:
         login: true
 
     - name: Compile 'godot' export template
-      if: steps.cache-template.outputs.cache-hit != 'true'
       shell: bash
       run: |
         mkdir -p ${{ steps.config.outputs.runner-dist }}
@@ -106,16 +91,7 @@ runs:
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
           -e SCONS_CACHE=$WORKSPACE_DIR/.scons \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
-          "gdbuild template \
-          --verbose \
-          --project $WORKSPACE_DIR/project \
-          ${{ steps.config.outputs.template-features }} \
-          $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
-          $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
-          $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
-          $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config $WORKSPACE_DIR/project/${{ inputs.manifest-path }}) \
-          --out $WORKSPACE_DIR/dist \
-          ${{ inputs.platform }}"
+          "${{ steps.template.outputs.command }}"
 
     - name: Print 'godot' export template info
       shell: bash

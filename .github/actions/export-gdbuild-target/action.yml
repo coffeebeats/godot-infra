@@ -27,6 +27,9 @@ inputs:
   manifest-path:
     description: "A specific 'gdbuild' manifest filename (relative to 'project-dir')."
     required: false
+  template-archive-path:
+    description: "A path to a 'gdbuild' template archive."
+    required: false
 
 outputs:
   path:
@@ -60,6 +63,7 @@ runs:
             $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
             $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
             $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config ${{ inputs.project-dir }}/${{ inputs.manifest-path }}) \
+            $([[ '${{ inputs.template-archive }}' != '' ]] && echo --template-archive ${{ inputs.template-archive }}) \
             --print-hash \
             ${{ inputs.target }}
         )"
@@ -72,11 +76,10 @@ runs:
       id: cache-target
       uses: actions/cache@v4
       with:
-        path: ${{ steps.config.outputs.runner-dist }}
+        path: ${{ env.GDBUILD_HOME }}/exports
         key: target-${{ runner.os }}-${{ steps.config.outputs.target-hash }}
 
     - name: Export the target
-      if: steps.cache-target.outputs.cache-hit != 'true'
       shell: bash
       run: |
         mkdir -p ${{ steps.config.outputs.runner-dist }}
@@ -91,6 +94,7 @@ runs:
           $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
           $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
           $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config ${{ inputs.project-dir }}/${{ inputs.manifest-path }}) \
+          $([[ '${{ inputs.template-archive }}' != '' ]] && echo --template-archive ${{ inputs.template-archive }}) \
           ${{ inputs.target }}
 
     - name: Print exported target artifacts info
