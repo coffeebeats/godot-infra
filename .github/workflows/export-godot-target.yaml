@@ -98,7 +98,22 @@ on:
         default: 60
 
 jobs:
+  build:
+    uses: "./.github/workflows/build-godot-template.yaml"
+    secrets: "inherit"
+    with:
+      platform: ${{ inputs.platform }}
+      profile: ${{ inputs.profile }}
+      features: ${{ inputs.features }}
+      project-dir: ${{ inputs.project-dir }}
+      manifest-path: ${{ inputs.manifest-path }}
+      publish: true
+      os: ${{ inputs.os }}
+      timeout: ${{ fromJson(inputs.timeout) }}
+
   export:
+    needs: ["build"]
+
     runs-on: ${{ inputs.os }}
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
@@ -125,6 +140,14 @@ jobs:
 
       # ----------------------------- Export the target ---------------------------- #
 
+      # Download and extract export template.
+      - name: Download 'godot' export template
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.path }}
+          path: ${{ runner.temp }}
+          merge-multiple: true
+
       - name: Export the target
         uses: ./.github/actions/export-gdbuild-target
         id: export-target
@@ -135,6 +158,7 @@ jobs:
           features: ${{ inputs.features }}
           project-dir: ${{ inputs.project-dir }}
           manifest-path: ${{ inputs.manifest-path }}
+          template-archive-path: ${{ runner.temp }}/${{ needs.build.outputs.path }}
 
       # ------------------------ Package the export artifacts ---------------------- #
 
