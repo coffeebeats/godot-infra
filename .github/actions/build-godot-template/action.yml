@@ -62,6 +62,10 @@ runs:
       shell: bash
       run: ${{ steps.template.outputs.command }}
 
+    - name: Configure runner
+      if: steps.template.outputs.cache-hit != 'true'
+      uses: ./.github/actions/setup-runner
+
     - name: Cache the 'SCons' build directory
       if: steps.template.outputs.cache-hit != 'true'
       id: cache-scons
