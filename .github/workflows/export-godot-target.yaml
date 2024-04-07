@@ -142,7 +142,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.path }}
-          path: ${{ needs.build.outputs.path }}
+          path: ${{ runner.temp }}/${{ needs.build.outputs.path }}
 
       - name: Export the target
         uses: ./.github/actions/export-gdbuild-target
@@ -154,7 +154,7 @@ jobs:
           features: ${{ inputs.features }}
           project-dir: ${{ inputs.project-dir }}
           manifest-path: ${{ inputs.manifest-path }}
-          template-archive-path: ${{ needs.build.outputs.path }}
+          template-archive-path: ${{ runner.temp }}/${{ needs.build.outputs.path }}
 
       # ------------------------ Package the export artifacts ---------------------- #
 
