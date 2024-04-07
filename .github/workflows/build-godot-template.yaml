@@ -17,6 +17,11 @@ on:
         description: "A space-, comma- or new line-separated list of features to enable."
         required: false
         default: ""
+      project-dir:
+        type: string
+        description: "The path to the project directory."
+        required: false
+        default: example
       publish:
         type: boolean
         description: "Whether to publish an artifact to the workflow."
@@ -55,6 +60,11 @@ on:
         description: "A space-, comma- or new line-separated list of features to enable."
         required: false
         default: ""
+      project-dir:
+        type: string
+        description: "The path to the project directory."
+        required: false
+        default: example
       publish:
         type: boolean
         description: "Whether to publish an artifact to the workflow."
@@ -90,13 +100,13 @@ jobs:
       - name: Install 'gdenv'
         uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
         with:
-          project-dir: ./example
+          project-dir: ${{ inputs.project-dir }}
           install-src: true
 
       - name: Install 'gdbuild'
         uses: coffeebeats/gdbuild/.github/actions/setup-gdbuild@main
         with:
-          project-dir: ./example
+          project-dir: ${{ inputs.project-dir }}
 
       # ------------------------ Compile the export template ----------------------- #
 
@@ -107,7 +117,7 @@ jobs:
           platform: ${{ inputs.platform }}
           profile: ${{ inputs.profile }}
           features: ${{ inputs.features }}
-          project-dir: ./example
+          project-dir: ${{ inputs.project-dir }}
 
       # ------------------------ Package the export template ----------------------- #
 
