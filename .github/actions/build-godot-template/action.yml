@@ -54,7 +54,7 @@ runs:
         features: ${{ inputs.features }}
         out-dir: ${{ steps.config.outputs.runner-dist }}
         project-dir: ${{ steps.config.outputs.runner-project }}
-        manifest-path: ${{ steps.config.outputs.runner-project }}/${{ inputs.manifest-path }}
+        manifest-path: ${{ inputs.manifest-path }}
         execute: false
 
     - name: Execute run command for cached template
