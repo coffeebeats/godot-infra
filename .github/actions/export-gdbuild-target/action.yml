@@ -53,6 +53,7 @@ runs:
       id: target
       uses: coffeebeats/gdbuild/.github/actions/run-target@main
       with:
+        verbose: true
         target: ${{ inputs.target }}
         platform: ${{ inputs.platform }}
         profile: ${{ inputs.profile }}
