@@ -77,14 +77,16 @@ runs:
       id: template-container
       uses: coffeebeats/gdbuild/.github/actions/run-template@feat/run-target
       with:
+        execute: false
         platform: ${{ inputs.platform }}
         profile: ${{ inputs.profile }}
         features: ${{ inputs.features }}
         out-dir: ${{ steps.config.outputs.container-workspace }}/dist
         project-dir: ${{ steps.config.outputs.container-workspace }}/project
         manifest-path: ${{ inputs.manifest-path }}
+        skip-cache: true # Cache already mounted correctly by prior command.
+        skip-hash: true # Hash already computed correctly by prior command.
         verbose: true
-        execute: false
 
     - name: Compile 'godot' export template
       shell: bash
