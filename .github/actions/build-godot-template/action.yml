@@ -9,6 +9,10 @@ inputs:
     description: "The execution profile to build with."
     required: false
     default: release
+  features:
+    description: "A space-, comma- or new line-separated list of features to enable."
+    required: false
+    default: ""
   out-dir:
     description: "The directory in which to place the export templates."
     required: false
@@ -17,10 +21,9 @@ inputs:
     description: "The path to the game project directory."
     required: false
     default: "."
-  manifest-name:
-    description: "The name of the 'gdbuild' manifest (relative to 'project-dir')."
+  manifest-path:
+    description: "A specific 'gdbuild' manifest filename (relative to 'project-dir')."
     required: false
-    default: "gdbuild.toml"
 
 outputs:
   path:
@@ -30,7 +33,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Export the output directory
+    - name: Set up action configuration
       id: config
       shell: bash
       run: |
@@ -41,35 +44,50 @@ runs:
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
 
-    - name: Cache the 'godot' export template
-      id: cache-template
-      uses: actions/cache@v4
+    - name: Build run command
+      id: template
+      uses: coffeebeats/gdbuild/.github/actions/run-template@main
       with:
-        path: ${{ steps.config.outputs.runner-dist }}
-        key: template-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/*.toml', inputs.project-dir)) }}
-        restore-keys: |
-          template-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
-          template-${{ runner.os }}-${{ inputs.platform }}-
+        platform: ${{ inputs.platform }}
+        profile: ${{ inputs.profile }}
+        features: ${{ inputs.features }}
+        out-dir: ${{ inputs.out-dir }}
+        project-dir: ${{ inputs.project-dir }}
+        manifest-path: ${{ inputs.manifest-path }}
+        execute: false
 
     - name: Cache the 'SCons' build directory
-      if: steps.cache-template.outputs.cache-hit != 'true'
+      if: steps.template.outputs.cache-hit != 'true'
       id: cache-scons
       uses: actions/cache@v4
       with:
         path: ${{ steps.config.outputs.runner-scons }}
-        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-${{ hashFiles(format('{0}/*.toml', inputs.project-dir)) }}
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ steps.template.outputs.hash }}
         restore-keys: |
-          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ hashFiles(format('{0}/.godot-version', inputs.project-dir)) }}-
+          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-
           scons-${{ runner.os }}-${{ inputs.platform }}-
 
+    - name: Build run command (within 'godot-infra' container)
+      id: template-container
+      uses: coffeebeats/gdbuild/.github/actions/run-template@main
+      with:
+        execute: false
+        platform: ${{ inputs.platform }}
+        profile: ${{ inputs.profile }}
+        features: ${{ inputs.features }}
+        out-dir: ${{ steps.config.outputs.container-workspace }}/dist
+        project-dir: ${{ steps.config.outputs.container-workspace }}/project
+        manifest-path: ${{ inputs.manifest-path }}
+        skip-cache: true # Cache already mounted correctly by prior command.
+        skip-hash: true # Hash already computed correctly by prior command.
+        verbose: true
+
     - name: Set up 'podman'
-      if: steps.cache-template.outputs.cache-hit != 'true'
       uses: ./.github/actions/setup-podman
       with:
         login: true
 
     - name: Compile 'godot' export template
-      if: steps.cache-template.outputs.cache-hit != 'true'
       shell: bash
       run: |
         mkdir -p ${{ steps.config.outputs.runner-dist }}
@@ -84,15 +102,9 @@ runs:
           -v $(realpath ${{ inputs.project-dir }}):$WORKSPACE_DIR/project:ro,Z \
           $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):$WORKSPACE_DIR/.gdenv:Z") \
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
+          -e SCONS_CACHE=$WORKSPACE_DIR/.scons \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
-          "gdbuild template \
-          --verbose \
-          $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
-          $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
-          $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
-          --config $WORKSPACE_DIR/project/${{ inputs.manifest-name }} \
-          --out $WORKSPACE_DIR/dist \
-          ${{ inputs.platform }}"
+          "${{ steps.template-container.outputs.command }}"
 
     - name: Print 'godot' export template info
       shell: bash

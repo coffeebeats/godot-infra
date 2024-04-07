@@ -1,0 +1,67 @@
+name: "🤖 godot-infra: Export 'gdbuild' target"
+description: "Exports a 'gdbuild' target."
+
+inputs:
+  target:
+    description: "The name of the 'gdbuild' target to export."
+    required: true
+  platform:
+    description: "The 'godot' platform to build for."
+    required: true
+  profile:
+    description: "The execution profile to build with."
+    required: false
+    default: release
+  features:
+    description: "A space-, comma- or new line-separated list of features to enable."
+    required: false
+    default: ""
+  out-dir:
+    description: "The directory in which to place the exported artifacts."
+    required: false
+    default: "dist"
+  project-dir:
+    description: "The path to the game project directory."
+    required: false
+    default: "."
+  manifest-path:
+    description: "A specific 'gdbuild' manifest filename (relative to 'project-dir')."
+    required: false
+  template-archive-path:
+    description: "A path to a 'gdbuild' template archive."
+    required: false
+
+outputs:
+  path:
+    description: "The directory containing the exported artifacts."
+    value: ${{ steps.config.outputs.runner-dist }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up action configuration
+      id: config
+      shell: bash
+      run: |
+        # Runner paths
+        DIST_DIR="$(realpath ${{ inputs.out-dir }})"
+        mkdir -p DIST_DIR
+
+        echo "runner-dist=$DIST_DIR" >> "$GITHUB_OUTPUT"
+
+    - name: Build run command
+      id: target
+      uses: coffeebeats/gdbuild/.github/actions/run-target@main
+      with:
+        target: ${{ inputs.target }}
+        platform: ${{ inputs.platform }}
+        profile: ${{ inputs.profile }}
+        features: ${{ inputs.features }}
+        template-archive-path: ${{ inputs.template-archive-path }}
+        out-dir: ${{ steps.config.outputs.runner-dist }}
+        project-dir: ${{ inputs.project-dir }}
+        manifest-path: ${{ inputs.manifest-path }}
+
+    - name: Print exported target artifacts info
+      shell: bash
+      run: ls -ls ${{ steps.config.outputs.runner-dist }}
