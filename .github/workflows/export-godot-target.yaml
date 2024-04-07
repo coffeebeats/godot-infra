@@ -99,7 +99,7 @@ jobs:
       features: ${{ inputs.features }}
       publish: true
       os: ${{ inputs.os }}
-      timeout: ${{ inputs.timeout }}
+      timeout: ${{ fromJson(inputs.timeout) }}
 
   export:
     needs: ["build"]
