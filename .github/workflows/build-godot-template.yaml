@@ -113,6 +113,23 @@ jobs:
         with:
           project-dir: ${{ inputs.project-dir }}
 
+      - uses: actions/checkout@v4
+        with:
+          repository: coffeebeats/gdbuild
+          ref: wip
+          path: ./gdbuild
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.2"
+
+      - name: "Install test"
+        shell: bash
+        run: |
+          cd ./gdbuild
+          go run github.com/goreleaser/goreleaser@latest release --clean --skip=publish --snapshot
+          tar -C $GDBUILD_HOME/bin -xzf dist/gdbuild-*-linux-x86_64.tar.gz
+
       # ------------------------ Compile the export template ----------------------- #
 
       - name: Compile the export template

@@ -47,7 +47,7 @@ runs:
 
     - name: Build run command
       id: template
-      uses: coffeebeats/gdbuild/.github/actions/run-template@main
+      uses: coffeebeats/gdbuild/.github/actions/run-template@wip
       with:
         execute: false
         verbose: true
@@ -81,7 +81,7 @@ runs:
     - name: Build run command (within 'godot-infra' container)
       id: template-container
       if: steps.template.outputs.cache-hit != 'true'
-      uses: coffeebeats/gdbuild/.github/actions/run-template@main
+      uses: coffeebeats/gdbuild/.github/actions/run-template@wip
       with:
         execute: false
         verbose: true
