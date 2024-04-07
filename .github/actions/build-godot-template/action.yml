@@ -109,6 +109,9 @@ runs:
 
         WORKSPACE_DIR="${{ steps.config.outputs.container-workspace }}"
 
+        # Create a secret for the encryption key, regardless of whether it's set.
+        podman secret create --env=true encryption-key SCRIPT_AES256_ENCRYPTION_KEY
+
         podman run \
           --userns keep-id:uid=1000,gid=1000 \
           -v ${{ steps.config.outputs.runner-dist }}:$WORKSPACE_DIR/dist:Z \
@@ -117,7 +120,7 @@ runs:
           $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):$WORKSPACE_DIR/.gdenv:Z") \
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
           -e SCONS_CACHE=$WORKSPACE_DIR/.scons \
-          --secret SCRIPT_AES256_ENCRYPTION_KEY,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
+          --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
           "${{ steps.template-container.outputs.command }}"
 
