@@ -38,6 +38,7 @@ runs:
       shell: bash
       run: |
         # Runner paths
+        echo "runner-project=$(realpath ${{ inputs.project-dir }})"  >> "$GITHUB_OUTPUT"
         echo "runner-dist=$(realpath ${{ inputs.out-dir }})" >> "$GITHUB_OUTPUT"
         echo "runner-scons=$HOME/.scons" >> "$GITHUB_OUTPUT"
 
@@ -48,13 +49,23 @@ runs:
       id: template
       uses: coffeebeats/gdbuild/.github/actions/run-template@main
       with:
+        execute: false
+        verbose: true
         platform: ${{ inputs.platform }}
         profile: ${{ inputs.profile }}
         features: ${{ inputs.features }}
-        out-dir: ${{ inputs.out-dir }}
-        project-dir: ${{ inputs.project-dir }}
+        out-dir: ${{ steps.config.outputs.runner-dist }}
+        project-dir: ${{ steps.config.outputs.runner-project }}
         manifest-path: ${{ inputs.manifest-path }}
-        execute: false
+
+    - name: Execute run command for cached template
+      if: steps.template.outputs.cache-hit == 'true'
+      shell: bash
+      run: ${{ steps.template.outputs.command }}
+
+    - name: Configure runner
+      if: steps.template.outputs.cache-hit != 'true'
+      uses: ./.github/actions/setup-runner
 
     - name: Cache the 'SCons' build directory
       if: steps.template.outputs.cache-hit != 'true'
@@ -69,25 +80,28 @@ runs:
 
     - name: Build run command (within 'godot-infra' container)
       id: template-container
+      if: steps.template.outputs.cache-hit != 'true'
       uses: coffeebeats/gdbuild/.github/actions/run-template@main
       with:
         execute: false
+        verbose: true
+        skip-cache: true # Cache already mounted correctly by prior command.
+        skip-hash: true # Hash already computed correctly by prior command.
         platform: ${{ inputs.platform }}
         profile: ${{ inputs.profile }}
         features: ${{ inputs.features }}
         out-dir: ${{ steps.config.outputs.container-workspace }}/dist
         project-dir: ${{ steps.config.outputs.container-workspace }}/project
         manifest-path: ${{ inputs.manifest-path }}
-        skip-cache: true # Cache already mounted correctly by prior command.
-        skip-hash: true # Hash already computed correctly by prior command.
-        verbose: true
 
     - name: Set up 'podman'
+      if: steps.template.outputs.cache-hit != 'true'
       uses: ./.github/actions/setup-podman
       with:
         login: true
 
     - name: Compile 'godot' export template
+      if: steps.template.outputs.cache-hit != 'true'
       shell: bash
       run: |
         mkdir -p ${{ steps.config.outputs.runner-dist }}
@@ -99,7 +113,7 @@ runs:
           --userns keep-id:uid=1000,gid=1000 \
           -v ${{ steps.config.outputs.runner-dist }}:$WORKSPACE_DIR/dist:Z \
           -v ${{ steps.config.outputs.runner-scons }}:$WORKSPACE_DIR/.scons:Z \
-          -v $(realpath ${{ inputs.project-dir }}):$WORKSPACE_DIR/project:ro,Z \
+          -v ${{ steps.config.outputs.runner-project }}:$WORKSPACE_DIR/project:ro,Z \
           $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):$WORKSPACE_DIR/.gdenv:Z") \
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
           -e SCONS_CACHE=$WORKSPACE_DIR/.scons \
