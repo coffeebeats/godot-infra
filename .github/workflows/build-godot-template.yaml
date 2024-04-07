@@ -22,6 +22,10 @@ on:
         description: "The path to the project directory."
         required: false
         default: example
+      manifest-path:
+        type: string
+        description: "A specific 'gdbuild' manifest filepath (relative to 'project-dir')."
+        required: false
       publish:
         type: boolean
         description: "Whether to publish an artifact to the workflow."
@@ -65,6 +69,10 @@ on:
         description: "The path to the project directory."
         required: false
         default: example
+      manifest-path:
+        type: string
+        description: "A specific 'gdbuild' manifest filepath (relative to 'project-dir')."
+        required: false
       publish:
         type: boolean
         description: "Whether to publish an artifact to the workflow."
@@ -118,6 +126,7 @@ jobs:
           profile: ${{ inputs.profile }}
           features: ${{ inputs.features }}
           project-dir: ${{ inputs.project-dir }}
+          manifest-path: ${{ inputs.manifest-path }}
 
       # ------------------------ Package the export template ----------------------- #
 
