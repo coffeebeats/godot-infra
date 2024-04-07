@@ -44,58 +44,23 @@ runs:
       shell: bash
       run: |
         # Runner paths
-        echo "runner-dist=$(realpath ${{ inputs.out-dir }})" >> "$GITHUB_OUTPUT"
+        DIST_DIR="$(realpath ${{ inputs.out-dir }})"
+        mkdir -p DIST_DIR
 
-        # Container paths
-        echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
+        echo "runner-dist=$DIST_DIR" >> "$GITHUB_OUTPUT"
 
-        FEATURES=()
-        for f in $(printf "${{ inputs.features }}" | tr -s ', ' \\n); do
-          FEATURES+=(--feature $f)
-        done
-
-        TARGET_HASH="$(
-          gdbuild target \
-            --project ${{ inputs.project-dir }} \
-            --platform ${{ inputs.platform }} \
-            ${FEATURES[@]} \
-            $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
-            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
-            $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
-            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config ${{ inputs.project-dir }}/${{ inputs.manifest-path }}) \
-            $([[ '${{ inputs.template-archive }}' != '' ]] && echo --template-archive ${{ inputs.template-archive }}) \
-            --print-hash \
-            ${{ inputs.target }}
-        )"
-
-        # 'gdbuild' properties
-        echo target-features="${FEATURES[@]}" >> "$GITHUB_OUTPUT"
-        echo "target-hash=$TARGET_HASH" >> "$GITHUB_OUTPUT"
-
-    - name: Cache the exported target artifacts
-      id: cache-target
-      uses: actions/cache@v4
+    - name: Build run command
+      id: target
+      uses: coffeebeats/gdbuild/.github/actions/run-target@feat/run-target
       with:
-        path: ${{ env.GDBUILD_HOME }}/exports
-        key: target-${{ runner.os }}-${{ steps.config.outputs.target-hash }}
-
-    - name: Export the target
-      shell: bash
-      run: |
-        mkdir -p ${{ steps.config.outputs.runner-dist }}
-
-        gdbuild target \
-          --verbose \
-          --project ${{ inputs.project-dir }} \
-          --platform ${{ inputs.platform }} \
-          --out ${{ steps.config.outputs.runner-dist }} \
-          ${{ steps.config.outputs.target-features }} \
-          $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
-          $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
-          $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
-          $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config ${{ inputs.project-dir }}/${{ inputs.manifest-path }}) \
-          $([[ '${{ inputs.template-archive }}' != '' ]] && echo --template-archive ${{ inputs.template-archive }}) \
-          ${{ inputs.target }}
+        target: ${{ inputs.target }}
+        platform: ${{ inputs.platform }}
+        profile: ${{ inputs.profile }}
+        features: ${{ inputs.features }}
+        template-archive-path: ${{ inputs.template-archive-path }}
+        out-dir: ${{ steps.config.outputs.runner-dist }}
+        project-dir: ${{ inputs.project-dir }}
+        manifest-path: ${{ inputs.manifest-path }}
 
     - name: Print exported target artifacts info
       shell: bash

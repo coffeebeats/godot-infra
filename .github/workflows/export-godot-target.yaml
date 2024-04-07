@@ -1,8 +1,12 @@
-name: "🏗️ godot-infra: Compile 'godot' export template"
+name: "🤖 godot-infra: Export 'gdbuild' target"
 
 on:
   workflow_call:
     inputs:
+      target:
+        type: string
+        description: "The name of the 'gdbuild' target to export."
+        required: true
       platform:
         type: string
         description: "The platform to build the export template for."
@@ -17,6 +21,11 @@ on:
         description: "A space-, comma- or new line-separated list of features to enable."
         required: false
         default: ""
+      project-dir:
+        type: string
+        description: "The path to the project directory."
+        required: false
+        default: example
       publish:
         type: boolean
         description: "Whether to publish an artifact to the workflow."
@@ -35,9 +44,13 @@ on:
     outputs:
       path:
         description: "The name of the 'godot' export template artifact."
-        value: ${{ jobs.build.outputs.name }}
+        value: ${{ jobs.export.outputs.name }}
   workflow_dispatch:
     inputs:
+      target:
+        type: string
+        description: "The name of the 'gdbuild' target to export."
+        required: true
       platform:
         type: choice
         description: "The platform to build the export template for."
@@ -55,6 +68,11 @@ on:
         description: "A space-, comma- or new line-separated list of features to enable."
         required: false
         default: ""
+      project-dir:
+        type: string
+        description: "The path to the project directory."
+        required: false
+        default: example
       publish:
         type: boolean
         description: "Whether to publish an artifact to the workflow."
@@ -73,6 +91,19 @@ on:
 
 jobs:
   build:
+    uses: "./.github/workflows/build-godot-template.yaml"
+    secrets: "inherit"
+    with:
+      platform: ${{ inputs.platform }}
+      profile: ${{ inputs.profile }}
+      features: ${{ inputs.features }}
+      publish: true
+      os: ${{ inputs.os }}
+      timeout: ${{ inputs.timeout }}
+
+  export:
+    needs: ["build"]
+
     runs-on: ${{ inputs.os }}
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
@@ -90,13 +121,12 @@ jobs:
       - name: Install 'gdenv'
         uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
         with:
-          project-dir: ./example
-          install-src: true
+          project-dir: ${{ inputs.project-dir }}
 
       - name: Install 'gdbuild'
         uses: coffeebeats/gdbuild/.github/actions/setup-gdbuild@main
         with:
-          project-dir: ./example
+          project-dir: ${{ inputs.project-dir }}
 
       # ------------------------ Compile the export template ----------------------- #
 
@@ -107,19 +137,39 @@ jobs:
           platform: ${{ inputs.platform }}
           profile: ${{ inputs.profile }}
           features: ${{ inputs.features }}
-          project-dir: ./example
+          project-dir: ${{ inputs.project-dir }}
 
-      # ------------------------ Package the export template ----------------------- #
+      # ----------------------------- Export the target ---------------------------- #
+
+      # Extract macOS SDK
+      - name: Download 'godot' export template
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.path }}
+          path: ${{ needs.build.outputs.path }}
+
+      - name: Export the target
+        uses: ./.github/actions/export-gdbuild-target
+        id: export-target
+        with:
+          target: ${{ inputs.target }}
+          platform: ${{ inputs.platform }}
+          profile: ${{ inputs.profile }}
+          features: ${{ inputs.features }}
+          project-dir: ${{ inputs.project-dir }}
+          template-archive-path: ${{ needs.build.outputs.path }}
+
+      # ------------------------ Package the export artifacts ---------------------- #
 
       - name: Configure the artifact name
         id: config-artifact
         shell: bash
-        run: echo "name=godot-${{ inputs.platform }}-template.tar.gz" >> $GITHUB_OUTPUT
+        run: echo "name=${{ inputs.target }}-${{ inputs.platform }}-${{ inputs.profile }}.tar.gz" >> $GITHUB_OUTPUT
 
       - name: Package the export template
         if: fromJson(format('{0}', inputs.publish))
         shell: bash
-        run: tar -C ${{ steps.build-template.outputs.path }} -czf ${{ steps.config-artifact.outputs.name }} .
+        run: tar -C ${{ steps.export-target.outputs.path }} -czf ${{ steps.config-artifact.outputs.name }} .
 
       # Publish the artifact
       - uses: actions/upload-artifact@v4
