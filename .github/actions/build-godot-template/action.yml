@@ -74,16 +74,19 @@ runs:
       run: |
         mkdir -p ${{ steps.config.outputs.runner-dist }}
 
+        echo ${{ steps.command.outputs.print-hash }}
+
+        echo "${{ steps.command.outputs.print-hash }}"
+
         podman run \
           --userns keep-id:uid=1000,gid=1000 \
           -v ${{ steps.config.outputs.runner-project }}:${{ steps.config.outputs.container-workspace }}/project:ro,Z \
-          -v ${{ steps.config.outputs.runner-dist }}:${{ steps.config.outputs.container-workspace }}/dist:Z \
           --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
-          "${{ steps.command.outputs.print-hash }} > ${{ steps.config.outputs.container-workspace }}/dist/hash"
+          '${{ steps.command.outputs.print-hash }}'
 
-        echo "value=$(cat ${{ steps.config.outputs.runner-dist }}/hash)" >> "$GITHUB_OUTPUT"
-        rm  ${{ steps.config.outputs.runner-dist }}/hash
+        echo "value=$(cat ${{ runner.temp }}/hash)" >> "$GITHUB_OUTPUT"
+        rm  ${{ runner.temp }}/hash
 
     - name: Cache the 'gdbuild' store's template artifact directory
       id: store
