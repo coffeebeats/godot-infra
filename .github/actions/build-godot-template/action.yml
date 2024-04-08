@@ -72,6 +72,8 @@ runs:
       id: template-hash
       shell: bash
       run: |
+        mkdir -p ${{ steps.config.outputs.runner-dist }}
+
         podman run \
           --userns keep-id:uid=1000,gid=1000 \
           -v ${{ steps.config.outputs.runner-project }}:${{ steps.config.outputs.container-workspace }}/project:ro,Z \
@@ -107,7 +109,6 @@ runs:
     - name: Compile 'godot' export template
       shell: bash
       run: |
-        mkdir -p ${{ steps.config.outputs.runner-dist }}
         mkdir -p ${{ steps.config.outputs.runner-scons }}
 
         WORKSPACE_DIR="${{ steps.config.outputs.container-workspace }}"
