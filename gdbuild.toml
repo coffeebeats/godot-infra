@@ -9,7 +9,7 @@
   use_mingw = true
 
 [template.platform.macos]
-  env    = {OSXCROSS_ROOT = "/usr/local/lib/osxcross/target"}
+  env    = {OSXCROSS_ROOT = "/usr/local/lib/osxcross"}
   vulkan = {sdk_path = "/usr/local/lib/vulkan-sdk/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64", use_volk = false}
 
 [template.platform.macos.scons]
