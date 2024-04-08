@@ -47,7 +47,7 @@ runs:
 
     - name: Build command to print unique template hash
       id: template
-      uses: coffeebeats/gdbuild/.github/actions/run-template@main
+      uses: coffeebeats/gdbuild/.github/actions/run-template@refactor/ci-improve-action
       with:
         execute: false
         verbose: true
@@ -110,7 +110,7 @@ runs:
     - name: Build run command (within 'godot-infra' container)
       id: template-container
       if: steps.store.outputs.cache-hit != 'true'
-      uses: coffeebeats/gdbuild/.github/actions/run-template@main
+      uses: coffeebeats/gdbuild/.github/actions/run-template@refactor/ci-improve-action
       with:
         execute: false
         verbose: true
