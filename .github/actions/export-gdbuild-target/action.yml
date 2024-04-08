@@ -93,14 +93,14 @@ runs:
 
         gdbuild target \
           --verbose \
-          --out $WORKSPACE/dist \
-          --project $WORKSPACE/project \
+          --out ${{ inputs.out-dir }} \
+          --project ${{ inputs.project-dir }} \
           ${FEATURES[@]} \
           $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
           $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
           $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
           $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo --template-archive '${{ inputs.template-archive-path }}') \
-          $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config '$WORKSPACE/project/${{ inputs.manifest-path }}') \
+          $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config '${{ inputs.project-dir }}/${{ inputs.manifest-path }}') \
           --platform ${{ inputs.platform }} \
           ${{ inputs.target }}
 
