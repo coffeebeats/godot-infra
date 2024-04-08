@@ -49,19 +49,60 @@ runs:
 
         echo "runner-dist=$DIST_DIR" >> "$GITHUB_OUTPUT"
 
-    - name: Build run command
-      id: target
-      uses: coffeebeats/gdbuild/.github/actions/run-target@main
+    - name: Run the hash print command
+      id: target-hash
+      shell: bash
+      run: |
+        mkdir -p ${{ steps.config.outputs.runner-dist }}
+
+        FEATURES=()
+        for f in $(printf "${{ inputs.features }}" | tr -s ', ' \\n); do
+          FEATURES+=(--feature $f)
+        done
+
+        HASH=$(
+          gdbuild target \
+            --print-hash \
+            --project ${{ inputs.project-dir }} \
+            ${FEATURES[@]} \
+            $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
+            $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
+            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
+            $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo --template-archive '${{ inputs.template-archive-path }}') \
+            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config '${{ inputs.project-dir }}/${{ inputs.manifest-path }}') \
+            --platform ${{ inputs.platform }} \
+            ${{ inputs.target }}
+        )
+
+        echo "value=$(echo $HASH | tail -1)" >> $GITHUB_OUTPUT
+
+    - name: Cache the 'gdbuild' store's target exports directory
+      id: store
+      uses: actions/cache@v4
       with:
-        verbose: true
-        target: ${{ inputs.target }}
-        platform: ${{ inputs.platform }}
-        profile: ${{ inputs.profile }}
-        features: ${{ inputs.features }}
-        template-archive-path: ${{ inputs.template-archive-path }}
-        out-dir: ${{ steps.config.outputs.runner-dist }}
-        project-dir: ${{ inputs.project-dir }}
-        manifest-path: ${{ inputs.manifest-path }}
+        path: ${{ env.GDBUILD_HOME }}/exports
+        key: exports-${{ runner.os }}-${{ steps.target-hash.outputs.value }}
+
+    - name: Run the export command
+      shell: bash
+      run: |
+        FEATURES=()
+        for f in $(printf "${{ inputs.features }}" | tr -s ', ' \\n); do
+          FEATURES+=(--feature $f)
+        done
+
+        gdbuild target \
+          --verbose \
+          --out ${{ inputs.out-dir }} \
+          --project ${{ inputs.project-dir }} \
+          ${FEATURES[@]} \
+          $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
+          $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
+          $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
+          $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo --template-archive '${{ inputs.template-archive-path }}') \
+          $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config '${{ inputs.project-dir }}/${{ inputs.manifest-path }}') \
+          --platform ${{ inputs.platform }} \
+          ${{ inputs.target }}
 
     - name: Print exported target artifacts info
       shell: bash

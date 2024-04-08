@@ -33,7 +33,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up action configuration
+    - name: Configure action properties
       id: config
       shell: bash
       run: |
@@ -45,84 +45,102 @@ runs:
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
 
-    - name: Build run command
-      id: template
-      uses: coffeebeats/gdbuild/.github/actions/run-template@main
+    - name: Set up 'podman'
+      uses: ./.github/actions/setup-podman
       with:
-        execute: false
-        verbose: true
-        platform: ${{ inputs.platform }}
-        profile: ${{ inputs.profile }}
-        features: ${{ inputs.features }}
-        out-dir: ${{ steps.config.outputs.runner-dist }}
-        project-dir: ${{ steps.config.outputs.runner-project }}
-        manifest-path: ${{ inputs.manifest-path }}
+        login: true
+        install-buildah: false
+        install-podman: true
 
-    - name: Execute run command for cached template
-      if: steps.template.outputs.cache-hit == 'true'
+    - name: Create a secret for the encryption key
+      if: env.SCRIPT_AES256_ENCRYPTION_KEY != ''
       shell: bash
-      run: ${{ steps.template.outputs.command }}
+      run: podman secret create --env=true encryption-key SCRIPT_AES256_ENCRYPTION_KEY
+
+    - name: Run the hash print command
+      id: template-hash
+      shell: bash
+      run: |
+        mkdir -p ${{ steps.config.outputs.runner-dist }}
+
+        WORKSPACE="${{ steps.config.outputs.container-workspace }}"
+
+        FEATURES=()
+        for f in $(printf "${{ inputs.features }}" | tr -s ', ' \\n); do
+          FEATURES+=(--feature $f)
+        done
+
+        HASH=$(
+          podman run \
+          --userns keep-id:uid=1000,gid=1000 \
+          -v ${{ steps.config.outputs.runner-project }}:$WORKSPACE/project:ro,Z \
+          $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE/.gdbuild:Z") \
+          --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
+          ghcr.io/${{ github.repository_owner }}/godot-infra:latest gdbuild template \
+            --print-hash \
+            --project $WORKSPACE/project \
+            ${FEATURES[@]} \
+            $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
+            $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
+            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
+            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config '$WORKSPACE/project/${{ inputs.manifest-path }}') \
+            ${{ inputs.platform }}
+        )
+
+        echo "value=$(echo $HASH | tail -1)" >> $GITHUB_OUTPUT
+
+    - name: Cache the 'gdbuild' store's template artifact directory
+      id: store
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.GDBUILD_HOME }}/templates
+        key: templates-${{ runner.os }}-${{ steps.template-hash.outputs.value }}
 
     - name: Configure runner
-      if: steps.template.outputs.cache-hit != 'true'
+      if: steps.store.outputs.cache-hit != 'true'
       uses: ./.github/actions/setup-runner
 
     - name: Cache the 'SCons' build directory
-      if: steps.template.outputs.cache-hit != 'true'
-      id: cache-scons
+      if: steps.store.outputs.cache-hit != 'true'
       uses: actions/cache@v4
       with:
         path: ${{ steps.config.outputs.runner-scons }}
-        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ steps.template.outputs.hash }}
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-${{ steps.template-hash.outputs.value }}
         restore-keys: |
           scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-
           scons-${{ runner.os }}-${{ inputs.platform }}-
 
-    - name: Build run command (within 'godot-infra' container)
-      id: template-container
-      if: steps.template.outputs.cache-hit != 'true'
-      uses: coffeebeats/gdbuild/.github/actions/run-template@main
-      with:
-        execute: false
-        verbose: true
-        skip-cache: true # Cache already mounted correctly by prior command.
-        skip-hash: true # Hash already computed correctly by prior command.
-        platform: ${{ inputs.platform }}
-        profile: ${{ inputs.profile }}
-        features: ${{ inputs.features }}
-        out-dir: ${{ steps.config.outputs.container-workspace }}/dist
-        project-dir: ${{ steps.config.outputs.container-workspace }}/project
-        manifest-path: ${{ inputs.manifest-path }}
-
-    - name: Set up 'podman'
-      if: steps.template.outputs.cache-hit != 'true'
-      uses: ./.github/actions/setup-podman
-      with:
-        login: true
-
-    - name: Compile 'godot' export template
-      if: steps.template.outputs.cache-hit != 'true'
+    - name: Run the build command
       shell: bash
       run: |
-        mkdir -p ${{ steps.config.outputs.runner-dist }}
         mkdir -p ${{ steps.config.outputs.runner-scons }}
 
-        WORKSPACE_DIR="${{ steps.config.outputs.container-workspace }}"
+        WORKSPACE="${{ steps.config.outputs.container-workspace }}"
 
-        # Create a secret for the encryption key, regardless of whether it's set.
-        podman secret create --env=true encryption-key SCRIPT_AES256_ENCRYPTION_KEY
+        FEATURES=()
+        for f in $(printf "${{ inputs.features }}" | tr -s ', ' \\n); do
+          FEATURES+=(--feature $f)
+        done
 
         podman run \
           --userns keep-id:uid=1000,gid=1000 \
-          -v ${{ steps.config.outputs.runner-dist }}:$WORKSPACE_DIR/dist:Z \
-          -v ${{ steps.config.outputs.runner-scons }}:$WORKSPACE_DIR/.scons:Z \
-          -v ${{ steps.config.outputs.runner-project }}:$WORKSPACE_DIR/project:ro,Z \
-          $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):$WORKSPACE_DIR/.gdenv:Z") \
-          $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE_DIR/.gdbuild:Z") \
-          -e SCONS_CACHE=$WORKSPACE_DIR/.scons \
+          -v ${{ steps.config.outputs.runner-dist }}:$WORKSPACE/dist:Z \
+          -v ${{ steps.config.outputs.runner-scons }}:$WORKSPACE/.scons:Z \
+          -v ${{ steps.config.outputs.runner-project }}:$WORKSPACE/project:ro,Z \
+          $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):$WORKSPACE/.gdenv:Z") \
+          $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE/.gdbuild:Z") \
+          -e SCONS_CACHE=$WORKSPACE/.scons \
           --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
-          ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
-          "${{ steps.template-container.outputs.command }}"
+          ghcr.io/${{ github.repository_owner }}/godot-infra:latest gdbuild template \
+            --verbose \
+            --out $WORKSPACE/dist \
+            --project $WORKSPACE/project \
+            ${FEATURES[@]} \
+            $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
+            $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
+            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
+            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config '$WORKSPACE/project/${{ inputs.manifest-path }}') \
+            ${{ inputs.platform }}
 
     - name: Print 'godot' export template info
       shell: bash
