@@ -63,10 +63,14 @@ on:
           - "windows"
           - "macos"
       profile:
-        type: string
+        type: choice
         description: "The profile to build the export template with."
         required: false
         default: release
+        options:
+          - "release"
+          - "release_debug"
+          - "debug"
       features:
         type: string
         description: "A space-, comma- or new line-separated list of features to enable."
