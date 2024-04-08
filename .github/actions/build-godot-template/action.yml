@@ -49,7 +49,6 @@ runs:
       id: command
       uses: coffeebeats/gdbuild/.github/actions/run-template@refactor/ci-improve-action
       with:
-        execute: false
         verbose: true
         platform: ${{ inputs.platform }}
         profile: ${{ inputs.profile }}
@@ -76,14 +75,15 @@ runs:
 
         podman run \
           --userns keep-id:uid=1000,gid=1000 \
+          -v ${{ steps.config.outputs.runner-dist }}:${{ steps.config.outputs.container-workspace }}/dist:Z \
           -v ${{ steps.config.outputs.runner-project }}:${{ steps.config.outputs.container-workspace }}/project:ro,Z \
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):${{ steps.config.outputs.container-workspace }}/.gdbuild:Z") \
           --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
-          ghcr.io/${{ github.repository_owner }}/godot-infra:latest \
-          ${{ steps.command.outputs.print-hash }} > ${{ runner.temp }}/hash
+          ghcr.io/${{ github.repository_owner }}/godot-infra:latest bash -c \
+          "${{ steps.command.outputs.print-hash }} > ${{ steps.config.outputs.container-workspace }}/dist/hash"
 
-        echo "value=$(cat ${{ runner.temp }}/hash)" >> "$GITHUB_OUTPUT"
-        rm  ${{ runner.temp }}/hash
+        echo "value=$(cat ${{ steps.config.outputs.runner-dist }}/hash)" >> "$GITHUB_OUTPUT"
+        rm  ${{ steps.config.outputs.runner-dist }}/hash
 
     - name: Cache the 'gdbuild' store's template artifact directory
       id: store
