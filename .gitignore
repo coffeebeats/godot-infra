@@ -19,8 +19,8 @@ thirdparty/moltenvk/*
 !thirdparty/moltenvk/.gitkeep
 
 # Dependency-related ignores
-**/dist
-**/.gdbuild
-**/.gdenv
-**/.gdpack
-**/.scons
+dist
+.gdbuild
+.gdenv
+.gdpack
+.scons
