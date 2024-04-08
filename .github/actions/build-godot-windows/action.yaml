@@ -1,5 +1,5 @@
-name: "🏗️ godot-infra: Build 'godot' export template"
-description: "Compiles a 'godot' export template."
+name: "🏗️ godot-infra: Build Windows export template"
+description: "Compiles a 'godot' export template for Windows."
 
 inputs:
   platform:
@@ -9,21 +9,13 @@ inputs:
     description: "The execution profile to build with."
     required: false
     default: release
-  features:
-    description: "A space-, comma- or new line-separated list of features to enable."
+  icon-path:
+    description: "A path to an '.ico' file to set as the file icon."
     required: false
-    default: ""
   out-dir:
     description: "The directory in which to place the export templates."
     required: false
     default: "dist"
-  project-dir:
-    description: "The path to the game project directory."
-    required: false
-    default: "."
-  manifest-path:
-    description: "A specific 'gdbuild' manifest filename (relative to 'project-dir')."
-    required: false
 
 outputs:
   path:
@@ -45,19 +37,6 @@ runs:
         # Container paths
         echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_OUTPUT"
 
-    - name: Build template commands
-      id: command
-      uses: coffeebeats/gdbuild/.github/actions/run-template@refactor/ci-improve-action
-      with:
-        execute: false
-        verbose: true
-        platform: ${{ inputs.platform }}
-        profile: ${{ inputs.profile }}
-        features: ${{ inputs.features }}
-        out-dir: ${{ steps.config.outputs.container-workspace }}/dist
-        project-dir: ${{ steps.config.outputs.container-workspace }}/project
-        manifest-path: ${{ inputs.manifest-path }}
-
     - name: Set up 'podman'
       uses: ./.github/actions/setup-podman
       with:
@@ -74,16 +53,17 @@ runs:
       run: |
         mkdir -p ${{ steps.config.outputs.runner-dist }}
 
-        podman run \
-          --userns keep-id:uid=1000,gid=1000 \
-          -v ${{ steps.config.outputs.runner-project }}:${{ steps.config.outputs.container-workspace }}/project:ro,Z \
-          $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):${{ steps.config.outputs.container-workspace }}/.gdbuild:Z") \
-          --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
-          ghcr.io/${{ github.repository_owner }}/godot-infra:latest \
-          ${{ steps.command.outputs.print-hash }}
+        HASH=$(
+          podman run \
+            --userns keep-id:uid=1000,gid=1000 \
+            -v ${{ steps.config.outputs.runner-project }}:${{ steps.config.outputs.container-workspace }}/project:ro,Z \
+            $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):${{ steps.config.outputs.container-workspace }}/.gdbuild:Z") \
+            --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
+            ghcr.io/${{ github.repository_owner }}/godot-infra:latest \
+            ${{ steps.command.outputs.print-hash }}
+        )
 
-        echo "value=$(cat ${{ runner.temp }}/hash)" >> "$GITHUB_OUTPUT"
-        rm  ${{ runner.temp }}/hash
+        echo "value=$(echo $HASH | tail -1)" >> "$GITHUB_OUTPUT"
 
     - name: Cache the 'gdbuild' store's template artifact directory
       id: store
