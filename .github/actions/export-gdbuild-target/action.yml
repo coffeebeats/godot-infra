@@ -50,8 +50,8 @@ runs:
         echo "runner-dist=$DIST_DIR" >> "$GITHUB_OUTPUT"
 
     - name: Build run command
-      id: target
-      uses: coffeebeats/gdbuild/.github/actions/run-target@main
+      id: command
+      uses: coffeebeats/gdbuild/.github/actions/run-target@refactor/ci-improve-action
       with:
         verbose: true
         target: ${{ inputs.target }}
@@ -62,6 +62,23 @@ runs:
         out-dir: ${{ steps.config.outputs.runner-dist }}
         project-dir: ${{ inputs.project-dir }}
         manifest-path: ${{ inputs.manifest-path }}
+
+    - name: Run the hash print command
+      id: target-hash
+      shell: bash
+      run: |
+        echo "value=$(${{ steps.command.outputs.print-hash }})" >> "$GITHUB_OUTPUT"
+
+    - name: Cache the 'gdbuild' store's export artifact directory
+      id: store
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.GDBUILD_HOME }}/exports
+        key: exports-${{ runner.os }}-${{ steps.target-hash.outputs.value }}
+
+    - name: Run the export command
+      shell: bash
+      run: ${{ steps.command.outputs.run }}
 
     - name: Print exported target artifacts info
       shell: bash
