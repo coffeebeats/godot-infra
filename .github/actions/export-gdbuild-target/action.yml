@@ -119,7 +119,7 @@ runs:
         HASH=$(
           podman run \
             --userns keep-id:uid=1000,gid=1000 \
-            -v ${{ steps.config.outputs.runner-project }}:${{ env.container-workspace }}/project:ro,Z \
+            -v ${{ steps.config.outputs.runner-project }}:${{ env.container-workspace }}/project:Z \
             $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo "-v $(realpath ${{ inputs.template-archive-path }}):${{ env.container-workspace }}/template-archive.tar.gz") \
             $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):${{ env.container-workspace }}/.gdenv:Z") \
             $([[ -d "$GDPACK_HOME" ]] && echo "-v $(realpath $GDPACK_HOME):${{ env.container-workspace }}/.gdpack:Z") \
