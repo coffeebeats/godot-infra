@@ -77,7 +77,6 @@ runs:
           $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):$WORKSPACE/.gdbuild:Z") \
           --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest gdbuild template \
-            --verbose \
             --print-hash \
             --project $WORKSPACE/project \
             ${FEATURES[@]} \
@@ -111,7 +110,7 @@ runs:
           scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.profile }}-
           scons-${{ runner.os }}-${{ inputs.platform }}-
 
-    - name: Compile 'godot' export template
+    - name: Run the build command
       shell: bash
       run: |
         mkdir -p ${{ steps.config.outputs.runner-scons }}
