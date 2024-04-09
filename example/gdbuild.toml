@@ -11,8 +11,8 @@
   runnable = true
 
   pack_files = [
-    {glob = ["**/*.gd", "**/*.tscn"], embed = true, encrypt = true},
-    {glob = ["**/*.svg"], embed = true},
+    {include = ["**/*.gd", "**/*.tscn"], embed = true, encrypt = true},
+    {include = ["**/*.svg"], embed = true},
   ]
 
 [target.client.platform.macos]
