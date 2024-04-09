@@ -75,9 +75,9 @@ runs:
           podman run \
             --userns keep-id:uid=1000,gid=1000 \
             -v ${{ steps.config.outputs.runner-project }}:${{ env.container-workspace }}/project:ro,Z \
-            $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):${{ env.container-workspace }}/.gdenv:Z") \
-            $([[ -d "$GDPACK_HOME" ]] && echo "-v $(realpath $GDPACK_HOME):${{ env.container-workspace }}/.gdpack:Z") \
-            $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):${{ env.container-workspace }}/.gdbuild:Z") \
+            $([[ -d "$GDENV_HOME" ]] && echo -v "$(realpath $GDENV_HOME):${{ env.container-workspace }}/.gdenv:Z") \
+            $([[ -d "$GDPACK_HOME" ]] && echo -v "$(realpath $GDPACK_HOME):${{ env.container-workspace }}/.gdpack:Z") \
+            $([[ -d "$GDBUILD_HOME" ]] && echo -v "$(realpath $GDBUILD_HOME):${{ env.container-workspace }}/.gdbuild:Z") \
             --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
             ghcr.io/${{ github.repository_owner }}/godot-infra:latest gdbuild template \
               --print-hash \
@@ -126,9 +126,9 @@ runs:
           -v ${{ steps.config.outputs.runner-dist }}:${{ env.container-workspace }}/dist:Z \
           -v ${{ steps.config.outputs.runner-scons }}:${{ env.container-workspace }}/.scons:Z \
           -v ${{ steps.config.outputs.runner-project }}:${{ env.container-workspace }}/project:ro,Z \
-          $([[ -d "$GDENV_HOME" ]] && echo "-v $(realpath $GDENV_HOME):${{ env.container-workspace }}/.gdenv:Z") \
-          $([[ -d "$GDPACK_HOME" ]] && echo "-v $(realpath $GDPACK_HOME):${{ env.container-workspace }}/.gdpack:Z") \
-          $([[ -d "$GDBUILD_HOME" ]] && echo "-v $(realpath $GDBUILD_HOME):${{ env.container-workspace }}/.gdbuild:Z") \
+          $([[ -d "$GDENV_HOME" ]] && echo -v "$(realpath $GDENV_HOME):${{ env.container-workspace }}/.gdenv:Z") \
+          $([[ -d "$GDPACK_HOME" ]] && echo -v "$(realpath $GDPACK_HOME):${{ env.container-workspace }}/.gdpack:Z") \
+          $([[ -d "$GDBUILD_HOME" ]] && echo -v "$(realpath $GDBUILD_HOME):${{ env.container-workspace }}/.gdbuild:Z") \
           -e SCONS_CACHE=${{ env.container-workspace }}/.scons \
           --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
           ghcr.io/${{ github.repository_owner }}/godot-infra:latest gdbuild template \
