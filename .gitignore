@@ -24,3 +24,6 @@ dist
 .gdenv
 .gdpack
 .scons
+
+# Testing-related ignores
+example/export_presets.cfg
