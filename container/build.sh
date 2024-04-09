@@ -44,10 +44,6 @@ Available options:
     --osxcross          Path to an OSXCross SDK
     --vulkan            Path to a macOS Vulkan SDK
 
-    --gdenv             Version of github.com/coffeebeats/gdenv to install (defaults to latest).
-    --gdpack            Version of github.com/coffeebeats/gdpack to install (defaults to latest).
-    --gdbuild           Version of github.com/coffeebeats/gdbuild to install (defaults to latest).
-
     -h, --help          Print this help and exit
     -v, --verbose       Print script debug info (default=false)
     --[no]color         Whether to enable colored output for logging (default=enabled)
@@ -130,21 +126,6 @@ parse_params() {
         --vulkan)
             VULKAN_SDK_HOST_PATH="${2:-}"
             [[ ! -d "$VULKAN_SDK_HOST_PATH" ]] && die "Missing directory: '${2:-}'"
-            shift
-            ;;
-        --gdenv)
-            GDENV_VERSION="${2:-}"
-            [[ -z "$GDENV_VERSION" ]] && die "Missing 'gdenv' version: '${2:-}'"
-            shift
-            ;;
-        --gdpack)
-            GDPACK_VERSION="${2:-}"
-            [[ -z "$GDPACK_VERSION" ]] && die "Missing 'gdpack' version: '${2:-}'"
-            shift
-            ;;
-        --gdbuild)
-            GDBUILD_VERSION="${2:-}"
-            [[ -z "$GDBUILD_VERSION" ]] && die "Missing 'gdbuild' version: '${2:-}'"
             shift
             ;;
         --)

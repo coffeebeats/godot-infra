@@ -39,39 +39,62 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up action configuration
+    - name: Configure action properties
       id: config
       shell: bash
       run: |
-        # Runner paths
-        DIST_DIR="$(realpath ${{ inputs.out-dir }})"
-        mkdir -p DIST_DIR
+        # Create required directories
+        mkdir -p ${{ inputs.out-dir }}
 
-        echo "runner-dist=$DIST_DIR" >> "$GITHUB_OUTPUT"
+        # Export runner paths
+        echo "runner-project=$(realpath ${{ inputs.project-dir }})"  >> "$GITHUB_OUTPUT"
+        echo "runner-dist=$(realpath ${{ inputs.out-dir }})" >> "$GITHUB_OUTPUT"
+
+        # Export container paths
+        echo "container-workspace=/home/ubuntu/godot-infra" >> "$GITHUB_ENV"
+
+    - name: Set up 'podman'
+      uses: ./.github/actions/setup-podman
+      with:
+        login: true
+        install-buildah: false
+        install-podman: true
+
+    # TODO: Centralize this once additional secrets need to be set.
+    - name: Create a secret for the encryption key
+      if: env.SCRIPT_AES256_ENCRYPTION_KEY != ''
+      shell: bash
+      run: podman secret create --env=true encryption-key SCRIPT_AES256_ENCRYPTION_KEY
 
     - name: Run the hash print command
       id: target-hash
       shell: bash
       run: |
-        mkdir -p ${{ steps.config.outputs.runner-dist }}
-
         FEATURES=()
         for f in $(printf "${{ inputs.features }}" | tr -s ', ' \\n); do
           FEATURES+=(--feature $f)
         done
 
         HASH=$(
-          gdbuild target \
-            --print-hash \
-            --project ${{ inputs.project-dir }} \
-            ${FEATURES[@]} \
-            $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
-            $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
-            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
-            $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo --template-archive '${{ inputs.template-archive-path }}') \
-            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config '${{ inputs.project-dir }}/${{ inputs.manifest-path }}') \
-            --platform ${{ inputs.platform }} \
-            ${{ inputs.target }}
+          podman run \
+            --userns keep-id:uid=1000,gid=1000 \
+            -v ${{ steps.config.outputs.runner-project }}:${{ env.container-workspace }}/project:ro,Z \
+            $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo "-v $(realpath ${{ inputs.template-archive-path }}):${{ env.container-workspace }}/$(basename ${{ inputs.template-archive-path }})") \
+            $([[ -d "$GDENV_HOME" ]] && echo -v "$(realpath $GDENV_HOME):${{ env.container-workspace }}/.gdenv:Z") \
+            $([[ -d "$GDPACK_HOME" ]] && echo -v "$(realpath $GDPACK_HOME):${{ env.container-workspace }}/.gdpack:Z") \
+            $([[ -d "$GDBUILD_HOME" ]] && echo -v "$(realpath $GDBUILD_HOME):${{ env.container-workspace }}/.gdbuild:Z") \
+            --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
+            ghcr.io/${{ github.repository_owner }}/godot-infra:latest gdbuild target \
+              --print-hash \
+              --project ${{ env.container-workspace }}/project \
+              ${FEATURES[@]} \
+              $([[ '${{ inputs.profile }}' == 'debug' ]] && echo --debug) \
+              $([[ '${{ inputs.profile }}' == 'release' ]] && echo --release) \
+              $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo --release_debug) \
+              $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo --template-archive "${{ env.container-workspace }}/$(basename ${{ inputs.template-archive-path }})") \
+              $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config "${{ env.container-workspace }}/project/${{ inputs.manifest-path }}") \
+              --platform ${{ inputs.platform }} \
+              ${{ inputs.target }}
         )
 
         echo "value=$(echo $HASH | tail -1)" >> $GITHUB_OUTPUT
@@ -91,18 +114,27 @@ runs:
           FEATURES+=(--feature $f)
         done
 
-        gdbuild target \
-          --verbose \
-          --out ${{ inputs.out-dir }} \
-          --project ${{ inputs.project-dir }} \
-          ${FEATURES[@]} \
-          $([[ '${{ inputs.profile }}' == 'debug' ]] && echo '--debug') \
-          $([[ '${{ inputs.profile }}' == 'release' ]] && echo '--release') \
-          $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo '--release_debug') \
-          $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo --template-archive '${{ inputs.template-archive-path }}') \
-          $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config '${{ inputs.project-dir }}/${{ inputs.manifest-path }}') \
-          --platform ${{ inputs.platform }} \
-          ${{ inputs.target }}
+        podman run \
+          --userns keep-id:uid=1000,gid=1000 \
+          -v ${{ steps.config.outputs.runner-dist }}:${{ env.container-workspace }}/dist:Z \
+          -v ${{ steps.config.outputs.runner-project }}:${{ env.container-workspace }}/project:Z \
+          $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo -v "$(realpath ${{ inputs.template-archive-path }}):${{ env.container-workspace }}/$(basename ${{ inputs.template-archive-path }})") \
+          $([[ -d "$GDENV_HOME" ]] && echo -v "$(realpath $GDENV_HOME):${{ env.container-workspace }}/.gdenv:Z") \
+          $([[ -d "$GDPACK_HOME" ]] && echo -v "$(realpath $GDPACK_HOME):${{ env.container-workspace }}/.gdpack:Z") \
+          $([[ -d "$GDBUILD_HOME" ]] && echo -v "$(realpath $GDBUILD_HOME):${{ env.container-workspace }}/.gdbuild:Z") \
+          --secret encryption-key,type=env,target=SCRIPT_AES256_ENCRYPTION_KEY \
+          ghcr.io/${{ github.repository_owner }}/godot-infra:latest gdbuild target \
+            --verbose \
+            --out ${{ env.container-workspace }}/dist \
+            --project ${{ env.container-workspace }}/project \
+            ${FEATURES[@]} \
+            $([[ '${{ inputs.profile }}' == 'debug' ]] && echo --debug) \
+            $([[ '${{ inputs.profile }}' == 'release' ]] && echo --release) \
+            $([[ '${{ inputs.profile }}' == 'release_debug' ]] && echo --release_debug) \
+            $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo --template-archive "${{ env.container-workspace }}/$(basename ${{ inputs.template-archive-path }})") \
+            $([[ '${{ inputs.manifest-path }}' != '' ]] && echo --config "${{ env.container-workspace }}/project/${{ inputs.manifest-path }}") \
+            --platform ${{ inputs.platform }} \
+            ${{ inputs.target }}
 
     - name: Print exported target artifacts info
       shell: bash

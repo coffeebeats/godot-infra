@@ -15,6 +15,9 @@
     {glob = ["**/*.svg"], embed = true},
   ]
 
+[target.client.platform.macos]
+  bundle_identifier = "com.game.example"
+
 [target.client.profile.release]
   # NOTE: Set the encryption key via the 'SCRIPT_AES256_ENCRYPTION_KEY' variable.
   encrypt = true
