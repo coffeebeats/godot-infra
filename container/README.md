@@ -66,7 +66,7 @@ The following instructions outline how to get the project set up for local devel
 3. Run the `container/build.sh` script from the repository root:
 
     ```sh
-    LLVM_VERSION=17 \                                                                                                                                                                                      10:59:38 AM
+    LLVM_VERSION=17 \
     MACOS_VERSION=14 \
     MACOS_VERSION_MINIMUM=10.13 \
     OSXCROSS_SDK=darwin23 \
