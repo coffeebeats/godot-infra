@@ -116,6 +116,7 @@ runs:
 
         podman run \
           --userns keep-id:uid=1000,gid=1000 \
+          -v ${{ steps.config.outputs.runner-dist }}:${{ env.container-workspace }}/dist:Z \
           -v ${{ steps.config.outputs.runner-project }}:${{ env.container-workspace }}/project:Z \
           $([[ '${{ inputs.template-archive-path }}' != '' ]] && echo -v "$(realpath ${{ inputs.template-archive-path }}):${{ env.container-workspace }}/$(basename ${{ inputs.template-archive-path }})") \
           $([[ -d "$GDENV_HOME" ]] && echo -v "$(realpath $GDENV_HOME):${{ env.container-workspace }}/.gdenv:Z") \
