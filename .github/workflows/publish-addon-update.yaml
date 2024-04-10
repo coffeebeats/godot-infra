@@ -1,0 +1,125 @@
+name: "🔄 godot-infra: Publish addon update"
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        type: string
+        description: "The 'thirdparty/' directory name of the addon to update."
+        required: true
+      target-branch:
+        type: string
+        description: "The name of the branch to push changes to."
+        required: true
+        default: v4
+      subfolder:
+        type: string
+        description: "The 'addons/' directory name of the addon to update."
+        required: true
+      force:
+        type: boolean
+        description: "Create the target branch even if the addon is up-to-date."
+        required: false
+        default: false
+      os:
+        type: string
+        description: "The runner's operating system."
+        required: false
+        default: ubuntu-latest
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  todo:
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Validate 'name' input
+        run: |
+          if [[ ! -d thirdparty/${{ inputs.name }} ]]; then
+            echo "No managed addon found with name: ${{ inputs.name }}"
+            exit 1
+          fi
+
+      - name: Update dependency
+        id: update
+        run: |
+          cd thirdparty/${{ inputs.name }}
+
+          CHANGES=$(git submodule update --remote)
+          if [[ -z "$CHANGES" ]]; then
+            echo "current=true" >> $GITHUB_OUTPUT
+            echo "Dependency is up-to-date; exiting without making changes."
+          fi
+
+          echo "rev=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Construct addon directory
+        if: steps.update.outputs.current != 'true' && inputs.force != true
+        run: |
+          NAME="${{ inputs.name }}"
+          if [[ ! -z "${{ inputs.subfolder }}" ]]; then
+            NAME="${{ inputs.subfolder }}"
+          fi
+
+          cd thirdparty/${{ inputs.name }}
+
+          if [[ ! -d "addons/$NAME" ]]; then
+            echo "Addon not found under 'addons/'; assuming addon is root-level."
+            cp -r * ${{ runner.temp }}
+            exit 0
+          fi
+
+          cp LICENSE* ${{ runner.temp }} 2>/dev/null || :
+          cp README* ${{ runner.temp }} 2>/dev/null || :
+          cp -r addons/$NAME/* ${{ runner.temp }} 2>/dev/null || :
+
+      - name: Check out to target branch
+        if: steps.update.outputs.current != 'true' && inputs.force != true
+        run: |
+          cd thirdparty/${{ inputs.name }}
+
+          BRANCHES=$(git ls-remote --heads origin ${{ inputs.target-branch }})
+
+          if [[ -z "$BRANCHES" ]]; then
+            git checkout -b ${{ inputs.target-branch }}
+          else
+            git checkout ${{ inputs.target-branch }}
+          fi
+
+      - name: Push the latest changes to the target branch
+        if: steps.update.outputs.current != 'true' && inputs.force != true
+        run: |
+          cd thirdparty/${{ inputs.name }}
+
+          rm -rf *
+          cp -r ${{ runner.temp }}/* .
+
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "Target branch is up-to-date; exiting without making changes."
+            exit 0
+          fi
+
+          # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          git add --all .
+          git commit -m "chore: updating ${{ inputs.name }} to ${{ steps.update.outputs.rev }} (on behalf of '${{ github.triggering_actor }}')"
+
+          git push
