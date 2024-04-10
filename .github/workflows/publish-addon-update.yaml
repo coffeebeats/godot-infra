@@ -32,6 +32,9 @@ on:
         required: false
         default: 5
 
+permissions:
+  contents: write
+
 defaults:
   run:
     shell: bash
