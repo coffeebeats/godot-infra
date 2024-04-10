@@ -40,7 +40,7 @@ defaults:
     shell: bash
 
 jobs:
-  todo:
+  update-dependency:
     runs-on: ${{ inputs.os }}
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
@@ -70,7 +70,7 @@ jobs:
           echo "rev=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Construct addon directory
-        if: steps.update.outputs.current != 'true' && inputs.force != true
+        if: steps.update.outputs.current != 'true' || inputs.force == true
         run: |
           NAME="${{ inputs.name }}"
           if [[ ! -z "${{ inputs.subfolder }}" ]]; then
@@ -90,7 +90,7 @@ jobs:
           cp -r addons/$NAME/* ${{ runner.temp }} 2>/dev/null || :
 
       - name: Check out to target branch
-        if: steps.update.outputs.current != 'true' && inputs.force != true
+        if: steps.update.outputs.current != 'true' || inputs.force == true
         run: |
           cd thirdparty/${{ inputs.name }}
 
@@ -103,7 +103,7 @@ jobs:
           fi
 
       - name: Push the latest changes to the target branch
-        if: steps.update.outputs.current != 'true' && inputs.force != true
+        if: steps.update.outputs.current != 'true' || inputs.force == true
         run: |
           cd thirdparty/${{ inputs.name }}
 
@@ -122,4 +122,4 @@ jobs:
           git add --all .
           git commit -m "chore: updating ${{ inputs.name }} to ${{ steps.update.outputs.rev }} (on behalf of '${{ github.triggering_actor }}')"
 
-          git push
+          git push origin ${{ inputs.target-branch }}
