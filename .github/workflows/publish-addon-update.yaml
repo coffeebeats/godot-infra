@@ -15,7 +15,7 @@ on:
       subfolder:
         type: string
         description: "The 'addons/' directory name of the addon to update."
-        required: true
+        required: false
       force:
         type: boolean
         description: "Create the target branch even if the addon is up-to-date."
@@ -30,7 +30,7 @@ on:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
         required: false
-        default: 60
+        default: 5
 
 permissions:
   contents: write
