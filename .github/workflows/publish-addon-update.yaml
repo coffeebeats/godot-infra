@@ -62,7 +62,10 @@ jobs:
           CHANGES=$(git submodule update --remote)
           if [[ -z "$CHANGES" ]]; then
             echo "current=true" >> $GITHUB_OUTPUT
-            echo "Dependency is up-to-date; exiting without making changes."
+
+            if [[ "${{ fromJson(inputs.force) }}" != 'true' ]]; then
+              echo "Dependency is up-to-date; exiting without making changes."
+            fi
           fi
 
           echo "rev=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
