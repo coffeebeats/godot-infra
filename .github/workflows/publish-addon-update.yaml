@@ -65,9 +65,6 @@ jobs:
             echo "Dependency is up-to-date; exiting without making changes."
           fi
 
-          # Run 'git pull' so 'godot-infra'-changes are pulled.
-          git pull
-
           echo "rev=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Construct addon directory
@@ -104,6 +101,7 @@ jobs:
           if [[ -z "$BRANCHES" ]]; then
             git checkout -b ${{ inputs.target-branch }}
           else
+            git fetch origin +refs/heads/${{ inputs.target-branch }}:refs/heads/${{ inputs.target-branch }}
             git checkout ${{ inputs.target-branch }}
           fi
 
