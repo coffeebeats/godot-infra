@@ -32,9 +32,6 @@ on:
         required: false
         default: 5
 
-permissions:
-  contents: write
-
 defaults:
   run:
     shell: bash
@@ -48,6 +45,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          token: ${{ secrets.GODOT_INFRA_UPDATE_TOKEN }}
 
       - name: Validate 'name' input
         run: |
@@ -64,12 +62,16 @@ jobs:
           CHANGES=$(git submodule update --remote)
           if [[ -z "$CHANGES" ]]; then
             echo "current=true" >> $GITHUB_OUTPUT
-            echo "Dependency is up-to-date; exiting without making changes."
+
+            if [[ "${{ fromJson(inputs.force) }}" != 'true' ]]; then
+              echo "Dependency is up-to-date; exiting without making changes."
+            fi
           fi
 
           echo "rev=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Construct addon directory
+        id: addon
         if: steps.update.outputs.current != 'true' || inputs.force == true
         run: |
           NAME="${{ inputs.name }}"
@@ -77,17 +79,20 @@ jobs:
             NAME="${{ inputs.subfolder }}"
           fi
 
+          mkdir ${{ runner.temp }}/addon
+
           cd thirdparty/${{ inputs.name }}
 
           if [[ ! -d "addons/$NAME" ]]; then
             echo "Addon not found under 'addons/'; assuming addon is root-level."
-            cp -r * ${{ runner.temp }}
+            cp -r * ${{ runner.temp }}/addon
             exit 0
           fi
 
-          cp LICENSE* ${{ runner.temp }} 2>/dev/null || :
-          cp README* ${{ runner.temp }} 2>/dev/null || :
-          cp -r addons/$NAME/* ${{ runner.temp }} 2>/dev/null || :
+          # Move nested files into the repository root.
+          cp LICENSE* ${{ runner.temp }}/addon 2>/dev/null || :
+          cp README* ${{ runner.temp }}/addon 2>/dev/null || :
+          cp -r addons/$NAME/* ${{ runner.temp }}/addon 2>/dev/null || :
 
       - name: Check out to target branch
         if: steps.update.outputs.current != 'true' || inputs.force == true
@@ -99,6 +104,7 @@ jobs:
           if [[ -z "$BRANCHES" ]]; then
             git checkout -b ${{ inputs.target-branch }}
           else
+            git fetch origin +refs/heads/${{ inputs.target-branch }}:refs/heads/${{ inputs.target-branch }}
             git checkout ${{ inputs.target-branch }}
           fi
 
@@ -108,7 +114,7 @@ jobs:
           cd thirdparty/${{ inputs.name }}
 
           rm -rf *
-          cp -r ${{ runner.temp }}/* .
+          cp -r ${{ runner.temp }}/addon/* .
 
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "Target branch is up-to-date; exiting without making changes."
