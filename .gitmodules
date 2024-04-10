@@ -1,3 +1,6 @@
 [submodule "thirdparty/osxcross"]
 	path = thirdparty/osxcross
 	url = https://github.com/tpoechtrager/osxcross
+[submodule "thirdparty/gut"]
+	path = thirdparty/gut
+	url = git@github.com:coffeebeats/gut.git
