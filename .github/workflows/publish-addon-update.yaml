@@ -68,6 +68,7 @@ jobs:
           echo "rev=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Construct addon directory
+        id: addon
         if: steps.update.outputs.current != 'true' || inputs.force == true
         run: |
           NAME="${{ inputs.name }}"
@@ -75,17 +76,20 @@ jobs:
             NAME="${{ inputs.subfolder }}"
           fi
 
+          mkdir ${{ runner.temp }}/addon
+
           cd thirdparty/${{ inputs.name }}
 
           if [[ ! -d "addons/$NAME" ]]; then
             echo "Addon not found under 'addons/'; assuming addon is root-level."
-            cp -r * ${{ runner.temp }}
+            cp -r * ${{ runner.temp }}/addon
             exit 0
           fi
 
-          cp LICENSE* ${{ runner.temp }} 2>/dev/null || :
-          cp README* ${{ runner.temp }} 2>/dev/null || :
-          cp -r addons/$NAME/* ${{ runner.temp }} 2>/dev/null || :
+          # Move nested files into the repository root.
+          cp LICENSE* ${{ runner.temp }}/addon 2>/dev/null || :
+          cp README* ${{ runner.temp }}/addon 2>/dev/null || :
+          cp -r addons/$NAME/* ${{ runner.temp }}/addon 2>/dev/null || :
 
       - name: Check out to target branch
         if: steps.update.outputs.current != 'true' || inputs.force == true
@@ -106,7 +110,7 @@ jobs:
           cd thirdparty/${{ inputs.name }}
 
           rm -rf *
-          cp -r ${{ runner.temp }}/* .
+          cp -r ${{ runner.temp }}/addon/* .
 
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "Target branch is up-to-date; exiting without making changes."
