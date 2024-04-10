@@ -122,4 +122,4 @@ jobs:
           git add --all .
           git commit -m "chore: updating ${{ inputs.name }} to ${{ steps.update.outputs.rev }} (on behalf of '${{ github.triggering_actor }}')"
 
-          git push
+          git push origin ${{ inputs.target-branch }}
