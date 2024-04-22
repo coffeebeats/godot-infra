@@ -1,0 +1,40 @@
+name: "🏗️ godot-infra: Build MacOS export template"
+description: "Builds a Godot export template for MacOS."
+
+inputs:
+  godot-version:
+    description: "The Godot version to compile (must be a semver specification)."
+    required: true
+
+  custompy-path:
+    description: "A path to a 'custom.py' file containing template build options."
+    required: false
+  profile:
+    description: "The optimization profile of the compiled export template."
+    required: false
+    default: release
+  features:
+    description: "A space-, comma-, or new line-separated list of features to enable."
+    required: false
+    default: ""
+
+  # MacOS-specific inputs.
+  # ...
+
+  token:
+    description: "The token used to authenticate with ghcr.io."
+    required: false
+    default: "${{ github.token }}"
+
+outputs:
+  path:
+    description: "The directory containing the export template artifacts."
+    value: ${{ steps.config.outputs.runner-dist }}
+
+runs:
+  using: docker
+  image: "docker://ghcr.io/coffeebeats/godot-infra-build-template:macos-v0.1.0" # x-release-please-version
+  entrypoint: entrypoint.sh
+  credentials:
+    username: ${{ github.actor }}
+    password: ${{ inputs.token }}
