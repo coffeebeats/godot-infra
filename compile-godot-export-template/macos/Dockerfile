@@ -187,22 +187,6 @@ COPY --from=vulkan . "$VULKAN_SDK_ROOT"
 RUN python3.12 -m pip install \
     SCons==4.*
 
-# ------------- Install: ImageMagick + pngcrush (Icon conversion) ------------ #
-
-# NOTE: 'ImageMagick' is used on all platforms to convert '.svg' files into
-# raster image formats (e.g. '.png' or '.jpg'). It's also used on the Windows
-# platform to create '.ico' files.
-
-RUN \
-    # Install image conversion tool
-    apt-get install -y \
-    imagemagick && \
-    # Add an alias for the installed command 'convert'
-    ln -s "$(which convert)" "/usr/bin/magick" && \
-    # Install 'pngcrush' for PNG image optimization
-    apt-get install -y --no-install-recommends \
-    pngcrush
-
 # ----------------------------- Clean: Apt cache ----------------------------- #
 
 RUN apt-get clean
