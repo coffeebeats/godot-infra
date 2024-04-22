@@ -1,10 +1,5 @@
 # syntax=docker/dockerfile:1
 
-ARG LLVM_VERSION
-ARG MACOS_VERSION
-ARG MACOS_VERSION_MINIMUM
-ARG OSXCROSS_SDK
-
 # ---------------------------------------------------------------------------- #
 #                              Image: Setup - Base                             #
 # ---------------------------------------------------------------------------- #
@@ -39,6 +34,8 @@ RUN \
 
 # ----------------------- Install: Clang / LLVM (MacOS) ---------------------- #
 
+ARG LLVM_VERSION
+
 RUN apt-get install -y --no-install-recommends \
     gnupg \
     lsb-release \
@@ -67,6 +64,24 @@ RUN apt-get install -y --no-install-recommends \
     python3.12 -m venv "/venv"
 
 # ---------------------------------------------------------------------------- #
+#                       Image: Setup - @coffeebeats tools                      #
+# ---------------------------------------------------------------------------- #
+
+FROM img-setup-base as img-setup-godot-tools
+
+# ------------------------------- Install: curl ------------------------------ #
+
+RUN apt-get install -y \
+    curl
+
+# ------------------------------ Install: gdenv ------------------------------ #
+
+ARG GDENV_VERSION=""
+RUN export GDENV_HOME="/gdenv" GDENV_VERSION=$GDENV_VERSION; \
+    curl https://raw.githubusercontent.com/coffeebeats/gdenv/main/scripts/install.sh | sh -s -- --no-modify-path; \
+    command -v /gdenv/bin/gdenv
+
+# ---------------------------------------------------------------------------- #
 #                      Image: Setup - OSXCross SDK (MacOS)                     #
 # ---------------------------------------------------------------------------- #
 
@@ -86,10 +101,14 @@ RUN apt-get install -y --no-install-recommends \
 # ------------------------- Add: OSXCross source code ------------------------ #
 
 # Verify build arguments were set.
-RUN \
-    test -n $MACOS_VERSION || (echo "Missing build argument: 'MACOS_VERSION'" && exit 1) && \
-    test -n $MACOS_VERSION_MINIMUM || (echo "Missing build argument: 'MACOS_VERSION_MINIMUM'" && exit 1) && \
-    test -n $OSXCROSS_SDK || (echo "Missing build argument: 'OSXCROSS_SDK'" && exit 1)
+ARG MACOS_VERSION
+RUN test -n $MACOS_VERSION || (echo "Missing build argument: 'MACOS_VERSION'" && exit 1)
+
+ARG MACOS_VERSION_MINIMUM
+RUN test -n $MACOS_VERSION_MINIMUM || (echo "Missing build argument: 'MACOS_VERSION_MINIMUM'" && exit 1)
+
+ARG OSXCROSS_SDK
+RUN test -n $OSXCROSS_SDK || (echo "Missing build argument: 'OSXCROSS_SDK'" && exit 1)
 
 # Add osxcross repository into container
 # NOTE: This step requires that the macOS SDK is already packaged in the
@@ -151,12 +170,17 @@ COPY \
     --from=img-setup-osxcross \
     "/osxcross" "/usr/local/lib/osxcross/target"
 
+
 # The 'osxcross/build_compiler_rt.sh' script installs libraries into these directories.
+ARG LLVM_VERSION
 COPY \
     --from=img-setup-osxcross \
     "/usr/lib/llvm-$LLVM_VERSION/lib/clang" \
     "/usr/lib/llvm-$LLVM_VERSION/lib/clang"
 
+ARG MACOS_VERSION
+ARG MACOS_VERSION_MINIMUM
+ARG OSXCROSS_SDK
 ENV \
     MACOS_VERSION="$MACOS_VERSION" \
     MACOS_VERSION_MINIMUM="$MACOS_VERSION_MINIMUM" \
@@ -186,6 +210,16 @@ COPY --from=vulkan . "$VULKAN_SDK_ROOT"
 
 RUN python3.12 -m pip install \
     SCons==4.*
+
+# ------------------------------ Install: gdenv ------------------------------ #
+
+COPY --from=img-setup-godot-tools "/gdenv/bin/*" "/opt/gdenv/bin"
+
+ENV \
+    GDENV_HOME="/opt/gdenv" \
+    PATH="/opt/gdenv/bin:$PATH"
+
+VOLUME "/opt/gdenv"
 
 # ----------------------------- Clean: Apt cache ----------------------------- #
 

@@ -55,6 +55,24 @@ RUN apt-get install -y --no-install-recommends \
     python3.12 -m venv "/venv"
 
 # ---------------------------------------------------------------------------- #
+#                       Image: Setup - @coffeebeats tools                      #
+# ---------------------------------------------------------------------------- #
+
+FROM img-setup-base as img-setup-godot-tools
+
+# ------------------------------- Install: curl ------------------------------ #
+
+RUN apt-get install -y \
+    curl
+
+# ------------------------------ Install: gdenv ------------------------------ #
+
+ARG GDENV_VERSION=""
+RUN export GDENV_HOME="/gdenv" GDENV_VERSION=$GDENV_VERSION; \
+    curl https://raw.githubusercontent.com/coffeebeats/gdenv/main/scripts/install.sh | sh -s -- --no-modify-path; \
+    command -v /gdenv/bin/gdenv
+
+# ---------------------------------------------------------------------------- #
 #                             Image: Setup - Final                             #
 # ---------------------------------------------------------------------------- #
 
@@ -88,6 +106,16 @@ RUN \
     # Install 'pngcrush' for PNG image optimization
     apt-get install -y --no-install-recommends \
     pngcrush
+
+# ------------------------------ Install: gdenv ------------------------------ #
+
+COPY --from=img-setup-godot-tools "/gdenv/bin/*" "/opt/gdenv/bin"
+
+ENV \
+    GDENV_HOME="/opt/gdenv" \
+    PATH="/opt/gdenv/bin:$PATH"
+
+VOLUME "/opt/gdenv"
 
 # ----------------------------- Clean: Apt cache ----------------------------- #
 
