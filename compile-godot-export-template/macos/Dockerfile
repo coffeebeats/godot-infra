@@ -72,6 +72,11 @@ RUN apt-get install -y --no-install-recommends \
 
 FROM img-setup-base as img-setup-godot-tools
 
+# ------------------------------- Install: curl ------------------------------ #
+
+RUN apt-get install -y \
+    curl
+
 # ------------------------------ Install: gdenv ------------------------------ #
 
 ARG GDENV_VERSION=""
