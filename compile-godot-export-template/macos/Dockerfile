@@ -1,15 +1,15 @@
 # syntax=docker/dockerfile:1
 
-ARG LLVM_VERSION
-ARG MACOS_VERSION
-ARG MACOS_VERSION_MINIMUM
-ARG OSXCROSS_SDK
-
 # ---------------------------------------------------------------------------- #
 #                              Image: Setup - Base                             #
 # ---------------------------------------------------------------------------- #
 
 FROM ubuntu:23.10 AS img-setup-base
+
+ARG LLVM_VERSION
+ARG MACOS_VERSION
+ARG MACOS_VERSION_MINIMUM
+ARG OSXCROSS_SDK
 
 # ------------------------- Update: Package registry ------------------------- #
 
@@ -65,6 +65,19 @@ RUN apt-get install -y --no-install-recommends \
     python3.12-venv && \
     # Set up the virtual environment
     python3.12 -m venv "/venv"
+
+# ---------------------------------------------------------------------------- #
+#                       Image: Setup - @coffeebeats tools                      #
+# ---------------------------------------------------------------------------- #
+
+FROM img-setup-base as img-setup-godot-tools
+
+# ------------------------------ Install: gdenv ------------------------------ #
+
+ARG GDENV_VERSION=""
+RUN export GDENV_HOME="/gdenv" GDENV_VERSION=$GDENV_VERSION; \
+    curl https://raw.githubusercontent.com/coffeebeats/gdenv/main/scripts/install.sh | sh -s -- --no-modify-path; \
+    command -v /gdenv/bin/gdenv
 
 # ---------------------------------------------------------------------------- #
 #                      Image: Setup - OSXCross SDK (MacOS)                     #
@@ -186,6 +199,16 @@ COPY --from=vulkan . "$VULKAN_SDK_ROOT"
 
 RUN python3.12 -m pip install \
     SCons==4.*
+
+# ------------------------------ Install: gdenv ------------------------------ #
+
+COPY --from=img-setup-godot-tools "/gdenv/bin/*" "/opt/gdenv/bin"
+
+ENV \
+    GDENV_HOME="/opt/gdenv" \
+    PATH="/opt/gdenv/bin:$PATH"
+
+VOLUME "/opt/gdenv"
 
 # ----------------------------- Clean: Apt cache ----------------------------- #
 
