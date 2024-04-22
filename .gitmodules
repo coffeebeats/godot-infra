@@ -4,3 +4,7 @@
 [submodule "thirdparty/gut"]
 	path = thirdparty/gut
 	url = git@github.com:coffeebeats/gut.git
+[submodule "thirdparty/godot-steam"]
+	path = thirdparty/godot-steam
+	url = https://github.com/coffeebeats/GodotSteam
+	branch = gdextension-plugin
