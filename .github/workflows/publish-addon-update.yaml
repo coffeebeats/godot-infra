@@ -11,7 +11,7 @@ on:
         type: string
         description: "The name of the branch to push changes to."
         required: true
-        default: v4
+        default: v4.2
       subfolder:
         type: string
         description: "The 'addons/' directory name of the addon to update."
