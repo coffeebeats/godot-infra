@@ -1,5 +1,5 @@
-name: "🏗️ godot-infra: Build Windows export template"
-description: "Builds a Godot export template for Windows."
+name: "🏗️ godot-infra: Build MacOS export template"
+description: "Builds a Godot export template for MacOS."
 
 inputs:
   godot-version:
@@ -18,10 +18,8 @@ inputs:
     required: false
     default: ""
 
-  # Windows-specific inputs.
-  icon-path:
-    description: "A path to an application icon."
-    required: true
+  # MacOS-specific inputs.
+  # ...
 
   token:
     description: "The token used to authenticate with ghcr.io."
@@ -35,7 +33,7 @@ outputs:
 
 runs:
   using: docker
-  image: "docker://ghcr.io/coffeebeats/godot-infra-build-template:windows-v0.1.0" # x-release-please-version
+  image: "docker://ghcr.io/coffeebeats/godot-infra-build-template:macos-v0.1.0" # x-release-please-version
   entrypoint: entrypoint.sh
   credentials:
     username: ${{ github.actor }}
