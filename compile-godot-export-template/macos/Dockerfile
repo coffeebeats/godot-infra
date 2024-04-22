@@ -6,11 +6,6 @@
 
 FROM ubuntu:23.10 AS img-setup-base
 
-ARG LLVM_VERSION
-ARG MACOS_VERSION
-ARG MACOS_VERSION_MINIMUM
-ARG OSXCROSS_SDK
-
 # ------------------------- Update: Package registry ------------------------- #
 
 # NOTE: This will install security updates. This image should be periodically
@@ -38,6 +33,8 @@ RUN \
     zip
 
 # ----------------------- Install: Clang / LLVM (MacOS) ---------------------- #
+
+ARG LLVM_VERSION
 
 RUN apt-get install -y --no-install-recommends \
     gnupg \
@@ -104,10 +101,14 @@ RUN apt-get install -y --no-install-recommends \
 # ------------------------- Add: OSXCross source code ------------------------ #
 
 # Verify build arguments were set.
-RUN \
-    test -n $MACOS_VERSION || (echo "Missing build argument: 'MACOS_VERSION'" && exit 1) && \
-    test -n $MACOS_VERSION_MINIMUM || (echo "Missing build argument: 'MACOS_VERSION_MINIMUM'" && exit 1) && \
-    test -n $OSXCROSS_SDK || (echo "Missing build argument: 'OSXCROSS_SDK'" && exit 1)
+ARG MACOS_VERSION
+RUN test -n $MACOS_VERSION || (echo "Missing build argument: 'MACOS_VERSION'" && exit 1)
+
+ARG MACOS_VERSION_MINIMUM
+RUN test -n $MACOS_VERSION_MINIMUM || (echo "Missing build argument: 'MACOS_VERSION_MINIMUM'" && exit 1)
+
+ARG OSXCROSS_SDK
+RUN test -n $OSXCROSS_SDK || (echo "Missing build argument: 'OSXCROSS_SDK'" && exit 1)
 
 # Add osxcross repository into container
 # NOTE: This step requires that the macOS SDK is already packaged in the
@@ -169,12 +170,17 @@ COPY \
     --from=img-setup-osxcross \
     "/osxcross" "/usr/local/lib/osxcross/target"
 
+
 # The 'osxcross/build_compiler_rt.sh' script installs libraries into these directories.
+ARG LLVM_VERSION
 COPY \
     --from=img-setup-osxcross \
     "/usr/lib/llvm-$LLVM_VERSION/lib/clang" \
     "/usr/lib/llvm-$LLVM_VERSION/lib/clang"
 
+ARG MACOS_VERSION
+ARG MACOS_VERSION_MINIMUM
+ARG OSXCROSS_SDK
 ENV \
     MACOS_VERSION="$MACOS_VERSION" \
     MACOS_VERSION_MINIMUM="$MACOS_VERSION_MINIMUM" \
