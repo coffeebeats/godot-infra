@@ -38,6 +38,7 @@ runs:
     PROFILE: ${{ inputs.profile }}
 
     # Godot-specific environment variables.
+    SCONS_CACHE: ${{ github.workspace }}/.scons
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
   credentials:
     username: ${{ github.actor }}
