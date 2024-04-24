@@ -1,0 +1,105 @@
+name: "🏗️ godot-infra: Compile Godot export template"
+description: "Compiles a Godot export template for the specified platform."
+
+inputs:
+  platform:
+    description: "The target platform of the export template."
+    required: true
+  godot-version:
+    description: "The Godot version to compile (must be a semver specification)."
+    required: true
+
+  encryption-key:
+    description: "A Godot script encryption key to embed within the export template."
+    required: false
+  custompy-path:
+    description: "A path to a 'custom.py' file containing template build options."
+    required: false
+  use-double-precision:
+    description: "Whether to enable double precision for the export template."
+    required: false
+    default: false
+  profile:
+    description: "The optimization profile of the compiled export template."
+    required: false
+    default: release
+
+  # Windows-specific inputs.
+  icon-path:
+    description: "A path to an application icon (only used on Windows)."
+    required: false
+
+  token:
+    description: "The token used to authenticate with ghcr.io."
+    required: false
+    default: "${{ github.token }}"
+
+outputs:
+  path:
+    description: "The directory containing the export template artifacts."
+    value: ${{ github.workspace }}/dist
+
+runs:
+  using: composite
+
+  steps:
+    - name: Determine export template hash identifier
+      id: export-template-cache-id
+      shell: bash
+      run: |
+        INPUT="${{ inputs.platform }}-${{ inputs.godot-version }}-${{ inputs.use-double-precision }}-${{ inputs.profile }}-${{ inputs.encryption-key }}"
+
+        if [[ "${{ inputs.platform }}" == 'windows' ]] && [[ ! -z "${{ inputs.icon-path }}" ]]; then
+          INPUT="$INPUT-${{ hashFiles(inputs.icon-path) }}"
+        fi
+
+        echo "dist=$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+
+    - name: Cache the Godot export template
+      id: export-template
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/dist
+        key: scons-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.dist }}
+
+    - name: Install 'gdenv'
+      if: steps.export-template.outputs.cache-hit != 'true'
+      uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
+      with:
+        skip-install: true # No 'project-dir' exists, so skip installation.
+
+    - name: Vendor Godot source code
+      if: steps.export-template.outputs.cache-hit != 'true'
+      shell: bash
+      # NOTE: This path must match the one expected by the container action.
+      run: gdenv vendor -o ${{ github.workspace }}/godot ${{ inputs.godot-version }}
+
+    - name: Cache the 'SCons' build directory
+      id: scons
+      if: steps.export-template.outputs.cache-hit != 'true'
+      uses: actions/cache@v4
+      with:
+        # NOTE: This path must match the one expected by the container action.
+        path: ${{ github.workspace }}/.scons
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.godot-version }}-${{ inputs.use-double-precision }}-${{ inputs.profile }}
+
+    - name: Compile the export template (MacOS)
+      if: steps.export-template.outputs.cache-hit != 'true' && inputs.platform == 'macos'
+      uses: "./.github/actions/compile-godot-export-template-macos"
+      with:
+        encryption-key: ${{ inputs.encryption-key }}
+        custompy-path: ${{ inputs.custompy-path }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+        profile: ${{ inputs.profile }}
+        token: ${{ inputs.token }}
+
+    - name: Compile the export template (Windows)
+      if: steps.export-template.outputs.cache-hit != 'true' && inputs.platform == 'windows'
+      uses: "./.github/actions/compile-godot-export-template-windows"
+      with:
+        encryption-key: ${{ inputs.encryption-key }}
+        custompy-path: ${{ inputs.custompy-path }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+        profile: ${{ inputs.profile }}
+        icon-path: ${{ inputs.icon-path }}
+        token: ${{ inputs.token }}
