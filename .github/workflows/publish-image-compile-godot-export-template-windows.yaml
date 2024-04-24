@@ -63,8 +63,8 @@ jobs:
         id: build
         with:
           image: compile-godot-export-template
-          containerfiles: .github/actions/compile-godot-export-template/windows/Dockerfile
-          context: .github/actions/compile-godot-export-template/windows
+          containerfiles: .github/actions/compile-godot-export-template-windows/Dockerfile
+          context: .github/actions/compile-godot-export-template-windows
           tags: >
             windows-${{ inputs.version }}
             ${{ inputs.tags }}
