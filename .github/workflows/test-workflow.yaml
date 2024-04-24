@@ -20,5 +20,14 @@ jobs:
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
     steps:
-      - shell: bash
-        run: exit 0
+      - uses: actions/checkout@v4
+
+      - uses: ./compile-godot-export-template
+        with:
+          platform:
+          godot-version: 4.2.2-stable
+          encryption-key:
+          custompy-path: example/custom.py
+          use-double-precision:
+          profile: release
+          icon-path: example/icon.svg
