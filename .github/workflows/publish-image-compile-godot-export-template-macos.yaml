@@ -157,8 +157,8 @@ jobs:
         id: build
         with:
           image: compile-godot-export-template
-          containerfiles: .github/actions/compile-godot-export-template/macos/Dockerfile
-          context: .github/actions/compile-godot-export-template/macos
+          containerfiles: .github/actions/compile-godot-export-template-macos/Dockerfile
+          context: .github/actions/compile-godot-export-template-macos
           tags: >
             macos-${{ inputs.version }}
             ${{ inputs.tags }}
