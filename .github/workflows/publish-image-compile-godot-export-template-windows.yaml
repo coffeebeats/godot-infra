@@ -1,0 +1,121 @@
+name: "🏗️ godot-infra: Build and publish the 'compile-godot-export-template' image for Windows"
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        description: "The image version to release."
+        required: false
+        default: v0.1.0 # x-release-please-version
+      tags:
+        type: string
+        description: "A newline- or space-separated list of additional tags for the image."
+        required: false
+        default: windows-v0 # x-release-please-major
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 30
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: "The version to release."
+        required: true
+      tags:
+        type: string
+        description: "A newline- or space-separated list of additional tags for the image."
+        required: false
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 30
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ------------------------------ Build the image ----------------------------- #
+
+      - name: Set up 'podman'
+        uses: ./.github/actions/setup-podman
+        with:
+          install-buildah: true
+          install-podman: false
+          login: true
+
+      - uses: redhat-actions/buildah-build@v2
+        id: build
+        with:
+          image: compile-godot-export-template
+          containerfiles: .github/actions/compile-godot-export-template/windows/Dockerfile
+          context: .github/actions/compile-godot-export-template/windows
+          tags: >
+            windows-${{ inputs.version }}
+            ${{ inputs.tags }}
+          layers: true
+          extra-args: |
+            --cache-from ghcr.io/${{ github.repository_owner }}/compile-godot-export-template-cache
+            --cache-to ghcr.io/${{ github.repository_owner }}/compile-godot-export-template-cache
+            --cache-ttl 168h
+            --disable-compression=false
+            --platform linux/amd64
+            --skip-unused-stages
+            --squash
+
+      # Push the image to GHCR (Image Registry)
+      - uses: redhat-actions/push-to-registry@v2
+        id: push
+        with:
+          image: ${{ steps.build.outputs.image }}
+          tags: ${{ steps.build.outputs.tags }}
+          registry: ghcr.io/${{ github.repository_owner }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+          extra-args: |
+            --disable-content-trust
+
+      - name: Display 'push' outputs
+        run: echo "${{ toJSON(steps.push.outputs) }}"
+
+  # NOTE: In order to conserve package storage, remove all but the
+  # latest versions of 'compile-godot-export-template'.
+  remove-stale-packages:
+    needs: ["build-and-publish"]
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    steps:
+      # After publishing, delete older version(s) to save space.
+      - uses: actions/delete-package-versions@v5
+        with:
+          owner: "coffeebeats"
+          package-name: "compile-godot-export-template"
+          package-type: "container"
+          # NOTE: This can be revised if multiple versions per platform are needed.
+          min-versions-to-keep: 1
+          ignore-versions: ^(?!(?:(windows)))\w+\-[\w\.]+$
+
+      - uses: actions/delete-package-versions@v5
+        with:
+          owner: "coffeebeats"
+          package-name: "compile-godot-export-template-cache"
+          package-type: "container"
+          # This is arbitrary and can be revisited to save on or increase cache space.
+          min-versions-to-keep: 50
