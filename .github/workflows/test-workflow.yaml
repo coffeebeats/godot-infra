@@ -24,9 +24,9 @@ jobs:
 
       - uses: ./compile-godot-export-template
         with:
-          platform:
+          platform: windows
           godot-version: 4.2.2-stable
-          encryption-key:
+          encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
           custompy-path: example/custom.py
           use-double-precision:
           profile: release
