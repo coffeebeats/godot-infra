@@ -2,9 +2,9 @@ name: "🏗️ godot-infra: Build MacOS export template"
 description: "Builds a Godot export template for MacOS."
 
 inputs:
-  custompy-path:
-    description: "A path to a 'custom.py' file containing template build options."
-    required: false
+  arch:
+    description: "The target architecture to build the export template for."
+    required: true
   encryption-key:
     description: "A Godot script encryption key to embed within the export template."
     required: false
@@ -17,27 +17,30 @@ inputs:
     required: false
     default: false
 
-  # MacOS-specific inputs.
-  # ...
-
-  token:
-    description: "The token used to authenticate with ghcr.io."
-    required: false
-    default: "${{ github.token }}"
-
 runs:
-  using: docker
-  image: "docker://ghcr.io/coffeebeats/compile-godot-export-template:macos-v0.1.0" # x-release-please-version
-  entrypoint: entrypoint.sh
+  using: "docker"
+  image: ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.2-macos
   env:
-    CUSTOMPY_PATH: ${{ inputs.custompy-path }}
-    DOUBLE_PRECISION: ${{ inputs.use-double-precision }}
-    PROFILE: ${{ inputs.profile }}
-
-    # Godot-specific environment variables.
-    SCONS_CACHE: ${{ github.workspace }}/.scons
-    SCONS_CACHE_SIZE: "2000"
+    SCONS_CACHE: /github/workspace/.scons
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
-  credentials:
-    username: ${{ github.actor }}
-    password: ${{ inputs.token }}
+  args:
+    - /bin/bash
+    - -c
+    - >
+      scons
+
+      -j$(nproc)
+      -C $GITHUB_WORKSPACE
+
+      platform=macos
+      arch=${{ inputs.arch }}
+
+      verbose=yes
+      warnings=extra
+      werror=yes
+
+      $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
+
+      $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes optimize=debug)
+      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes lto=full optimize=speed_trace)
+      $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes lto=full optimize=speed)

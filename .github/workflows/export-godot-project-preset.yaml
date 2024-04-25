@@ -1,0 +1,89 @@
+name: "🏗️ Export: Godot project preset"
+
+on:
+  workflow_call:
+    inputs:
+      preset-name:
+        type: string
+        description: "The name of the export preset."
+        required: true
+
+      pck-only:
+        type: boolean
+        description: "Whether the exported preset should only be a PCK file."
+        required: false
+        default: false
+
+      platform:
+        type: string
+        description: "The platform of the export preset."
+        required: true
+
+      godot-src-rev:
+        type: string
+        description: "The revision/tag name in the 'godot-src-repository' to check out."
+        required: true
+      godot-src-repository:
+        type: string
+        description: "The name of a repository containing the Godot source code."
+        required: false
+        default: godotengine/godot
+
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
+
+    outputs:
+      path:
+        description: "The name of the exported artifact."
+        value: ${{ jobs.compile.outputs.name }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  compile-export-template:
+    uses: "./.github/workflows/compile-godot-export-template-windows.yaml"
+    with:
+      custompy-path: ""
+      encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
+      godot-src-repository: ${{ inputs.godot-src-repository }}
+      godot-src-rev: ${{ inputs.godot-src-rev }}
+      icon-path: ""
+      profile: release
+      use-double-precision: false
+
+  export-project-preset:
+    needs: ["compile-export-template"]
+
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+
+    container: ghcr.io/coffeebeats/export-godot-project-preset:godot-${{ needs.compile-export-template.outputs.godot-major-minor-version }}-windows
+
+    outputs:
+      name: ${{ steps.config-artifact.outputs.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # -------------------------- Export the preset ------------------------- #
+
+      - name: Export the project preset
+        run: >
+          SCRIPT_AES256_ENCRYPTION_KEY=${{ secrets.SCRIPT_AES256_ENCRYPTION_KEY }}
+
+          godot --headless --export$([[ "${{ inputs.pck-only }}" == 'true' ]] && echo '_pck')
+
+      # --------------------- Package the exported preset -------------------- #
+
+      # Publish the artifact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.preset-name }}
+          path: ${{ steps.config-artifact.outputs.name }}
+          retention-days: 7
+          if-no-files-found: error

@@ -29,15 +29,10 @@ inputs:
     description: "A path to an application icon (only used on Windows)."
     required: false
 
-  token:
-    description: "The token used to authenticate with ghcr.io."
-    required: false
-    default: "${{ github.token }}"
-
 outputs:
   path:
     description: "The directory containing the export template artifacts."
-    value: ${{ github.workspace }}/dist
+    value: ${{ github.workspace }}/bin
 
 runs:
   using: composite
@@ -53,14 +48,14 @@ runs:
           INPUT="$INPUT-${{ hashFiles(inputs.icon-path) }}"
         fi
 
-        echo "dist=$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+        echo "value=$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
 
     - name: Cache the Godot export template
       id: export-template
       uses: actions/cache@v4
       with:
-        path: ${{ github.workspace }}/dist
-        key: scons-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.dist }}
+        path: ${{ github.workspace }}/bin
+        key: scons-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
 
     - name: Install 'gdenv'
       if: steps.export-template.outputs.cache-hit != 'true'
@@ -72,7 +67,7 @@ runs:
       if: steps.export-template.outputs.cache-hit != 'true'
       shell: bash
       # NOTE: This path must match the one expected by the container action.
-      run: gdenv vendor -o ${{ github.workspace }}/godot ${{ inputs.godot-version }}
+      run: gdenv vendor -o ${{ github.workspace }} ${{ inputs.godot-version }}
 
     - name: Cache the 'SCons' build directory
       id: scons
@@ -83,23 +78,48 @@ runs:
         path: ${{ github.workspace }}/.scons
         key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.godot-version }}-${{ inputs.use-double-precision }}-${{ inputs.profile }}
 
+    - name: Copy 'custom.py' into Godot source code directory
+      if: inputs.custompy-path != '' && steps.export-template.outputs.cache-hit != 'true'
+      shell: bash
+      run: cp ${{ inputs.custompy-path }} ${{ github.workspace }}/custom.py
+
+    - name: Copy icon into Godot source code directory
+      if: inputs.icon-path != '' && steps.export-template.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        ICON_PATH="${{ inputs.icon-path }}"
+        if [[ "${{ endsWith(inputs.icon-path, '.ico') }}" != "true" ]]; then
+          sudo apt-get install -y imagemagick
+
+          ICON_PATH=${{ runner.temp }}/godot.ico
+          convert ${{ inputs.icon-path }} -define icon:auto-resize=256,128,64,48,32,16 $ICON_PATH
+        fi
+
+        cp $ICON_PATH ${{ github.workspace }}/platform/windows/godot.ico
+
     - name: Compile the export template (MacOS)
       if: steps.export-template.outputs.cache-hit != 'true' && inputs.platform == 'macos'
       uses: "./.github/actions/compile-godot-export-template-macos"
       with:
+        arch: x86_64
         encryption-key: ${{ inputs.encryption-key }}
-        custompy-path: ${{ inputs.custompy-path }}
         use-double-precision: ${{ inputs.use-double-precision }}
         profile: ${{ inputs.profile }}
         token: ${{ inputs.token }}
+
+    - name: Compile the export template (MacOS)
+      if: steps.export-template.outputs.cache-hit != 'true' && inputs.platform == 'macos'
+      uses: "./.github/actions/compile-godot-export-template-macos"
+      with:
+        arch: arm64
+        encryption-key: ${{ inputs.encryption-key }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+        profile: ${{ inputs.profile }}
 
     - name: Compile the export template (Windows)
       if: steps.export-template.outputs.cache-hit != 'true' && inputs.platform == 'windows'
       uses: "./.github/actions/compile-godot-export-template-windows"
       with:
         encryption-key: ${{ inputs.encryption-key }}
-        custompy-path: ${{ inputs.custompy-path }}
         use-double-precision: ${{ inputs.use-double-precision }}
         profile: ${{ inputs.profile }}
-        icon-path: ${{ inputs.icon-path }}
-        token: ${{ inputs.token }}

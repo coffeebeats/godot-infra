@@ -1,0 +1,66 @@
+name: "🤖 Godot: Vendor source code"
+description: "Downloads the Godot source code and vendors it to a directory and/or artifact."
+
+inputs:
+  godot-src-rev:
+    type: string
+    description: "The revision/tag name in the 'godot-src-repository' to check out."
+    required: true
+  godot-src-repository:
+    type: string
+    description: "The name of a repository containing the Godot source code."
+    required: false
+    default: godotengine/godot
+
+  dst-path:
+    type: string
+    description: "A destination path to vendor the Godot source code into (skipped if empty)."
+    required: false
+    default: ""
+  artifact-name:
+    type: string
+    description: "An artifact name to upload the source code under (skipped if empty)."
+    required: false
+    default: ""
+
+outputs:
+  major-minor-version:
+    description: "The major-minor version of the source code."
+    value: ${{ steps.godot.outputs.major-minor }}
+  semantic-version:
+    description: "The full semantic version of the source code."
+    value: ${{ steps.godot.outputs.semver }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        path: ./godot-${{ inputs.godot-src-rev }}
+        ref: ${{ inputs.godot-src-rev }}
+        repository: ${{ inputs.godot-src-repository }}
+
+    - name: Determine the Godot version
+      id: godot
+      shell: bash
+      workdir: ./godot-${{ inputs.godot-src-rev }}
+      run: |
+        echo "major-minor=$(python3 -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_OUTPUT
+        echo "semver=$(python3 -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_OUTPUT
+
+    - name: Verify source code checkout
+      shell: bash
+      run: "[[ ! -f '${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/version.py' ]] && exit 1 || :"
+
+    - name: Upload the source code artifact
+      if: inputs.artifact-name != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
+        if-no-files-found: error
+
+    - name: Copy the source code to 'dst-path'
+      if: inputs.dst-path != ''
+      shell: bash
+      run: mv $GITHUB_WORKSPACE/godot-${{ inputs.godot-src-rev }} ${{ inputs.dst-path }}

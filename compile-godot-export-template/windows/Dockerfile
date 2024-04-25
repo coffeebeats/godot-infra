@@ -25,6 +25,7 @@ RUN \
     # Install global dependencies
     apt-get install -y --no-install-recommends \
     ca-certificates \
+    pkg-config \
     python3.12
 
 # ---------------------- Install: 'mingw-w64' toolchain ---------------------- #
@@ -60,6 +61,10 @@ RUN apt-get install -y --no-install-recommends \
 
 FROM img-setup-base
 
+# ----------------------------- Clean: Apt cache ----------------------------- #
+
+RUN apt-get clean
+
 # ------------------------------ Install: Python ----------------------------- #
 
 COPY --from=img-setup-python "/venv" "/opt/python3"
@@ -79,7 +84,3 @@ RUN python3.12 -m pip install \
 # Windows-related settings.
 
 ENV SCONSFLAGS="platform=windows use_mingw=yes"
-
-# ----------------------------- Clean: Apt cache ----------------------------- #
-
-RUN apt-get clean

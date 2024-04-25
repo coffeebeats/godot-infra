@@ -137,6 +137,10 @@ RUN test "$OSXCROSS_SDK" = "$(ls /osxcross/bin | \grep 'darwin' | head -1 | cut 
 
 FROM img-setup-base
 
+# ----------------------------- Clean: Apt cache ----------------------------- #
+
+RUN apt-get clean
+
 # ------------------------------ Install: Python ----------------------------- #
 
 COPY --from=img-setup-python "/venv" "/opt/python3"
@@ -205,7 +209,3 @@ ENV SCONSFLAGS="use_volk=no vulkan_sdk_path=$VULKAN_SDK_ROOT/macOS/lib/MoltenVK.
 # detect clang usage via 'OSXCross'. Add in the missing "common
 # warnings" here (see https://github.com/godotengine/godot/blob/2267646bf4c29acf1342951d8726626817c742bd/SConstruct#L727-L730).
 ENV SCONSFLAGS="CCFLAGS='-Wno-ordered-compare-function-pointers' $SCONSFLAGS"
-
-# ----------------------------- Clean: Apt cache ----------------------------- #
-
-RUN apt-get clean
