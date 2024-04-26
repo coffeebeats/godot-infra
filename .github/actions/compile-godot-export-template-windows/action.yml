@@ -27,8 +27,9 @@ runs:
   args:
     - /bin/bash
     - -c
-    - >
+    - >-
       echo
+
       -j$(nproc)
       -C $GITHUB_WORKSPACE
       platform=windows
