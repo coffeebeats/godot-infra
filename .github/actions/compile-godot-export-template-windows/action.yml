@@ -29,6 +29,7 @@ runs:
     - -c
     - >-
       scons
+
       -j$(nproc)
       -C $GITHUB_WORKSPACE
       platform=windows
