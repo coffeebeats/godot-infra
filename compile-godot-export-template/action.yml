@@ -42,9 +42,15 @@ runs:
 
   steps:
     - name: Copy the Godot source code to the expected location
-      if: inputs.godot-src-path != ${{ github.workspace }}/godot
       shell: bash
-      run: cp -r ${{ inputs.godot-src-path }} ${{ github.workspace }}/godot
+      run: |
+        if [[ $(realpath "${{ inputs.godot-src-path }}") == $(realpath "${{ github.workspace }}/godot") ]]; then
+          echo "Godot source code already located at target directory; exiting without making changes."
+          exit 0
+        fi
+
+        cp -r ${{ inputs.godot-src-path }} ${{ github.workspace }}/godot
+        echo "Copied Godot source code to target directory: ${{ github.workspace }}/godot"
 
     # -------------- Restore the export template + SCons caches -------------- #
 
