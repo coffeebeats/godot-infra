@@ -19,17 +19,16 @@ inputs:
     default: release
 
 runs:
-  using: "docker"
-  image: ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.2-windows
+  using: docker
+  image: ubuntu:24.04
   env:
     SCONS_CACHE: /github/workspace/.scons
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
   args:
     - /bin/bash
     - -c
-    - >-
-      scons
-
+    - >
+      echo
       -j$(nproc)
       -C $GITHUB_WORKSPACE
       platform=windows
