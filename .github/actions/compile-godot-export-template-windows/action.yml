@@ -26,6 +26,7 @@ runs:
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
   entrypoint: /bin/bash
   args:
+    - -c
     - echo
     - -j$(nproc)
     - -C $GITHUB_WORKSPACE
