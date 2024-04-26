@@ -17,12 +17,20 @@ inputs:
     description: "The optimization profile of the compiled export template."
     required: false
     default: release
+  godot-src-path:
+    description: "A path, relative to 'github.workspace', where the Godot source code is located."
+    required: false
+    default: "."
+  scons-cache-path:
+    description: "A path, relative to 'github.workspace', where the SCons cache is located."
+    required: false
+    default: ".scons"
 
 runs:
   using: docker
-  image: ubuntu:24.04
+  image: ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.2-windows
   env:
-    SCONS_CACHE: /github/workspace/.scons
+    SCONS_CACHE: /github/workspace/${{ inputs.scons-cache-path }}
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
   args:
     - /bin/bash
@@ -30,7 +38,7 @@ runs:
     - >
       scons
       -j$(nproc)
-      -C $GITHUB_WORKSPACE
+      -C $GITHUB_WORKSPACE/${{ inputs.godot-src-path }}
       platform=windows
       arch=${{ inputs.arch }}
       verbose=yes

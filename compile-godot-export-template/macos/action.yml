@@ -24,12 +24,20 @@ inputs:
     description: "Whether to create an app bundle for the export template."
     required: false
     default: false
+  godot-src-path:
+    description: "A path, relative to 'github.workspace', where the Godot source code is located."
+    required: false
+    default: "."
+  scons-cache-path:
+    description: "A path, relative to 'github.workspace', where the SCons cache is located."
+    required: false
+    default: ".scons"
 
 runs:
   using: docker
   image: ubuntu:24.04
   env:
-    SCONS_CACHE: /github/workspace/.scons
+    SCONS_CACHE: /github/workspace/${{ inputs.scons-cache-path }}
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
   args:
     - /bin/bash
@@ -37,7 +45,7 @@ runs:
     - >
       scons
       -j$(nproc)
-      -C $GITHUB_WORKSPACE
+      -C $GITHUB_WORKSPACE/${{ inputs.godot-src-path }}
       platform=windows arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
