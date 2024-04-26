@@ -25,19 +25,15 @@ runs:
     SCONS_CACHE: /github/workspace/.scons
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
   args:
-    - /bin/bash
-    - -c
-    - >-
-      echo
-
-      -j$(nproc)
-      -C $GITHUB_WORKSPACE
-      platform=windows
-      arch=${{ inputs.arch }}
-      verbose=yes
-      warnings=extra
-      werror=yes
-      $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
-      $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes optimize=debug)
-      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes lto=full optimize=speed_trace)
-      $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes lto=full optimize=speed)
+    - echo
+    - -j$(nproc)
+    - -C $GITHUB_WORKSPACE
+    - platform=windows
+    - arch=${{ inputs.arch }}
+    - verbose=yes
+    - warnings=extra
+    - werror=yes
+    - $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
+    - $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes optimize=debug)
+    - $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes lto=full optimize=speed_trace)
+    - $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes lto=full optimize=speed)
