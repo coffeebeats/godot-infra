@@ -24,6 +24,9 @@ inputs:
     required: false
     default: release
 
+  # MacOS-specific inputs.
+  # ...
+
   # Windows-specific inputs.
   icon-path:
     description: "A path to an application icon (only used on Windows)."
@@ -91,7 +94,7 @@ runs:
     - name: Copy icon into Godot source code directory
       if: |
         inputs.icon-path != '' &&
-        inputs.platform == windows &&
+        inputs.platform == 'windows' &&
         steps.export-template.outputs.cache-hit != 'true'
       shell: bash
       run: |
@@ -109,8 +112,8 @@ runs:
 
     - name: Compile the export template (MacOS - x86_64)
       if: |
-        inputs.platform == 'macos'
-        steps.export-template.outputs.cache-hit != 'true' &&
+        inputs.platform == 'macos' &&
+        steps.export-template.outputs.cache-hit != 'true'
       uses: "./compile-godot-export-template/macos"
       with:
         arch: x86_64
@@ -121,8 +124,8 @@ runs:
 
     - name: Compile the export template (MacOS - arm64+universal)
       if: |
-        inputs.platform == 'macos'
-        steps.export-template.outputs.cache-hit != 'true' &&
+        inputs.platform == 'macos'  &&
+        steps.export-template.outputs.cache-hit != 'true'
       uses: "./compile-godot-export-template/macos"
       with:
         app-bundle: true
@@ -135,8 +138,8 @@ runs:
 
     - name: Compile the export template (Windows - x86_64)
       if: |
-        inputs.platform == 'windows'
-        steps.export-template.outputs.cache-hit != 'true' &&
+        inputs.platform == 'windows' &&
+        steps.export-template.outputs.cache-hit != 'true'
       uses: "./compile-godot-export-template/windows"
       with:
         arch: x86_64
