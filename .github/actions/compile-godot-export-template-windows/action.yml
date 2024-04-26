@@ -24,6 +24,7 @@ runs:
   env:
     SCONS_CACHE: /github/workspace/.scons
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
+  entrypoint: /bin/bash
   args:
     - echo
     - -j$(nproc)
