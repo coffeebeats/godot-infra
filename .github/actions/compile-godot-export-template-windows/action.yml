@@ -1,5 +1,5 @@
-name: "🏗️ godot-infra: Build Windows export template"
-description: "Builds a Godot export template for Windows."
+name: "🏗️ Compile: Godot export template (Windows)"
+description: "Compiles a Godot export template for the Windows platform."
 
 inputs:
   arch:
