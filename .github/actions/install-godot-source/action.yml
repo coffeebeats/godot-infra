@@ -45,11 +45,6 @@ runs:
         --depth 1
         --no-tags
 
-        ls .
-        echo ""
-        ls ${{ github.workspace }}
-        echo ""
-
         HASH=${{ hashFiles(format('{0}/godot-{1}', github.workspace, inputs.godot-src-rev)) }}
         echo hash=$HASH
 
