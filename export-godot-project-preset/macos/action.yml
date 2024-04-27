@@ -1,0 +1,80 @@
+name: "🤖 Export: Godot project export preset (MacOS)"
+description: "Exports a Godot project export preset for the MacOS platform."
+
+inputs:
+  preset-name:
+    description: "The name of the Godot project export preset."
+    required: true
+  preset-output-path:
+    description: "A path, relative to 'github.workspace', where the exported Godot preset will be output."
+    required: true
+  pck-only:
+    description: "Whether to export a PCK file instead of an executable."
+    required: true
+
+  project-path:
+    description: "A path, relative to 'github.workspace', where the Godot project is located."
+    required: false
+    default: "."
+  godot-editor-path:
+    description: "A path, relative to 'github.workspace', where the Godot editor executable is located."
+    required: true
+  godot-export-template-path:
+    description: "A path, relative to 'github.workspace', where the Godot editor executable is located."
+    required: true
+
+  profile:
+    description: "The optimization profile of the exported project preset."
+    required: false
+    default: release
+  encryption-key:
+    description: "A Godot script encryption key to encrypt exported resources with."
+    required: false
+
+  # See https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_macos.html.
+  codesign-certificate-file:
+    required: false
+  codesign-certificate-password:
+    required: false
+  codesign-provisioning-profile:
+    required: false
+  notarization-api-uuid:
+    required: false
+  notarization-api-key:
+    required: false
+  notarization-api-key-id:
+    required: false
+  notarization-apple-id-name:
+    required: false
+  notarization-apple-id-password:
+    required: false
+
+runs:
+  using: docker
+  image: ghcr.io/coffeebeats/export-godot-project-preset:godot-v4.2-windows
+  env:
+    GODOT_SCRIPT_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
+    GODOT_MACOS_CODESIGN_CERTIFICATE_FILE: ${{ inputs.codesign-certificate-file }}
+    GODOT_MACOS_CODESIGN_CERTIFICATE_PASSWORD: ${{ inputs.codesign-certificate-password }}
+    GODOT_MACOS_CODESIGN_PROVISIONING_PROFILE: ${{ inputs.codesign-provisioning-profile }}
+    GODOT_MACOS_NOTARIZATION_API_UUID: ${{ inputs.notarization-api-uuid }}
+    GODOT_MACOS_NOTARIZATION_API_KEY: ${{ inputs.notarization-api-key }}
+    GODOT_MACOS_NOTARIZATION_API_KEY_ID: ${{ inputs.notarization-api-key-id }}
+    GODOT_MACOS_NOTARIZATION_APPLE_ID_NAME: ${{ inputs.notarization-apple-id-name }}
+    GODOT_MACOS_NOTARIZATION_APPLE_ID_PASSWORD: ${{ inputs.notarization-apple-id-password }}
+  args:
+    - /bin/bash
+    - -c
+    # NOTE: Any extra new-lines contained in this string will be executed as the
+    # start of a new command.
+    - >
+      $GITHUB_WORKSPACE/${{ inputs.godot-editor-path }}
+      --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
+      --headless
+      --verbose
+      $([[ "${{ inputs.profile }}" == "debug" ]] && echo "--export-debug")
+      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo "--export-debug")
+      $([[ "${{ inputs.profile }}" == "release" ]] && echo "--export-release")
+      $([[ "${{ inputs.pck-only }}" == "true" ]] && echo "--export-pck")
+      ${{ inputs.preset-name }}
+      ${{  }}

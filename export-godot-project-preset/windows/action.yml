@@ -1,0 +1,65 @@
+name: "🤖 Export: Godot project export preset (Windows)"
+description: "Exports a Godot project export preset for the Windows platform."
+
+inputs:
+  preset-name:
+    description: "The name of the Godot project export preset."
+    required: true
+  preset-output-path:
+    description: "A path, relative to 'github.workspace', where the exported Godot preset will be output."
+    required: true
+  pck-only:
+    description: "Whether to export a PCK file instead of an executable."
+    required: true
+
+  project-path:
+    description: "A path, relative to 'github.workspace', where the Godot project is located."
+    required: false
+    default: "."
+  godot-editor-path:
+    description: "A path, relative to 'github.workspace', where the Godot editor executable is located."
+    required: true
+  godot-export-template-path:
+    description: "A path, relative to 'github.workspace', where the Godot editor executable is located."
+    required: true
+
+  profile:
+    description: "The optimization profile of the exported project preset."
+    required: false
+    default: release
+  encryption-key:
+    description: "A Godot script encryption key to encrypt exported resources with."
+    required: false
+
+  # See https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_windows.html.
+  codesign-identity-type:
+    required: false
+  codesign-identity:
+    required: false
+  codesign-password:
+    required: false
+
+runs:
+  using: docker
+  image: ghcr.io/coffeebeats/export-godot-project-preset:godot-v4.2-windows
+  env:
+    GODOT_SCRIPT_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
+    GODOT_WINDOWS_CODESIGN_IDENTITY_TYPE: ${{ inputs.codesign-identity-type }}
+    GODOT_WINDOWS_CODESIGN_IDENTITY: ${{ inputs.codesign-identity }}
+    GODOT_WINDOWS_CODESIGN_PASSWORD: ${{ inputs.codesign-password }}
+  args:
+    - /bin/bash
+    - -c
+    # NOTE: Any extra new-lines contained in this string will be executed as the
+    # start of a new command.
+    - >
+      $GITHUB_WORKSPACE/${{ inputs.godot-editor-path }}
+      --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
+      --headless
+      --verbose
+      $([[ "${{ inputs.profile }}" == "debug" ]] && echo "--export-debug")
+      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo "--export-debug")
+      $([[ "${{ inputs.profile }}" == "release" ]] && echo "--export-release")
+      $([[ "${{ inputs.pck-only }}" == "true" ]] && echo "--export-pck")
+      ${{ inputs.preset-name }}
+      ${{  }}
