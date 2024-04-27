@@ -1,15 +1,23 @@
-name: "🤖 Export: Godot project preset"
-description: "Exports a Godot project preset for the specified platform."
+name: "🤖 Export: Godot project export preset"
+description: "Exports a Godot project export preset for the specified platform."
+
 
 inputs:
   preset-name:
     description: "The name of the Godot project export preset."
     required: true
+  preset-output-name:
+    description: "The output filename of the exported Godot project preset."
+    required: true
+  pck-only:
+    description: "Whether to export a PCK file instead of an executable."
+    required: false
+    default: false
+
   project-path:
     description: "The path to the Godot project."
     required: false
     default: "."
-
   godot-editor-path:
     description: "The path to the Godot editor executable."
     required: false
@@ -25,78 +33,143 @@ inputs:
   encryption-key:
     description: "A Godot script encryption key to embed within the export template."
     required: false
+  
+  # MacOS-specific inputs.
+  codesign-certificate-file:
+    description: "The codesigning certificate file (only used on MacOS)."
+    required: false
+  codesign-certificate-password:
+    description: "The codesigning certificate password (only used on MacOS)."
+    required: false
+  codesign-provisioning-profile:
+    description: "The codesigning provisioning profile (only used on MacOS)."
+    required: false
+  notarization-api-uuid:
+    description: "The notarization API UUID (only used on MacOS)."
+    required: false
+  notarization-api-key:
+    description: "The notarization API key (only used on MacOS)."
+    required: false
+  notarization-api-key-id:
+    description: "The notarization API key ID (only used on MacOS)."
+    required: false
+  notarization-apple-id-name:
+    description: "The notarization Apple ID name (only used on MacOS)."
+    required: false
+  notarization-apple-id-password:
+    description: "The notarization Apple ID name (only used on MacOS)."
+    required: false
+  
+  # Windows-specific inputs.
+  codesign-identity-type:
+    description: "The codesigning identity type (only used on Windows)."
+    required: false
+  codesign-identity:
+    description: "The codesigning identity (only used on Windows)."
+    required: false
+  codesign-password:
+    description: "The codesigning password for the identity (only used on Windows)."
+    required: false
 
 outputs:
   path:
-    description: "The path to the exported project preset artifact."
-    value: TODO
+    description: "The path to the compiled export template artifact."
+    value: ${{ github.workspace }}/project/${{ inputs.preset-output-name }}
 
 runs:
   using: composite
 
   steps:
+    # ----------------------------- Set up Godot ----------------------------- #
+    
+    - name: Copy the Godot project to the expected location
+      shell: bash
+      run: |
+        if [[ $(realpath "${{ inputs.project-path }}") == $(realpath "${{ github.workspace }}/project") ]]; then
+          echo "Godot project already located at target directory; exiting without making changes."
+          exit 0
+        fi
+
+        cp -r ${{ inputs.project-path }} ${{ github.workspace }}/project
+        echo "Copied Godot project to target directory: ${{ github.workspace }}/project"
+    
+    - name: Copy the Godot editor to the expected location
+      shell: bash
+      run: |
+        if [[ $(realpath "${{ inputs.godot-editor-path }}") == $(realpath "${{ github.workspace }}/godot") ]]; then
+          echo "Godot editor already located at target path; exiting without making changes."
+          exit 0
+        fi
+
+        cp ${{ inputs.godot-editor-path }} ${{ github.workspace }}/godot
+        echo "Copied Godot editor to target path: ${{ github.workspace }}/godot"
+
     # ------------------- Install the Godot export template ------------------ #
 
       - uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.export-template-artifact-name }}
-          path: ${{ github.workspace }}/.local/shared/godot/export_templates/4.2.2.stable/linux_debug.${{ inputs.arch }}
-          path: ${{ github.workspace }}/.local/shared/godot/export_templates/4.2.2.stable/macos.zip
+          path: ${{ github.workspace }}/.godot/export_templates
+      
+      - name: Set path to export template in 'export_presets.cfg'
+        shell: bash
+        run: >-
+          ${{ github.workspace }}/godot
+          --headless
+          --quit
+          -s ./export-godot-project-preset/set-export-template-path.gd
+          --preset="${{ inputs.preset-name }}"
+          --export-presets-path=${{ github.workspace }}/project/export_presets.cfg
+          --template-path="${{ github.workspace }}/.godot/export_templates/${{ inputs.export-template-artifact-name }}"
+      
+      - name: Get the platform of the specified preset
+        id: preset
+        shell: bash
+        run: >-
+          PLATFORM=$(
+            ${{ github.workspace }}/godot
+            --headless
+            --quit
+            -s ./export-godot-project-preset/get-export-preset-platform.gd
+            --preset="${{ inputs.preset-name }}"
+            --export-presets-path=${{ github.workspace }}/project/export_presets.cfg
+            | tail -n 1
+          )
+
+          echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
 
     # ----------------------- Export the project preset ---------------------- #
 
-    - name: Compile the export template (MacOS - x86_64)
-      if: |
-        inputs.platform == 'macos' &&
-        (inputs.arch == "x86_64" || inputs.arch == "universal") &&
-        steps.export-template.outputs.cache-hit != 'true'
-      uses: "./compile-godot-export-template/macos"
-      with:
-        arch: x86_64
-        encryption-key: ${{ inputs.encryption-key }}
-        godot-src-path: godot
-        profile: ${{ inputs.profile }}
-        use-double-precision: ${{ inputs.use-double-precision }}
-
-    - name: Compile the export template (MacOS - arm64+universal)
-      if: |
-        inputs.platform == 'macos'  &&
-        (inputs.arch == "arm64" || inputs.arch == "universal") &&
-        steps.export-template.outputs.cache-hit != 'true'
-      uses: "./compile-godot-export-template/macos"
-      with:
-        app-bundle: true
-        arch: arm64
-        encryption-key: ${{ inputs.encryption-key }}
-        godot-src-path: godot
-        lipo: ${{ inputs.arch == "universal" }}
-        profile: ${{ inputs.profile }}
-        use-double-precision: ${{ inputs.use-double-precision }}
-
-    - name: Compile the export template (Windows - x86_64)
-      if: |
-        inputs.platform == 'windows' &&
-        steps.export-template.outputs.cache-hit != 'true'
-      uses: "./compile-godot-export-template/windows"
+    - name: Export the Godot project preset (MacOS)
+      if: steps.preset.outputs.platform == 'macos'
+      uses: "./export-godot-project-preset/windows"
       with:
         arch: ${{ inputs.arch }}
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         profile: ${{ inputs.profile }}
         use-double-precision: ${{ inputs.use-double-precision }}
-
-    # ------------- Determine compiled export template file name ------------- #
-
-    - name: Determine export template file name
-      id: compiled-artifact
-      shell: bash
-      run: |
-        if [[ "${{ inputs.platform }}" == "macos" ]]; then
-          echo "name=macos.zip" >> $GITHUB_OUTPUT
-          exit 0
-        fi
-
-        TARGET=$([[ "${{ inputs.profile }}" == "release" ]] && echo template_release || echo template_debug)
-        DOUBLE=$([[ "${{ inputs.use-double-precision }}" == "true" ]] && echo ".double")
-
-        echo "name=godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}.exe" >> $GITHUB_OUTPUT
+        codesign-certificate-file: ${{ inputs.codesign-certificate-file }}
+        codesign-certificate-password: ${{ inputs.codesign-certificate-password }}
+        codesign-provisioning-profile: ${{ inputs.codesign-provisioning-profile }}
+        notarization-api-uuid: ${{ inputs.notarization-api-uuid }}
+        notarization-api-key: ${{ inputs.notarization-api-key }}
+        notarization-api-key-id: ${{ inputs.notarization-api-key-id }}
+        notarization-apple-id-name: ${{ inputs.notarization-apple-id-name }}
+        notarization-apple-id-password: ${{ inputs.notarization-apple-id-password }}
+    
+    - name: Export the Godot project preset (Windows)
+      if: steps.preset.outputs.platform == 'windows'
+      uses: "./export-godot-project-preset/windows"
+      with:
+        preset-name: ${{ inputs.preset-name }}
+        preset-output-path: ${{ github.workspace }}/dist/${{ inputs.preset-output-name }}
+        pck-only: ${{ inputs.pck-only }}
+        project-path: project
+        godot-editor-path: godot
+        godot-export-template-path: .godot/export_templates/${{ inputs.export-template-artifact-name }}
+        profile: ${{ inputs.profile }}
+        encryption-key: ${{ inputs.encryption-key }}
+        codesign-identity-type: ${{ inputs.codesign-identity-type }}
+        codesign-identity: ${{ inputs.codesign-identity }}
+        codesign-password: ${{ inputs.codesign-password }}

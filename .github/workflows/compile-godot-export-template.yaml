@@ -79,7 +79,7 @@ jobs:
 
       # -------------------- Vendor the Godot source code -------------------- #
 
-      - uses: ./.github/actions/vendor-godot-source
+      - uses: ./.github/actions/install-godot-source
         id: godot
         with:
           dst-path: ${{ github.workspace }}/godot

@@ -1,4 +1,4 @@
-name: "🤖 Godot: Vendor source code"
+name: "🤖 Godot: Download source code"
 description: "Downloads the Godot source code and vendors it to a directory and/or artifact."
 
 inputs:
