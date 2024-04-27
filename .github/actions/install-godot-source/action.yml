@@ -43,7 +43,7 @@ runs:
     - name: Determine the Godot version
       id: godot
       shell: bash
-      workdir: ./godot-${{ inputs.godot-src-rev }}
+      working-directory: ./godot-${{ inputs.godot-src-rev }}
       run: |
         echo "major-minor=$(python3 -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_OUTPUT
         echo "semver=$(python3 -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_OUTPUT
