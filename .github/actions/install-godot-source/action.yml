@@ -45,7 +45,7 @@ runs:
         --depth 1
         --no-tags
 
-        HASH=${{ hashFiles(format('./godot-{0}', inputs.godot-src-rev)) }}
+        HASH=${{ hashFiles(format('{0}/godot-{1}', github.workspace, inputs.godot-src-rev)) }}
         echo hash=$HASH
 
         if [[ -z "$HASH" ]]; then
@@ -60,7 +60,7 @@ runs:
         --depth 1
         --no-tags
 
-        echo hash2=${{ hashFiles(format('./godot-{0}-2', inputs.godot-src-rev)) }}
+        echo hash2=${{ hashFiles(format('{0}/godot-{1}-2', github.workspace, inputs.godot-src-rev)) }}
 
         exit 1
 
