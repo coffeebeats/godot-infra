@@ -124,14 +124,15 @@ runs:
     - name: Get the platform of the specified preset
       id: preset
       shell: bash
-      run: >-
+      run: |-
         PLATFORM=$(
-          ${{ github.workspace }}/godot
-          --headless
-          --quit
-          -s ./export-godot-project-preset/get-export-preset-platform.gd
-          --preset="${{ inputs.preset-name }}"
-          --export-presets-path=project/export_presets.cfg | tail -n 1
+          ${{ github.workspace }}/godot \
+          --headless \
+          --quit \
+          -s ./export-godot-project-preset/get-export-preset-platform.gd \
+          --preset="${{ inputs.preset-name }}" \
+          --export-presets-path=project/export_presets.cfg  \
+            | tail -n 1
         )
 
         echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
