@@ -1,0 +1,118 @@
+name: "🏗️ Compile: Godot export template"
+
+on:
+  workflow_call:
+    inputs:
+      godot-src-rev:
+        type: string
+        description: "The revision/tag name in the 'godot-src-repository' to check out."
+        required: true
+      godot-src-repository:
+        type: string
+        description: "The name of a repository containing the Godot source code."
+        required: false
+        default: godotengine/godot
+
+      arch:
+        type: string
+        description: "The target architecture of the compiled export template."
+        required: true
+      platform:
+        type: string
+        description: "The target platform of the compiled export template."
+        required: true
+
+      profile:
+        type: string
+        description: "The optimization profile of the compiled export template."
+        required: false
+        default: release
+      encryption-key:
+        type: string
+        description: "A Godot script encryption key to embed within the export template."
+        required: false
+      custompy-path:
+        type: string
+        description: "A path to a 'custom.py' file containing template build options."
+        required: false
+      use-double-precision:
+        type: boolean
+        description: "Whether to enable double precision for the export template."
+        required: false
+        default: false
+
+      # Windows-specific inputs.
+      icon-path:
+        type: string
+        description: "A path to an application icon."
+        required: true
+
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
+
+    outputs:
+      name:
+        description: "The file name of the compiled export template."
+        value: ${{ jobs.compile.outputs.name }}
+      path:
+        description: "The path to the compiled export template artifact."
+        value: ${{ jobs.compile.outputs.path }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+
+    outputs:
+      name: ${{ steps.export-template.outputs.name }}
+      path: ${{ steps.export-template.outputs.path }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # -------------------- Vendor the Godot source code -------------------- #
+
+      - uses: ./.github/actions/vendor-godot-source
+        id: godot
+        with:
+          dst-path: ${{ github.workspace }}/godot
+          godot-src-rev: ${{ inputs.godot-src-rev }}
+          godot-src-repository: ${{ inputs.godot-src-repository }}
+
+      # --------------------- Compile the export template -------------------- #
+
+      - name: Compile the export template
+        id: export-template
+        uses: ./compile-godot-export-template
+        with:
+          godot-src-path: ${{ github.workspace }}/godot
+
+          arch: ${{ inputs.arch }}
+          platform: ${{ inputs.platform }}
+
+          custompy-path: ${{ inputs.custompy-path }}
+          encryption-key: ${{ inputs.encryption-key }}
+          profile: ${{ inputs.profile }}
+          use-double-precision: ${{ inputs.use-double-precision }}
+
+          # MacOS-specific inputs.
+          # ...
+
+          # Windows-specific inputs.
+          icon-path: ${{ inputs.icon-path }}
+
+      # --------------------- Package the export template -------------------- #
+
+      # Publish the artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.export-template.outputs.name }}
+          path: ${{ steps.export-template.outputs.path }}
+          if-no-files-found: error
