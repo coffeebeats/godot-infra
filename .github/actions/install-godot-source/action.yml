@@ -34,19 +34,23 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
-      with:
-        path: ./godot-${{ inputs.godot-src-rev }}
-        ref: ${{ inputs.godot-src-rev }}
-        repository: ${{ inputs.godot-src-repository }}
+    - name: Clone the Godot source code
+      shell: bash
+      run: >-
+        git clone
+        --depth 1
+        --no-tags
+        -b ${{ inputs.godot-src-rev }}
+        ${{ inputs.godot-src-repository }}
+        ./godot-${{ inputs.godot-src-rev }}
 
     - name: Determine the Godot version
       id: godot
       shell: bash
       working-directory: ./godot-${{ inputs.godot-src-rev }}
       run: |
-        echo "major-minor=$(python3 -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_OUTPUT
-        echo "semver=$(python3 -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_OUTPUT
+        echo "major-minor=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_OUTPUT
+        echo "semver=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_OUTPUT
 
     - name: Verify source code checkout
       shell: bash
