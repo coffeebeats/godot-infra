@@ -111,9 +111,9 @@ jobs:
           # Windows-specific inputs.
           icon-path: ${{ inputs.icon-path }}
 
-      # --------------------- Package the export template -------------------- #
+      # --------------------- Publish generated artifacts -------------------- #
 
-      # Publish the artifacts
+      # Compiled export template
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.export-template.outputs.name }}
