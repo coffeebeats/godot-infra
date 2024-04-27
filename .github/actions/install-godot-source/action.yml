@@ -8,7 +8,7 @@ inputs:
     required: true
   godot-src-repository:
     type: string
-    description: "The name of a repository containing the Godot source code."
+    description: "The name of a GitHub repository containing the Godot source code."
     required: false
     default: godotengine/godot
 
@@ -37,12 +37,12 @@ runs:
     - name: Clone the Godot source code
       shell: bash
       run: >-
-        git clone
-        --depth 1
-        --no-tags
-        -b ${{ inputs.godot-src-rev }}
+        gh repo clone
         ${{ inputs.godot-src-repository }}
         ./godot-${{ inputs.godot-src-rev }}
+        --
+          --depth 1
+          --no-tags
 
     - name: Determine the Godot version
       id: godot
