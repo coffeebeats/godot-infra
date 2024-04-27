@@ -3,9 +3,9 @@ name: "🤖 Export: Godot project preset"
 on:
   workflow_call:
     inputs:
-      project-artifact-name:
+      project-path:
         type: string
-        description: "The name of the Godot project artifact to download."
+        description: "The path to the Godot project."
         required: true
 
       preset-name:
@@ -117,11 +117,6 @@ jobs:
 
       # ------------------------- Set up the project ------------------------- #
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.project-artifact-name }}
-          path: ${{ github.workspace }}/project
-
       - uses: ./.github/actions/setup-godot
         with:
           version: ${{ inputs.godot-editor-version }}
@@ -140,7 +135,7 @@ jobs:
           preset-name: ${{ inputs.preset-name }}
           preset-output-name: ${{ inputs.preset-output-name }}
           profile: ${{ inputs.profile }}
-          project-path: ${{ github.workspace }}/project
+          project-path: ${{ inputs.project-path }}
 
           # MacOS-specific inputs.
           codesign-certificate-file: ${{ inputs.codesign-certificate-file }}
