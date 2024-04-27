@@ -1,0 +1,102 @@
+name: "🤖 Export: Godot project preset"
+description: "Exports a Godot project preset for the specified platform."
+
+inputs:
+  preset-name:
+    description: "The name of the Godot project export preset."
+    required: true
+  project-path:
+    description: "The path to the Godot project."
+    required: false
+    default: "."
+
+  godot-editor-path:
+    description: "The path to the Godot editor executable."
+    required: false
+    default: godot
+  export-template-artifact-name:
+    description: "The name of the Godot export template artifact to download."
+    required: true
+
+  profile:
+    description: "The optimization profile of the compiled export template."
+    required: false
+    default: release
+  encryption-key:
+    description: "A Godot script encryption key to embed within the export template."
+    required: false
+
+outputs:
+  path:
+    description: "The path to the exported project preset artifact."
+    value: TODO
+
+runs:
+  using: composite
+
+  steps:
+    # ------------------- Install the Godot export template ------------------ #
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.export-template-artifact-name }}
+          path: ${{ github.workspace }}/.local/shared/godot/export_templates/4.2.2.stable/linux_debug.${{ inputs.arch }}
+          path: ${{ github.workspace }}/.local/shared/godot/export_templates/4.2.2.stable/macos.zip
+
+    # ----------------------- Export the project preset ---------------------- #
+
+    - name: Compile the export template (MacOS - x86_64)
+      if: |
+        inputs.platform == 'macos' &&
+        (inputs.arch == "x86_64" || inputs.arch == "universal") &&
+        steps.export-template.outputs.cache-hit != 'true'
+      uses: "./compile-godot-export-template/macos"
+      with:
+        arch: x86_64
+        encryption-key: ${{ inputs.encryption-key }}
+        godot-src-path: godot
+        profile: ${{ inputs.profile }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+
+    - name: Compile the export template (MacOS - arm64+universal)
+      if: |
+        inputs.platform == 'macos'  &&
+        (inputs.arch == "arm64" || inputs.arch == "universal") &&
+        steps.export-template.outputs.cache-hit != 'true'
+      uses: "./compile-godot-export-template/macos"
+      with:
+        app-bundle: true
+        arch: arm64
+        encryption-key: ${{ inputs.encryption-key }}
+        godot-src-path: godot
+        lipo: ${{ inputs.arch == "universal" }}
+        profile: ${{ inputs.profile }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+
+    - name: Compile the export template (Windows - x86_64)
+      if: |
+        inputs.platform == 'windows' &&
+        steps.export-template.outputs.cache-hit != 'true'
+      uses: "./compile-godot-export-template/windows"
+      with:
+        arch: ${{ inputs.arch }}
+        encryption-key: ${{ inputs.encryption-key }}
+        godot-src-path: godot
+        profile: ${{ inputs.profile }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+
+    # ------------- Determine compiled export template file name ------------- #
+
+    - name: Determine export template file name
+      id: compiled-artifact
+      shell: bash
+      run: |
+        if [[ "${{ inputs.platform }}" == "macos" ]]; then
+          echo "name=macos.zip" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        TARGET=$([[ "${{ inputs.profile }}" == "release" ]] && echo template_release || echo template_debug)
+        DOUBLE=$([[ "${{ inputs.use-double-precision }}" == "true" ]] && echo ".double")
+
+        echo "name=godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}.exe" >> $GITHUB_OUTPUT

@@ -128,7 +128,7 @@ runs:
     - name: Compile the export template (MacOS - x86_64)
       if: |
         inputs.platform == 'macos' &&
-        (inputs.arch == "x86_64" || inputs.arch == "universal") &&
+        (inputs.arch == 'x86_64' || inputs.arch == 'universal') &&
         steps.export-template.outputs.cache-hit != 'true'
       uses: "./compile-godot-export-template/macos"
       with:
@@ -141,7 +141,7 @@ runs:
     - name: Compile the export template (MacOS - arm64+universal)
       if: |
         inputs.platform == 'macos'  &&
-        (inputs.arch == "arm64" || inputs.arch == "universal") &&
+        (inputs.arch == 'arm64' || inputs.arch == 'universal') &&
         steps.export-template.outputs.cache-hit != 'true'
       uses: "./compile-godot-export-template/macos"
       with:
@@ -149,7 +149,7 @@ runs:
         arch: arm64
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
-        lipo: ${{ inputs.arch == "universal" }}
+        lipo: ${{ inputs.arch == 'universal' }}
         profile: ${{ inputs.profile }}
         use-double-precision: ${{ inputs.use-double-precision }}
 

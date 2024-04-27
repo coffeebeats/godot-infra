@@ -5,29 +5,32 @@ on:
     inputs:
       preset-name:
         type: string
-        description: "The name of the export preset."
+        description: "The name of the Godot project export preset."
         required: true
-
-      pck-only:
-        type: boolean
-        description: "Whether the exported preset should only be a PCK file."
+      project-path:
+        type: string
+        description: "The path to the Godot project."
         required: false
-        default: false
+        default: "."
 
-      platform:
+      godot-editor-version:
         type: string
-        description: "The platform of the export preset."
+        description: "The version of the Godot editor to use."
+        required: true
+      export-template-name:
+        type: string
+        description: "The name of the Godot export template/artifact to download."
         required: true
 
-      godot-src-rev:
+      profile:
         type: string
-        description: "The revision/tag name in the 'godot-src-repository' to check out."
-        required: true
-      godot-src-repository:
-        type: string
-        description: "The name of a repository containing the Godot source code."
+        description: "The optimization profile of the compiled export template."
         required: false
-        default: godotengine/godot
+        default: release
+      encryption-key:
+        type: string
+        description: "A Godot script encryption key to embed within the export template."
+        required: false
 
       timeout:
         type: number
@@ -37,53 +40,36 @@ on:
 
     outputs:
       path:
-        description: "The name of the exported artifact."
-        value: ${{ jobs.compile.outputs.name }}
+        description: "The name of the Godot project export preset artifact."
+        value: ${{ jobs.export.outputs.name }}
 
 defaults:
   run:
     shell: bash
 
 jobs:
-  compile-export-template:
-    uses: "./.github/workflows/compile-godot-export-template-windows.yaml"
-    with:
-      custompy-path: ""
-      encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
-      godot-src-repository: ${{ inputs.godot-src-repository }}
-      godot-src-rev: ${{ inputs.godot-src-rev }}
-      icon-path: ""
-      profile: release
-      use-double-precision: false
-
-  export-project-preset:
-    needs: ["compile-export-template"]
-
+  export:
     runs-on: ubuntu-latest
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
-    container: ghcr.io/coffeebeats/export-godot-project-preset:godot-${{ needs.compile-export-template.outputs.godot-major-minor-version }}-windows
-
     outputs:
-      name: ${{ steps.config-artifact.outputs.name }}
+      name: TODO
 
     steps:
       - uses: actions/checkout@v4
 
-      # -------------------------- Export the preset ------------------------- #
+      # ---------------------- Export the project preset --------------------- #
 
       - name: Export the project preset
-        run: >
-          SCRIPT_AES256_ENCRYPTION_KEY=${{ secrets.SCRIPT_AES256_ENCRYPTION_KEY }}
+        id: export-preset
+        uses: ./export-godot-project-preset
+        with:
 
-          godot --headless --export$([[ "${{ inputs.pck-only }}" == 'true' ]] && echo '_pck')
+      # ----------------- Package the exported project preset ---------------- #
 
-      # --------------------- Package the exported preset -------------------- #
-
-      # Publish the artifact
+      # Publish the artifacts
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.preset-name }}
-          path: ${{ steps.config-artifact.outputs.name }}
-          retention-days: 7
+          name: ${{ steps.export-preset.outputs.name }}
+          path: ${{ steps.export-preset.outputs.path }}
           if-no-files-found: error
