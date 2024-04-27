@@ -63,7 +63,6 @@ jobs:
       - name: Export the project preset
         id: export-preset
         uses: ./export-godot-project-preset
-        with:
 
       # ----------------- Package the exported project preset ---------------- #
 
