@@ -44,7 +44,7 @@ runs:
     - -c
     # NOTE: Any extra new-lines contained in this string will be executed as the
     # start of a new command.
-    - >
+    - >-
       scons
       -j$(nproc)
       -C $GITHUB_WORKSPACE/${{ inputs.godot-src-path }}
