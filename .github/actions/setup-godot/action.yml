@@ -38,13 +38,19 @@ runs:
       shell: bash
       run: |
         case ${{ runner.os }} in
-          Linux) platform="linux.x86_64"
-          macOS) platform="macos.universal"
-          Windows) platform="win64.exe"
+          Linux) platform="linux.x86_64" ;;
+          macOS) platform="macos.universal" ;;
+          Windows) platform="win64.exe" ;;
         esac
 
         EDITOR="Godot_v${{ steps.version.outputs.value }}_${platform}"
-        curl -L -o godot.zip "https://github.com/godotengine/godot/releases/download/$EDITOR.zip"
+
+        GH_TOKEN=${{ github.token }} gh release download \
+          ${{ steps.version.outputs.value }} \
+          --repo godotengine/godot \
+          --pattern "$EDITOR.zip" \
+          --output godot.zip
+
         unzip godot.zip
         chmod +x $EDITOR
 

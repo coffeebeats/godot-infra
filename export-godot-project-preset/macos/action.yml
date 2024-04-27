@@ -65,9 +65,7 @@ runs:
   args:
     - /bin/bash
     - -c
-    # NOTE: Any extra new-lines contained in this string will be executed as the
-    # start of a new command.
-    - >
+    - >-
       $GITHUB_WORKSPACE/${{ inputs.godot-editor-path }}
       --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
       --headless
@@ -76,5 +74,5 @@ runs:
       $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo "--export-debug")
       $([[ "${{ inputs.profile }}" == "release" ]] && echo "--export-release")
       $([[ "${{ inputs.pck-only }}" == "true" ]] && echo "--export-pck")
-      ${{ inputs.preset-name }}
-      ${{  }}
+      '${{ inputs.preset-name }}'
+      /github/workspace/${{ inputs.preset-output-path }}

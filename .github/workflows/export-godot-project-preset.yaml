@@ -152,11 +152,11 @@ jobs:
           codesign-identity: ${{ inputs.codesign-identity }}
           codesign-password: ${{ inputs.codesign-password }}
 
-      # ----------------- Package the exported project preset ---------------- #
+      # --------------------- Publish generated artifacts -------------------- #
 
-      # Publish the artifacts
+      # Exported project preset
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.export-preset.outputs.name }}
+          name: ${{ inputs.preset-output-name }}
           path: ${{ steps.export-preset.outputs.path }}
           if-no-files-found: error
