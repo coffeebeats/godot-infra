@@ -1,0 +1,73 @@
+name: "🤖 Setup: Godot editor executable"
+description: "Install the specified version of 'godot'."
+
+inputs:
+  version:
+    description: "The version of Godot to install (should match a 'godotengine/godot' release tag)."
+    required: true
+  install-dir:
+    description: "The Godot installation directory."
+    required: false
+    default: "$HOME/.godot"
+  modify-path:
+    description: "Whether to add the Godot editor to 'PATH'."
+    required: false
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Export the installation directory environment variable
+      shell: bash
+      run: echo "GODOT_HOME=$(realpath ${{ inputs.install-dir }})" >> $GITHUB_ENV
+
+    - name: Export the formatted Godot version
+      id: version
+      shell: bash
+      run: echo "value=$(echo "${{ inputs.version }}" | sed -E 's/^v//')" >> $GITHUB_OUTPUT
+
+    - name: Cache the Godot executable
+      id: cache-godot
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.GODOT_HOME }}
+        key: godot-${{ runner.os }}-${{ steps.version.outputs.value }}
+
+    - name: Download the Godot executable
+      if: steps.cache-godot.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        case ${{ runner.os }} in
+          Linux) platform="linux.x86_64"
+          macOS) platform="macos.universal"
+          Windows) platform="win64.exe"
+        esac
+
+        EDITOR="Godot_v${{ steps.version.outputs.value }}_${platform}"
+        curl -L -o godot.zip "https://github.com/godotengine/godot/releases/download/$EDITOR.zip"
+        unzip godot.zip
+        chmod +x $EDITOR
+
+        mkdir -p "$GODOT_HOME/bin"
+        mv $EDITOR "$GODOT_HOME/bin/godot"
+
+    - name: Update the 'PATH' environment variable
+      if: inputs.modify-path == 'true'
+      shell: bash
+      run: echo "$GODOT_HOME/bin" >> $GITHUB_PATH
+
+    - name: Validate Godot executable was set up correctly
+      shell: bash
+      run: |
+        if [[ "$(${{ env.GODOT_HOME }}/bin/godot --version)" == "" ]]; then
+          echo "Failed to install 'godot@v${{ steps.version.outputs.value }}'!"
+          exit 1
+        fi
+
+        if [[ \
+          "${{ inputs.modify-path }}" == "true" && \
+          "$(command -v godot >/dev/null 2>&1; echo $?)" -ne 0 \
+        ]]; then
+          echo "Failed to add Godot to \$PATH!"
+          exit 1
+        fi
