@@ -1,4 +1,4 @@
-name: "🐙 godot-infra: Set up 'GitHub' hosted runner"
+name: "🐙 Setup: GitHub hosted runner"
 description: "Configures the 'GitHub' hosted runner for use with 'godot-infra'."
 
 runs:
