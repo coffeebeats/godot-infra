@@ -46,7 +46,7 @@ runs:
         GH_TOKEN=${{ github.token }} gh release download \
           ${{ steps.version.outputs.value }} \
           --repo godotengine/godot \
-          --pattern "Godot_v${{ steps.version.outputs.value }}_${platform}" \
+          --pattern "Godot_v${{ steps.version.outputs.value }}_${platform}.zip" \
           --output godot.zip
 
         unzip godot.zip
