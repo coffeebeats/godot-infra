@@ -56,16 +56,63 @@ runs:
     - name: Hash files
       shell: bash
       run: |
-        ls -lsa ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
-        rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/.*
-        HASH=${{ hashFiles(format('{0}/godot-{1}/*', github.workspace, inputs.godot-src-rev)) }}
-        echo hash=$HASH
+        # ls -lsa ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
+        # rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/.*
+        # HASH=${{ hashFiles(format('{0}/godot-{1}/*', github.workspace, inputs.godot-src-rev)) }}
+        # echo hash=$HASH
 
-        echo ""
-        ls -lsa ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2
-        rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2/.*
-        HASH2=${{ hashFiles(format('{0}/godot-{1}-2/*', github.workspace, inputs.godot-src-rev)) }}
-        echo hash=$HASH2
+        # echo ""
+        # ls -lsa ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2
+        # rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2/.*
+        # HASH2=${{ hashFiles(format('{0}/godot-{1}-2/*', github.workspace, inputs.godot-src-rev)) }}
+        # echo hash=$HASH2
+
+        echo ".clang-format -> ${{ hashFiles(format('./godot-{0}/.clang-format', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.clang-format', inputs.godot-src-rev)) }}"
+        echo ".clang-tidy -> ${{ hashFiles(format('./godot-{0}/.clang-tidy', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.clang-tidy', inputs.godot-src-rev)) }}"
+        echo ".editorconfig -> ${{ hashFiles(format('./godot-{0}/.editorconfig', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.editorconfig', inputs.godot-src-rev)) }}"
+        echo ".git -> ${{ hashFiles(format('./godot-{0}/.git', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.git', inputs.godot-src-rev)) }}"
+        echo ".git-blame-ignore-revs -> ${{ hashFiles(format('./godot-{0}/.git-blame-ignore-revs', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.git-blame-ignore-revs', inputs.godot-src-rev)) }}"
+        echo ".gitattributes -> ${{ hashFiles(format('./godot-{0}/.gitattributes', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.gitattributes', inputs.godot-src-rev)) }}"
+        echo ".github -> ${{ hashFiles(format('./godot-{0}/.github', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.github', inputs.godot-src-rev)) }}"
+        echo ".gitignore -> ${{ hashFiles(format('./godot-{0}/.gitignore', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.gitignore', inputs.godot-src-rev)) }}"
+        echo ".mailmap -> ${{ hashFiles(format('./godot-{0}/.mailmap', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.mailmap', inputs.godot-src-rev)) }}"
+        echo ".pre-commit-config.yaml -> ${{ hashFiles(format('./godot-{0}/.pre-commit-config.yaml', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/.pre-commit-config.yaml', inputs.godot-src-rev)) }}"
+        echo "AUTHORS.md -> ${{ hashFiles(format('./godot-{0}/AUTHORS.md', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/AUTHORS.md', inputs.godot-src-rev)) }}"
+        echo "CHANGELOG.md -> ${{ hashFiles(format('./godot-{0}/CHANGELOG.md', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/CHANGELOG.md', inputs.godot-src-rev)) }}"
+        echo "CONTRIBUTING.md -> ${{ hashFiles(format('./godot-{0}/CONTRIBUTING.md', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/CONTRIBUTING.md', inputs.godot-src-rev)) }}"
+        echo "COPYRIGHT.txt -> ${{ hashFiles(format('./godot-{0}/COPYRIGHT.txt', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/COPYRIGHT.txt', inputs.godot-src-rev)) }}"
+        echo "DONORS.md -> ${{ hashFiles(format('./godot-{0}/DONORS.md', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/DONORS.md', inputs.godot-src-rev)) }}"
+        echo "LICENSE.txt -> ${{ hashFiles(format('./godot-{0}/LICENSE.txt', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/LICENSE.txt', inputs.godot-src-rev)) }}"
+        echo "LOGO_LICENSE.txt -> ${{ hashFiles(format('./godot-{0}/LOGO_LICENSE.txt', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/LOGO_LICENSE.txt', inputs.godot-src-rev)) }}"
+        echo "README.md -> ${{ hashFiles(format('./godot-{0}/README.md', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/README.md', inputs.godot-src-rev)) }}"
+        echo "SConstruct -> ${{ hashFiles(format('./godot-{0}/SConstruct', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/SConstruct', inputs.godot-src-rev)) }}"
+        echo "core -> ${{ hashFiles(format('./godot-{0}/core', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/core', inputs.godot-src-rev)) }}"
+        echo "doc -> ${{ hashFiles(format('./godot-{0}/doc', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/doc', inputs.godot-src-rev)) }}"
+        echo "drivers -> ${{ hashFiles(format('./godot-{0}/drivers', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/drivers', inputs.godot-src-rev)) }}"
+        echo "editor -> ${{ hashFiles(format('./godot-{0}/editor', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/editor', inputs.godot-src-rev)) }}"
+        echo "gles3_builders.py -> ${{ hashFiles(format('./godot-{0}/gles3_builders.py', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/gles3_builders.py', inputs.godot-src-rev)) }}"
+        echo "glsl_builders.py -> ${{ hashFiles(format('./godot-{0}/glsl_builders.py', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/glsl_builders.py', inputs.godot-src-rev)) }}"
+        echo "godot.manifest -> ${{ hashFiles(format('./godot-{0}/godot.manifest', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/godot.manifest', inputs.godot-src-rev)) }}"
+        echo "icon.png -> ${{ hashFiles(format('./godot-{0}/icon.png', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/icon.png', inputs.godot-src-rev)) }}"
+        echo "icon.svg -> ${{ hashFiles(format('./godot-{0}/icon.svg', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/icon.svg', inputs.godot-src-rev)) }}"
+        echo "icon_outlined.png -> ${{ hashFiles(format('./godot-{0}/icon_outlined.png', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/icon_outlined.png', inputs.godot-src-rev)) }}"
+        echo "icon_outlined.svg -> ${{ hashFiles(format('./godot-{0}/icon_outlined.svg', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/icon_outlined.svg', inputs.godot-src-rev)) }}"
+        echo "logo.png -> ${{ hashFiles(format('./godot-{0}/logo.png', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/logo.png', inputs.godot-src-rev)) }}"
+        echo "logo.svg -> ${{ hashFiles(format('./godot-{0}/logo.svg', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/logo.svg', inputs.godot-src-rev)) }}"
+        echo "logo_outlined.png -> ${{ hashFiles(format('./godot-{0}/logo_outlined.png', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/logo_outlined.png', inputs.godot-src-rev)) }}"
+        echo "logo_outlined.svg -> ${{ hashFiles(format('./godot-{0}/logo_outlined.svg', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/logo_outlined.svg', inputs.godot-src-rev)) }}"
+        echo "main -> ${{ hashFiles(format('./godot-{0}/main', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/main', inputs.godot-src-rev)) }}"
+        echo "methods.py -> ${{ hashFiles(format('./godot-{0}/methods.py', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/methods.py', inputs.godot-src-rev)) }}"
+        echo "misc -> ${{ hashFiles(format('./godot-{0}/misc', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/misc', inputs.godot-src-rev)) }}"
+        echo "modules -> ${{ hashFiles(format('./godot-{0}/modules', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/modules', inputs.godot-src-rev)) }}"
+        echo "platform -> ${{ hashFiles(format('./godot-{0}/platform', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/platform', inputs.godot-src-rev)) }}"
+        echo "platform_methods.py -> ${{ hashFiles(format('./godot-{0}/platform_methods.py', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/platform_methods.py', inputs.godot-src-rev)) }}"
+        echo "scene -> ${{ hashFiles(format('./godot-{0}/scene', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/scene', inputs.godot-src-rev)) }}"
+        echo "scu_builders.py -> ${{ hashFiles(format('./godot-{0}/scu_builders.py', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/scu_builders.py', inputs.godot-src-rev)) }}"
+        echo "servers -> ${{ hashFiles(format('./godot-{0}/servers', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/servers', inputs.godot-src-rev)) }}"
+        echo "tests -> ${{ hashFiles(format('./godot-{0}/tests', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/tests', inputs.godot-src-rev)) }}"
+        echo "thirdparty -> ${{ hashFiles(format('./godot-{0}/thirdparty', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/thirdparty', inputs.godot-src-rev)) }}"
+        echo "version.py -> ${{ hashFiles(format('./godot-{0}/version.py', inputs.godot-src-rev)) }} == ${{ hashFiles(format('./godot-{0}-2/version.py', inputs.godot-src-rev)) }}"
 
         exit 1
 
