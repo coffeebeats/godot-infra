@@ -42,8 +42,8 @@ runs:
         ${{ inputs.godot-src-repository }}
         ./godot-${{ inputs.godot-src-rev }}
         --
-          --depth 1
-          --no-tags
+        --depth 1
+        --no-tags
 
     - name: Determine the Godot version
       id: godot
