@@ -13,7 +13,7 @@ jobs:
   compile:
     uses: "./.github/workflows/compile-godot-export-template.yaml"
     with:
-      godot-src-rev: v4.2.2-stable
+      godot-src-rev: 4.2.2-stable
       godot-src-repository: godotengine/godot
 
       arch: x86_64
@@ -37,7 +37,7 @@ jobs:
       preset-output-name: "game.exe"
       pck-only: false
 
-      godot-editor-version: v4.2.2-stable
+      godot-editor-version: 4.2.2-stable
       export-template-artifact-name: ${{ needs.compile.outputs.name }}
 
       profile: release
