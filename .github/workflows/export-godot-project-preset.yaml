@@ -157,6 +157,6 @@ jobs:
       # Publish the artifacts
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.export-preset.outputs.name }}
+          name: ${{ inputs.preset-output-name }}
           path: ${{ steps.export-preset.outputs.path }}
           if-no-files-found: error
