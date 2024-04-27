@@ -1,7 +1,6 @@
 name: "🤖 Export: Godot project export preset"
 description: "Exports a Godot project export preset for the specified platform."
 
-
 inputs:
   preset-name:
     description: "The name of the Godot project export preset."
@@ -33,7 +32,7 @@ inputs:
   encryption-key:
     description: "A Godot script encryption key to embed within the export template."
     required: false
-  
+
   # MacOS-specific inputs.
   codesign-certificate-file:
     description: "The codesigning certificate file (only used on MacOS)."
@@ -59,7 +58,7 @@ inputs:
   notarization-apple-id-password:
     description: "The notarization Apple ID name (only used on MacOS)."
     required: false
-  
+
   # Windows-specific inputs.
   codesign-identity-type:
     description: "The codesigning identity type (only used on Windows)."
@@ -81,18 +80,20 @@ runs:
 
   steps:
     # ----------------------------- Set up Godot ----------------------------- #
-    
+
     - name: Copy the Godot project to the expected location
       shell: bash
       run: |
-        if [[ $(realpath "${{ inputs.project-path }}") == $(realpath "${{ github.workspace }}/project") ]]; then
+        if [[ $(realpath ${{ inputs.project-path }}) == $(realpath "${{ github.workspace }}/project") ]]; then
           echo "Godot project already located at target directory; exiting without making changes."
+          ls -lsa ${{ github.workspace }}/project
           exit 0
         fi
 
-        cp -r ${{ inputs.project-path }} ${{ github.workspace }}/project
+        cp -r $(realpath ${{ inputs.project-path }}) ${{ github.workspace }}/project
         echo "Copied Godot project to target directory: ${{ github.workspace }}/project"
-    
+        ls -lsa ${{ github.workspace }}/project
+
     - name: Copy the Godot editor to the expected location
       shell: bash
       run: |
@@ -106,37 +107,37 @@ runs:
 
     # ------------------- Install the Godot export template ------------------ #
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.export-template-artifact-name }}
-          path: ${{ github.workspace }}/.godot/export_templates
-      
-      - name: Set path to export template in 'export_presets.cfg'
-        shell: bash
-        run: >-
+    - uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.export-template-artifact-name }}
+        path: ${{ github.workspace }}/.godot/export_templates
+
+    - name: Set path to export template in 'export_presets.cfg'
+      shell: bash
+      run: >-
+        ${{ github.workspace }}/godot
+        --headless
+        --quit
+        -s ./export-godot-project-preset/set-export-template-path.gd
+        --preset="${{ inputs.preset-name }}"
+        --export-presets-path=${{ github.workspace }}/project/export_presets.cfg
+        --template-path="${{ github.workspace }}/.godot/export_templates/${{ inputs.export-template-artifact-name }}"
+
+    - name: Get the platform of the specified preset
+      id: preset
+      shell: bash
+      run: >-
+        PLATFORM=$(
           ${{ github.workspace }}/godot
           --headless
           --quit
-          -s ./export-godot-project-preset/set-export-template-path.gd
+          -s ./export-godot-project-preset/get-export-preset-platform.gd
           --preset="${{ inputs.preset-name }}"
           --export-presets-path=${{ github.workspace }}/project/export_presets.cfg
-          --template-path="${{ github.workspace }}/.godot/export_templates/${{ inputs.export-template-artifact-name }}"
-      
-      - name: Get the platform of the specified preset
-        id: preset
-        shell: bash
-        run: >-
-          PLATFORM=$(
-            ${{ github.workspace }}/godot
-            --headless
-            --quit
-            -s ./export-godot-project-preset/get-export-preset-platform.gd
-            --preset="${{ inputs.preset-name }}"
-            --export-presets-path=${{ github.workspace }}/project/export_presets.cfg
-            | tail -n 1
-          )
+          | tail -n 1
+        )
 
-          echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
+        echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
 
     # ----------------------- Export the project preset ---------------------- #
 
@@ -157,7 +158,7 @@ runs:
         notarization-api-key-id: ${{ inputs.notarization-api-key-id }}
         notarization-apple-id-name: ${{ inputs.notarization-apple-id-name }}
         notarization-apple-id-password: ${{ inputs.notarization-apple-id-password }}
-    
+
     - name: Export the Godot project preset (Windows)
       if: steps.preset.outputs.platform == 'windows'
       uses: "./export-godot-project-preset/windows"
