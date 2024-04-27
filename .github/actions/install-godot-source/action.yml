@@ -45,6 +45,9 @@ runs:
         --depth 1
         --no-tags
 
+    - name: Hash files
+      shell: bash
+      run: |
         HASH=${{ hashFiles(format('{0}/godot-{1}', github.workspace, inputs.godot-src-rev)) }}
         echo hash=$HASH
 
@@ -54,19 +57,8 @@ runs:
         HASH=${{ hashFiles(format('./godot-{0}/*', inputs.godot-src-rev)) }}
         echo hash=$HASH
 
-        if [[ -z "$HASH" ]]; then
-          exit 1
-        fi
-
-        GH_TOKEN=${{ github.token }}
-        gh repo clone
-        ${{ inputs.godot-src-repository }}
-        ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2
-        --
-        --depth 1
-        --no-tags
-
-        echo hash2=${{ hashFiles(format('{0}/godot-{1}-2', github.workspace, inputs.godot-src-rev)) }}
+        HASH=${{ hashFiles(format('./godot-4.2.2-stable/*', inputs.godot-src-rev)) }}
+        echo hash=$HASH
 
         exit 1
 
