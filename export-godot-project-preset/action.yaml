@@ -108,7 +108,7 @@ runs:
     - uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.export-template-artifact-name }}
-        path: ${{ github.workspace }}/.godot/export_templates
+        path: ${{ github.workspace }}
 
     - name: Set path to export template in 'export_presets.cfg'
       shell: bash
@@ -119,7 +119,9 @@ runs:
         -s ./export-godot-project-preset/set-export-template-path.gd
         --preset="${{ inputs.preset-name }}"
         --export-presets-path=project/export_presets.cfg
-        --template-path="${{ github.workspace }}/.godot/export_templates/${{ inputs.export-template-artifact-name }}"
+        --template-path="/github/workspace/${{ inputs.export-template-artifact-name }}"
+
+        cat project/export_presets.cfg
 
     - name: Get the platform of the specified preset
       id: preset
@@ -132,7 +134,7 @@ runs:
           -s ./export-godot-project-preset/get-export-preset-platform.gd \
           --preset="${{ inputs.preset-name }}" \
           --export-presets-path=project/export_presets.cfg  \
-            | tail -n 1
+          | tail -n 1
         )
 
         echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
