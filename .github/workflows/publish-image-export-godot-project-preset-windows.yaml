@@ -1,0 +1,64 @@
+name: "🐳 Publish Image: 'export-godot-project-preset' (Windows)"
+
+on:
+  workflow_call:
+    inputs:
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
+  workflow_dispatch:
+    inputs:
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  # The Godot minor version which the image is defined to support. Only one
+  # version of the image will be provided per Godot minor version/platform pair.
+  GODOT_MAJOR_MINOR_VERSION: 4.2
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ------------------------------ Build the image ----------------------------- #
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and push
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: export-godot-project-preset/windows
+          push: true
+          tags: ghcr.io/coffeebeats/export-godot-project-preset:godot-v${{ env.GODOT_MAJOR_MINOR_VERSION }}-windows
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Display 'push' outputs
+        run: echo "${{ toJSON(steps.build-and-push.outputs.metadata) }}"
