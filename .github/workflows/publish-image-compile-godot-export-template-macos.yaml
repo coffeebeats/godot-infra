@@ -3,10 +3,6 @@ name: "🐳 Publish Image: 'compile-godot-export-template' (MacOS)"
 on:
   workflow_call:
     inputs:
-      tags:
-        type: string
-        description: "A newline- or space-separated list of additional tags for the image."
-        required: false
       llvm-version:
         type: string
         description: "The 'LLVM' version to install in the image."
@@ -44,10 +40,6 @@ on:
         default: 60
   workflow_dispatch:
     inputs:
-      tags:
-        type: string
-        description: "A newline- or space-separated list of additional tags for the image."
-        required: false
       llvm-version:
         type: string
         description: "The 'LLVM' version to install in the image."
