@@ -121,8 +121,6 @@ runs:
         --export-presets-path=project/export_presets.cfg
         --template-path="/github/workspace/${{ inputs.export-template-artifact-name }}"
 
-        cat project/export_presets.cfg
-
     - name: Get the platform of the specified preset
       id: preset
       shell: bash
