@@ -43,9 +43,12 @@ runs:
           Windows) platform="win64.exe" ;;
         esac
 
-        EDITOR="Godot_v${{ steps.version.outputs.value }}_${platform}"
-        echo "https://github.com/godotengine/godot/releases/download/$EDITOR.zip"
-        curl -L -o godot.zip "https://github.com/godotengine/godot/releases/download/$EDITOR.zip"
+        GH_TOKEN=${{ github.token }} gh release download \
+          ${{ steps.version.outputs.value }} \
+          --repo godotengine/godot \
+          --pattern "Godot_v${{ steps.version.outputs.value }}_${platform}" \
+          --output godot.zip
+
         unzip godot.zip
         chmod +x $EDITOR
 
