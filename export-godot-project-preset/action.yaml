@@ -86,13 +86,11 @@ runs:
       run: |
         if [[ $(realpath ${{ inputs.project-path }}) == $(realpath "${{ github.workspace }}/project") ]]; then
           echo "Godot project already located at target directory; exiting without making changes."
-          ls -lsa ${{ github.workspace }}/project
           exit 0
         fi
 
         cp -r $(realpath ${{ inputs.project-path }}) ${{ github.workspace }}/project
         echo "Copied Godot project to target directory: ${{ github.workspace }}/project"
-        ls -lsa ${{ github.workspace }}/project
 
     - name: Copy the Godot editor to the expected location
       shell: bash
@@ -120,7 +118,7 @@ runs:
         --quit
         -s ./export-godot-project-preset/set-export-template-path.gd
         --preset="${{ inputs.preset-name }}"
-        --export-presets-path=${{ github.workspace }}/project/export_presets.cfg
+        --export-presets-path=project/export_presets.cfg
         --template-path="${{ github.workspace }}/.godot/export_templates/${{ inputs.export-template-artifact-name }}"
 
     - name: Get the platform of the specified preset
@@ -133,8 +131,7 @@ runs:
           --quit
           -s ./export-godot-project-preset/get-export-preset-platform.gd
           --preset="${{ inputs.preset-name }}"
-          --export-presets-path=${{ github.workspace }}/project/export_presets.cfg
-          | tail -n 1
+          --export-presets-path=project/export_presets.cfg | tail -n 1
         )
 
         echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
