@@ -67,7 +67,11 @@ runs:
       shell: bash
       run: |
         INPUT="${{ inputs.platform }}-${{ hashFiles(format('{0}/godot', github.workspace)) }}"
-        ls ${{ github.workspace }}
+        ls ${{ github.workspace }}/godot
+        echo ""
+        echo workspace=${{ hashFiles(format('{0}', github.workspace)) }}
+        echo godot=${{ hashFiles(format('{0}/godot', github.workspace)) }}
+
         exit 1
         INPUT="$INPUT-${{ inputs.profile }}-${{ inputs.encryption-key }}-${{ inputs.use-double-precision }}"
         INPUT="$INPUT-${{ hashFiles(inputs.custompy-path) }}-${{ hashFiles(inputs.icon-path) }}"
