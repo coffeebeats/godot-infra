@@ -56,12 +56,14 @@ runs:
     - name: Hash files
       shell: bash
       run: |
-        ls -ls ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
+        ls -lsa ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
+        rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/.git
         HASH=${{ hashFiles(format('{0}/godot-{1}/*', github.workspace, inputs.godot-src-rev)) }}
         echo hash=$HASH
 
         echo ""
-        ls -ls ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2
+        ls -lsa ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2
+        rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2/.git
         HASH2=${{ hashFiles('/home/runner/work/godot-infra/godot-infra/godot-4.2.2-stable-2/*') }}
         echo hash=$HASH2
 
