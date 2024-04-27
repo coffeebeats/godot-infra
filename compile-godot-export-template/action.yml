@@ -175,6 +175,6 @@ runs:
         fi
 
         TARGET=$([[ "${{ inputs.profile }}" == "release" ]] && echo template_release || echo template_debug)
-        DOUBLE=$([[ "${{ inputs.use-double-precision }}" == "true" ]] && echo ".double")
+        DOUBLE=$([[ "${{ inputs.use-double-precision }}" == "true" ]] && echo ".double" || :)
 
         echo "name=godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}.exe" >> $GITHUB_OUTPUT
