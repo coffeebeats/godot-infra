@@ -3,11 +3,6 @@ name: "🧪 godot-infra: Placeholder workflow for testing"
 on:
   workflow_dispatch:
     inputs:
-      os:
-        type: string
-        description: "The runner's operating system."
-        required: false
-        default: ubuntu-latest
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -15,19 +10,29 @@ on:
         default: 60
 
 jobs:
-  todo:
-    runs-on: ${{ inputs.os }}
+  test:
+    runs-on: ubuntu-latest
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install 'gdenv'
+        uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
+        with:
+          skip-install: true # No 'project-dir' exists, so skip installation.
+
+      - name: Vendor Godot source code
+        shell: bash
+        # NOTE: This path must match the one expected by the container action.
+        run: gdenv vendor -o ${{ github.workspace }}/godot 4.2.1-stable
+
       - uses: ./compile-godot-export-template
         with:
-          platform:
-          godot-version: 4.2.2-stable
-          encryption-key:
-          custompy-path: example/custom.py
-          use-double-precision:
+          platform: windows
+          godot-src-path: ${{ github.workspace }}/godot
+          encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
+          custompy-path: ./example/custom.py
+          use-double-precision: false
           profile: release
-          icon-path: example/icon.svg
+          icon-path: ./example/icon.svg

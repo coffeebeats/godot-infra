@@ -1,18 +1,12 @@
-name: "🏗️ godot-infra: Build and publish the 'compile-godot-export-template' image for MacOS"
+name: "🐳 Publish Image: 'compile-godot-export-template' (MacOS)"
 
 on:
   workflow_call:
     inputs:
-      version:
-        type: string
-        description: "The image version to release."
-        required: false
-        default: v0.1.0 # x-release-please-version
       tags:
         type: string
         description: "A newline- or space-separated list of additional tags for the image."
         required: false
-        default: macos-v0 # x-release-please-major
       llvm-version:
         type: string
         description: "The 'LLVM' version to install in the image."
@@ -50,10 +44,6 @@ on:
         default: 60
   workflow_dispatch:
     inputs:
-      version:
-        type: string
-        description: "The version to release."
-        required: true
       tags:
         type: string
         description: "A newline- or space-separated list of additional tags for the image."
@@ -91,6 +81,11 @@ on:
 permissions:
   contents: write
   packages: write
+
+env:
+  # The Godot minor version which the image is defined to support. Only one
+  # version of the image will be provided per Godot minor version/platform pair.
+  GODOT_MAJOR_MINOR_VERSION: 4.2
 
 jobs:
   package-macos-sdk:
@@ -146,77 +141,34 @@ jobs:
 
       # ------------------------------ Build the image ----------------------------- #
 
-      - name: Set up 'podman'
-        uses: ./.github/actions/setup-podman
-        with:
-          install-buildah: true
-          install-podman: false
-          login: true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - uses: redhat-actions/buildah-build@v2
-        id: build
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          image: compile-godot-export-template
-          containerfiles: .github/actions/compile-godot-export-template-macos/Dockerfile
-          context: .github/actions/compile-godot-export-template-macos
-          tags: >
-            macos-${{ inputs.version }}
-            ${{ inputs.tags }}
-          layers: true
-          extra-args: |
-            --build-context osxcross=thirdparty/osxcross
-            --build-context vulkan=thirdparty/moltenvk
-            --cache-from ghcr.io/${{ github.repository_owner }}/compile-godot-export-template-cache
-            --cache-to ghcr.io/${{ github.repository_owner }}/compile-godot-export-template-cache
-            --cache-ttl 168h
-            --disable-compression=false
-            --platform linux/amd64
-            --skip-unused-stages
-            --squash
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and push
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: compile-godot-export-template/macos
+          push: true
+          tags: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ env.GODOT_MAJOR_MINOR_VERSION }}-macos
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
           build-args: |
             LLVM_VERSION=${{ inputs.llvm-version }}
             MACOS_VERSION=${{ inputs.osx-version }}
             MACOS_VERSION_MINIMUM=${{ inputs.osx-version-min }}
             OSXCROSS_SDK=${{ inputs.osxcross-sdk }}
-
-      # Push the image to GHCR (Image Registry)
-      - uses: redhat-actions/push-to-registry@v2
-        id: push
-        with:
-          image: ${{ steps.build.outputs.image }}
-          tags: ${{ steps.build.outputs.tags }}
-          registry: ghcr.io/${{ github.repository_owner }}
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-          extra-args: |
-            --disable-content-trust
+          build-contexts: |
+            osxcross=thirdparty/osxcross
+            vulkan=thirdparty/moltenvk
 
       - name: Display 'push' outputs
-        run: echo "${{ toJSON(steps.push.outputs) }}"
-
-  # NOTE: In order to conserve package storage, remove all but the
-  # latest versions of 'compile-godot-export-template'.
-  remove-stale-packages:
-    needs: ["build-and-publish"]
-
-    runs-on: ubuntu-latest
-    timeout-minutes: 4
-
-    steps:
-      # After publishing, delete older version(s) to save space.
-      - uses: actions/delete-package-versions@v5
-        with:
-          owner: "coffeebeats"
-          package-name: "compile-godot-export-template"
-          package-type: "container"
-          # NOTE: This can be revised if multiple versions per platform are needed.
-          min-versions-to-keep: 1
-          ignore-versions: ^(?!(?:(macos)))\w+\-[\w\.]+$
-
-      - uses: actions/delete-package-versions@v5
-        with:
-          owner: "coffeebeats"
-          package-name: "compile-godot-export-template-cache"
-          package-type: "container"
-          # This is arbitrary and can be revisited to save on or increase cache space.
-          min-versions-to-keep: 50
+        run: echo "${{ toJSON(steps.build-and-push.outputs.metadata) }}"

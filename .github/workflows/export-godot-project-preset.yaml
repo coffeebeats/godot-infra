@@ -1,0 +1,75 @@
+name: "🏗️ Export: Godot project preset"
+
+on:
+  workflow_call:
+    inputs:
+      preset-name:
+        type: string
+        description: "The name of the Godot project export preset."
+        required: true
+      project-path:
+        type: string
+        description: "The path to the Godot project."
+        required: false
+        default: "."
+
+      godot-editor-version:
+        type: string
+        description: "The version of the Godot editor to use."
+        required: true
+      export-template-name:
+        type: string
+        description: "The name of the Godot export template/artifact to download."
+        required: true
+
+      profile:
+        type: string
+        description: "The optimization profile of the compiled export template."
+        required: false
+        default: release
+      encryption-key:
+        type: string
+        description: "A Godot script encryption key to embed within the export template."
+        required: false
+
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
+
+    outputs:
+      path:
+        description: "The name of the Godot project export preset artifact."
+        value: ${{ jobs.export.outputs.name }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+
+    outputs:
+      name: TODO
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---------------------- Export the project preset --------------------- #
+
+      - name: Export the project preset
+        id: export-preset
+        uses: ./export-godot-project-preset
+        with:
+
+      # ----------------- Package the exported project preset ---------------- #
+
+      # Publish the artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.export-preset.outputs.name }}
+          path: ${{ steps.export-preset.outputs.path }}
+          if-no-files-found: error

@@ -1,0 +1,52 @@
+name: "🏗️ Compile: Godot export template (Windows)"
+description: "Compiles a Godot export template for the Windows platform."
+
+inputs:
+  arch:
+    description: "The target architecture to build the export template for."
+    required: false
+    default: x86_64
+  encryption-key:
+    description: "A Godot script encryption key to embed within the export template."
+    required: false
+  use-double-precision:
+    description: "Whether to enable double precision for the export template."
+    required: false
+    default: false
+  profile:
+    description: "The optimization profile of the compiled export template."
+    required: false
+    default: release
+  godot-src-path:
+    description: "A path, relative to 'github.workspace', where the Godot source code is located."
+    required: false
+    default: "."
+  scons-cache-path:
+    description: "A path, relative to 'github.workspace', where the SCons cache is located."
+    required: false
+    default: ".scons"
+
+runs:
+  using: docker
+  image: ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.2-windows
+  env:
+    SCONS_CACHE: /github/workspace/${{ inputs.scons-cache-path }}
+    SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
+  args:
+    - /bin/bash
+    - -c
+    # NOTE: Any extra new-lines contained in this string will be executed as the
+    # start of a new command.
+    - >
+      scons
+      -j$(nproc)
+      -C $GITHUB_WORKSPACE/${{ inputs.godot-src-path }}
+      platform=windows
+      arch=${{ inputs.arch }}
+      verbose=yes
+      warnings=extra
+      werror=yes
+      $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
+      $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes optimize=debug)
+      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes lto=full optimize=speed_trace)
+      $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes lto=full optimize=speed)
