@@ -40,34 +40,12 @@ runs:
         GH_TOKEN=${{ github.token }}
         gh repo clone
         ${{ inputs.godot-src-repository }}
-        ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
+        godot-${{ inputs.godot-src-rev }}
         --
         --depth 1
         --no-tags
 
-        rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/.git
-
-        GH_TOKEN=${{ github.token }}
-        gh repo clone
-        ${{ inputs.godot-src-repository }}
-        ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2
-        --
-        --depth 1
-        --no-tags
-
-        rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}-2/.git
-
-    - name: Hash files
-      shell: bash
-      run: |
-        HASH=${{ hashFiles(format('{0}/godot-{1}/*', github.workspace, inputs.godot-src-rev)) }}
-        echo hash=$HASH
-
-        echo ""
-        HASH2=${{ hashFiles(format('{0}/godot-{1}-2/*', github.workspace, inputs.godot-src-rev)) }}
-        echo hash=$HASH2
-
-        exit 1
+        rm -rf godot-${{ inputs.godot-src-rev }}/.git
 
     - name: Determine the Godot version
       id: godot
