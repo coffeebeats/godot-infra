@@ -48,6 +48,12 @@ runs:
         HASH=${{ hashFiles(format('{0}/godot-{1}', github.workspace, inputs.godot-src-rev)) }}
         echo hash=$HASH
 
+        HASH=${{ hashFiles('/home/runner/work/godot-infra/godot-infra/godot-4.2.2-stable') }}
+        echo hash=$HASH
+
+        HASH=${{ hashFiles(format('./godot-{1}/*', inputs.godot-src-rev)) }}
+        echo hash=$HASH
+
         if [[ -z "$HASH" ]]; then
           exit 1
         fi
