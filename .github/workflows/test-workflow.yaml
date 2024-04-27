@@ -10,29 +10,35 @@ on:
         default: 60
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+  compile:
+    uses: "./.github/workflows/compile-godot-export-template.yaml"
+    with:
+      godot-src-rev: v4.2.2-stable
+      godot-src-repository: godotengine/godot
 
-    steps:
-      - uses: actions/checkout@v4
+      arch: x86_64
+      platform: windows
+      encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
+      custompy-path: ./example/custom.py
+      use-double-precision: false
+      profile: release
 
-      - name: Install 'gdenv'
-        uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
-        with:
-          skip-install: true # No 'project-dir' exists, so skip installation.
+      # Windows-specific inputs.
+      icon-path: ./example/icon.svg
 
-      - name: Vendor Godot source code
-        shell: bash
-        # NOTE: This path must match the one expected by the container action.
-        run: gdenv vendor -o ${{ github.workspace }}/godot 4.2.1-stable
+  export:
+    needs: ["compile"]
 
-      - uses: ./compile-godot-export-template
-        with:
-          platform: windows
-          godot-src-path: ${{ github.workspace }}/godot
-          encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
-          custompy-path: ./example/custom.py
-          use-double-precision: false
-          profile: release
-          icon-path: ./example/icon.svg
+    uses: "./.github/workflows/export-godot-project-preset.yaml"
+    with:
+      project-path: ./example
+
+      preset-name: "Windows Desktop"
+      preset-output-name: "game.exe"
+      pck-only: false
+
+      godot-editor-version: v4.2.2-stable
+      export-template-artifact-name: ${{ needs.compile.outputs.name }}
+
+      profile: release
+      encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
