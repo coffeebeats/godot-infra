@@ -8,7 +8,7 @@ inputs:
     required: true
   godot-src-repository:
     type: string
-    description: "The name of a repository containing the Godot source code."
+    description: "The name of a GitHub repository containing the Godot source code."
     required: false
     default: godotengine/godot
 
@@ -34,19 +34,26 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
-      with:
-        path: ./godot-${{ inputs.godot-src-rev }}
-        ref: ${{ inputs.godot-src-rev }}
-        repository: ${{ inputs.godot-src-repository }}
+    - name: Clone the Godot source code
+      shell: bash
+      run: >-
+        GH_TOKEN=${{ github.token }}
+        gh repo clone
+        ${{ inputs.godot-src-repository }}
+        godot-${{ inputs.godot-src-rev }}
+        --
+        --depth 1
+        --no-tags
+
+        rm -rf godot-${{ inputs.godot-src-rev }}/.git
 
     - name: Determine the Godot version
       id: godot
       shell: bash
       working-directory: ./godot-${{ inputs.godot-src-rev }}
       run: |
-        echo "major-minor=$(python3 -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_OUTPUT
-        echo "semver=$(python3 -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_OUTPUT
+        echo "major-minor=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_OUTPUT
+        echo "semver=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_OUTPUT
 
     - name: Verify source code checkout
       shell: bash
