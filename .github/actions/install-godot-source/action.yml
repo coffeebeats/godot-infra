@@ -37,6 +37,7 @@ runs:
     - name: Clone the Godot source code
       shell: bash
       run: >-
+        GH_TOKEN=${{ github.token }}
         gh repo clone
         ${{ inputs.godot-src-repository }}
         ./godot-${{ inputs.godot-src-rev }}
