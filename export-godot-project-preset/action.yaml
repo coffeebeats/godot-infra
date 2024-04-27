@@ -73,7 +73,7 @@ inputs:
 outputs:
   path:
     description: "The path to the compiled export template artifact."
-    value: ${{ github.workspace }}/project/${{ inputs.preset-output-name }}
+    value: ${{ github.workspace }}/${{ inputs.preset-output-name }}
 
 runs:
   using: composite
@@ -146,14 +146,19 @@ runs:
       uses: "./export-godot-project-preset/windows"
       with:
         arch: ${{ inputs.arch }}
-        preset-name: ${{ inputs.preset-name }}
-        preset-output-path: project/${{ inputs.preset-output-name }}
         pck-only: ${{ inputs.pck-only }}
-        project-path: project
-        godot-editor-path: godot
-        godot-export-template-path: .godot/export_templates/${{ inputs.export-template-artifact-name }}
+        preset-name: ${{ inputs.preset-name }}
         profile: ${{ inputs.profile }}
+
+        godot-editor-path: godot
+        godot-export-template-path: ${{ inputs.export-template-artifact-name }}
+        preset-output-path: ${{ inputs.preset-output-name }}
+        project-path: project
+
+        # Encryption secrets
         encryption-key: ${{ inputs.encryption-key }}
+
+        # Codesigning secrets
         codesign-certificate-file: ${{ inputs.codesign-certificate-file }}
         codesign-certificate-password: ${{ inputs.codesign-certificate-password }}
         codesign-provisioning-profile: ${{ inputs.codesign-provisioning-profile }}
@@ -167,14 +172,19 @@ runs:
       if: steps.preset.outputs.platform == 'windows'
       uses: "./export-godot-project-preset/windows"
       with:
-        preset-name: ${{ inputs.preset-name }}
-        preset-output-path: project/${{ inputs.preset-output-name }}
         pck-only: ${{ inputs.pck-only }}
-        project-path: project
-        godot-editor-path: godot
-        godot-export-template-path: .godot/export_templates/${{ inputs.export-template-artifact-name }}
+        preset-name: ${{ inputs.preset-name }}
         profile: ${{ inputs.profile }}
+
+        godot-editor-path: godot
+        godot-export-template-path: ${{ inputs.export-template-artifact-name }}
+        preset-output-path: ${{ inputs.preset-output-name }}
+        project-path: project
+
+        # Encryption secrets
         encryption-key: ${{ inputs.encryption-key }}
+
+        # Codesigning secrets
         codesign-identity-type: ${{ inputs.codesign-identity-type }}
         codesign-identity: ${{ inputs.codesign-identity }}
         codesign-password: ${{ inputs.codesign-password }}
