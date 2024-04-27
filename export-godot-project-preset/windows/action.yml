@@ -60,4 +60,4 @@ runs:
       $([[ "${{ inputs.profile }}" == "release" ]] && echo "--export-release")
       $([[ "${{ inputs.pck-only }}" == "true" ]] && echo "--export-pck")
       '${{ inputs.preset-name }}'
-      ${{ inputs.preset-output-path }}
+      /github/workspace/${{ inputs.preset-output-path }}

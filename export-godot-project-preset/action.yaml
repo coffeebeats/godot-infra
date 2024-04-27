@@ -146,10 +146,14 @@ runs:
       uses: "./export-godot-project-preset/windows"
       with:
         arch: ${{ inputs.arch }}
-        encryption-key: ${{ inputs.encryption-key }}
-        godot-src-path: godot
+        preset-name: ${{ inputs.preset-name }}
+        preset-output-path: project/${{ inputs.preset-output-name }}
+        pck-only: ${{ inputs.pck-only }}
+        project-path: project
+        godot-editor-path: godot
+        godot-export-template-path: .godot/export_templates/${{ inputs.export-template-artifact-name }}
         profile: ${{ inputs.profile }}
-        use-double-precision: ${{ inputs.use-double-precision }}
+        encryption-key: ${{ inputs.encryption-key }}
         codesign-certificate-file: ${{ inputs.codesign-certificate-file }}
         codesign-certificate-password: ${{ inputs.codesign-certificate-password }}
         codesign-provisioning-profile: ${{ inputs.codesign-provisioning-profile }}
@@ -164,7 +168,7 @@ runs:
       uses: "./export-godot-project-preset/windows"
       with:
         preset-name: ${{ inputs.preset-name }}
-        preset-output-path: ${{ github.workspace }}/dist/${{ inputs.preset-output-name }}
+        preset-output-path: project/${{ inputs.preset-output-name }}
         pck-only: ${{ inputs.pck-only }}
         project-path: project
         godot-editor-path: godot
