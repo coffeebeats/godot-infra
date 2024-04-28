@@ -16,6 +16,10 @@ on:
         description: "The branch name which triggered this workflow run; used to determine supported Godot version (e.g. 'godot-v4.2')."
         required: true
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   godot-major-minor-version:
     runs-on: ubuntu-latest
