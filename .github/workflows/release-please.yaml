@@ -3,7 +3,6 @@ name: "🚀 Release: 'godot-infra'"
 on:
   push:
     branches:
-      - godot-*
       - godot-v*
 
 env:
@@ -30,12 +29,34 @@ jobs:
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
 
-          # NOTE: A PAT is used so that workflows can run on the new, automatically
-          # created pull requests. This circumvents GitHub's recursive workflow
-          # protections, which block automated pull requests from triggering workflows
-          # under the same default GitHub Actions token.
-          token: ${{ secrets.RELEASE_PLEASE }}
-
           # NOTE: To handle releases on specific branches (e.g. a '1.X' release branch),
           # simply change the "branches" filter in the workflow's on-"push" trigger.
           target-branch: ${{ github.ref_name }}
+
+  publish-images:
+    needs: ["release-please"]
+    if: needs.release-please.outputs.release-created == 'true'
+
+    strategy:
+      fail-fast: true
+      max-parallel: 2
+
+      matrix:
+        included:
+          - image: compile-godot-export-template
+            context: macos
+            timeout: 60
+          - image: compile-godot-export-template
+            platform: windows
+            timeout: 30
+
+          - image: export-godot-project-preset
+            platform: macos
+            timeout: 10
+          - image: export-godot-project-preset
+            platform: windows
+            timeout: 10
+
+    uses: "./.github/workflows/publish-image-${{ matrix.image }}-${{ matrix.platform }}.yaml"
+    with:
+      timeout: ${{ matrix.timeout }}
