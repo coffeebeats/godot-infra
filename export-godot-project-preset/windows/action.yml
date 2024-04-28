@@ -54,6 +54,12 @@ runs:
       $GITHUB_WORKSPACE/${{ inputs.godot-editor-path }}
       --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
       --headless
+      --import
+      --quit
+
+      $GITHUB_WORKSPACE/${{ inputs.godot-editor-path }}
+      --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
+      --headless
       --verbose
       $([[ "${{ inputs.profile }}" == "debug" ]] && echo "--export-debug")
       $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo "--export-debug")
