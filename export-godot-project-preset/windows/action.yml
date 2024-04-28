@@ -8,9 +8,6 @@ inputs:
   preset-output-path:
     description: "A path, relative to 'github.workspace', where the exported Godot preset will be output."
     required: true
-  pck-only:
-    description: "Whether to export a PCK file instead of an executable."
-    required: true
 
   project-path:
     description: "A path, relative to 'github.workspace', where the Godot project is located."
@@ -23,6 +20,9 @@ inputs:
     description: "A path, relative to 'github.workspace', where the Godot editor executable is located."
     required: true
 
+  pck-only:
+    description: "Whether to export a PCK file instead of an executable."
+    required: true
   profile:
     description: "The optimization profile of the exported project preset."
     required: false
