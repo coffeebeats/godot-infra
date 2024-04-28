@@ -41,10 +41,8 @@ runs:
       -C $GITHUB_WORKSPACE/${{ inputs.godot-src-path }}
       platform=windows
       arch=${{ inputs.arch }}
-      verbose=yes
-      warnings=extra
-      werror=yes
+      verbose=yes warnings=extra werror=yes
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
-      $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes optimize=debug)
-      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug dev_mode=yes debug_symbols=yes lto=full optimize=speed_trace)
-      $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes lto=full optimize=speed)
+      $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug debug_symbols=yes optimize=debug)
+      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
+      $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes optimize=speed)
