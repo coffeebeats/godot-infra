@@ -31,6 +31,7 @@ runs:
   image: ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.2-windows
   env:
     SCONS_CACHE: /github/workspace/${{ inputs.scons-cache-path }}
+    SCONS_CACHE_LIMIT: 1500
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
   args:
     - /bin/bash
