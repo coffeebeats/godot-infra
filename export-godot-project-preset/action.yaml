@@ -8,10 +8,6 @@ inputs:
   preset-output-name:
     description: "The output filename of the exported Godot project preset."
     required: true
-  pck-only:
-    description: "Whether to export a PCK file instead of an executable."
-    required: false
-    default: false
 
   project-path:
     description: "The path to the Godot project."
@@ -25,6 +21,10 @@ inputs:
     description: "The name of the Godot export template artifact to download."
     required: true
 
+  pck-only:
+    description: "Whether to export a PCK file instead of an executable."
+    required: false
+    default: false
   profile:
     description: "The optimization profile of the compiled export template."
     required: false
