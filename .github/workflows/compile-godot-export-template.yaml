@@ -60,9 +60,6 @@ on:
       name:
         description: "The file name of the compiled export template."
         value: ${{ jobs.compile.outputs.name }}
-      path:
-        description: "The path to the compiled export template artifact."
-        value: ${{ jobs.compile.outputs.path }}
 
 defaults:
   run:
@@ -75,7 +72,6 @@ jobs:
 
     outputs:
       name: ${{ steps.export-template.outputs.name }}
-      path: ${{ steps.export-template.outputs.path }}
 
     steps:
       - uses: actions/checkout@v4
