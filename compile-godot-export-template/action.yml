@@ -115,11 +115,17 @@ runs:
         if [[ "${{ endsWith(inputs.icon-path, '.ico') }}" != "true" ]]; then
           sudo apt-get install -y imagemagick
 
+          sha256sum ${{ inputs.icon-path }}
+
           ICON_PATH=${{ runner.temp }}/godot.ico
           convert ${{ inputs.icon-path }} -define icon:auto-resize=256,128,64,48,32,16 $ICON_PATH
+
+          sha256sum $ICON_PATH
         fi
 
         cp $ICON_PATH ${{ github.workspace }}/godot/platform/windows/godot.ico
+
+        sha256sum ${{ github.workspace }}/godot/platform/windows/godot.ico
 
     # ---------------------- Compile the export template --------------------- #
 
