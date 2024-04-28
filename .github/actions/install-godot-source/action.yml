@@ -78,3 +78,4 @@ runs:
         fi
 
         mv ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }} ${{ inputs.dst-path }}
+        echo "Moved Godot source code to target directory: $(realpath ${{ inputs.dst-path }})"

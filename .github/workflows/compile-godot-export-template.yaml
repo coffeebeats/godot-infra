@@ -85,7 +85,7 @@ jobs:
       - uses: ./.github/actions/install-godot-source
         id: godot
         with:
-          dst-path: godot-${{ inputs.godot-src-rev }}
+          dst-path: ${{ github.workspace }}/godot
           godot-src-rev: ${{ inputs.godot-src-rev }}
           godot-src-repository: ${{ inputs.godot-src-repository }}
 
@@ -95,7 +95,7 @@ jobs:
         id: export-template
         uses: ./compile-godot-export-template
         with:
-          godot-src-path: ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
+          godot-src-path: ${{ github.workspace }}/godot
 
           arch: ${{ inputs.arch }}
           platform: ${{ inputs.platform }}
