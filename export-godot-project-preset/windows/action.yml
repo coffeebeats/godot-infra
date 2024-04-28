@@ -66,7 +66,7 @@ runs:
       $([[ "${{ inputs.profile }}" == "release" ]] && echo "--export-release")
       $([[ "${{ inputs.pck-only }}" == "true" ]] && echo "--export-pck")
       '${{ inputs.preset-name }}'
-      /github/workspace/${{ inputs.preset-output-path }}
+      $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
       &> log.txt
 
       # FIXME(https://github.com/godotengine/godot/issues/83042): Remove this
