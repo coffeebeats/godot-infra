@@ -48,7 +48,7 @@ runs:
     - >-
       scons
       -j$(nproc)
-      -C /github/workspace/${{ inputs.godot-src-path }}
+      -C ${{ inputs.godot-src-path }}
       platform=macos arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
@@ -58,14 +58,14 @@ runs:
 
       [[ "${{ inputs.lipo }}" == "true" ]] &&
       lipo
-      -create bin/godot.macos.*
-      -output bin/godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").universal ||
+      -create ${{ inputs.godot-src-path }}/bin/godot.macos.*
+      -output ${{ inputs.godot-src-path }}/bin/godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").universal ||
       :
 
       [[ "${{ inputs.app-bundle }}" == "true" ]] &&
-      cp -r misc/dist/macos_template.app bin &&
-      mkdir -p bin/macos_template.app/Contents/MacOS &&
+      cp -r ${{ inputs.godot-src-path }}/misc/dist/macos_template.app ${{ inputs.godot-src-path }}/bin &&
+      mkdir -p ${{ inputs.godot-src-path }}/bin/macos_template.app/Contents/MacOS &&
       TEMPLATE_NAME=godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").$([[ "${{ inputs.lipo }}" == "true" ]] && echo universal || echo ${{ inputs.arch }}) &&
-      cp bin/$TEMPLATE_NAME bin/macos_template.app/Contents/MacOS &&
-      zip bin/macos.zip bin/macos_template.app ||
+      cp ${{ inputs.godot-src-path }}/bin/$TEMPLATE_NAME ${{ inputs.godot-src-path }}/bin/macos_template.app/Contents/MacOS &&
+      zip ${{ inputs.godot-src-path }}/bin/macos.zip bin/macos_template.app ||
       :
