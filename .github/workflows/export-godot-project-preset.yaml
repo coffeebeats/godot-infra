@@ -128,14 +128,16 @@ jobs:
         id: export-preset
         uses: ./export-godot-project-preset
         with:
-          encryption-key: ${{ inputs.encryption-key }}
-          export-template-artifact-name: ${{ inputs.export-template-artifact-name }}
-          godot-editor-path: ${{ github.workspace }}/bin/godot
-          pck-only: ${{ inputs.pck-only }}
           preset-name: ${{ inputs.preset-name }}
           preset-output-name: ${{ inputs.preset-output-name }}
-          profile: ${{ inputs.profile }}
+
           project-path: ${{ inputs.project-path }}
+          godot-editor-path: ${{ github.workspace }}/bin/godot
+          export-template-artifact-name: ${{ inputs.export-template-artifact-name }}
+
+          encryption-key: ${{ inputs.encryption-key }}
+          pck-only: ${{ inputs.pck-only }}
+          profile: ${{ inputs.profile }}
 
           # MacOS-specific inputs.
           codesign-certificate-file: ${{ inputs.codesign-certificate-file }}
