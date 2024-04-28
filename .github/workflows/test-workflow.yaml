@@ -3,6 +3,44 @@ name: "🧪 godot-infra: Placeholder workflow for testing"
 on:
   workflow_dispatch:
     inputs:
+      platform:
+        type: choice
+        required: false
+        default: windows
+        options:
+          - windows
+          - macos
+      arch:
+        type: choice
+        required: false
+        default: x86_64
+        options:
+          - x86_64
+          - arm64
+          - universal
+      profile:
+        type: choice
+        required: false
+        default: debug
+        options:
+          - debug
+          - release_debug
+          - release
+      godot-src-rev:
+        type: string
+        required: false
+        default: 4.2.1-stable
+      godot-src-repository:
+        type: string
+        required: false
+        default: godotengine/godot
+      preset:
+        type: choice
+        required: false
+        default: "Windows Desktop"
+        options:
+          - "Windows Desktop"
+          - "macOS"
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -13,15 +51,16 @@ jobs:
   compile:
     uses: "./.github/workflows/compile-godot-export-template.yaml"
     with:
-      godot-src-rev: 4.2.2-stable
-      godot-src-repository: godotengine/godot
+      godot-src-rev: ${{ inputs.godot-src-rev }}
+      godot-src-repository: ${{ inputs.godot-src-repository }}
 
-      arch: x86_64
-      platform: windows
+      arch: ${{ inputs.arch }}
+      platform: ${{ inputs.platform }}
+
       encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
       custompy-path: ./example/custom.py
       use-double-precision: false
-      profile: debug
+      profile: ${{ inputs.profile }}
 
       # Windows-specific inputs.
       icon-path: ./example/icon.svg
@@ -33,12 +72,12 @@ jobs:
     with:
       project-path: ./example
 
-      preset-name: "Windows Desktop"
+      preset-name: ${{ inputs.preset }}
       preset-output-name: "game.exe"
       pck-only: false
 
-      godot-editor-version: 4.2.2-stable
+      godot-editor-version: ${{ inputs.godot-src-rev }}
       export-template-artifact-name: ${{ needs.compile.outputs.name }}
 
-      profile: debug
+      profile: ${{ inputs.profile }}
       encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
