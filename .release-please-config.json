@@ -7,13 +7,11 @@
   "include-v-in-tag": true,
 
   "pull-request-title-pattern": "chore: release v${version}",
-  "changelog-type": "default",
+  "changelog-type": "github",
 
   "packages": {
     ".": {
       "release-type": "simple",
-
-      "release-as": "0.1.0",
 
       "changelog-path": "CHANGELOG.md",
 
