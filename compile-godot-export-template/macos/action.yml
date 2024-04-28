@@ -43,29 +43,29 @@ runs:
   args:
     - /bin/bash
     - -c
-    - |-
-      scons \
-      -j$(nproc) \
-      -C /github/workspace/${{ inputs.godot-src-path }} \
-      platform=macos arch=${{ inputs.arch }} \
-      verbose=yes warnings=extra werror=yes \
-      $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double") \
-      $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug debug_symbols=yes optimize=debug) \
-      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace) \
+    # NOTE: Any extra new-lines contained in this string will be executed as the
+    # start of a new command.
+    - >-
+      scons
+      -j$(nproc)
+      -C /github/workspace/${{ inputs.godot-src-path }}
+      platform=macos arch=${{ inputs.arch }}
+      verbose=yes warnings=extra werror=yes
+      $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
+      $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug debug_symbols=yes optimize=debug)
+      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
       $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes optimize=speed)
 
-      $(
-        [[ "${{ inputs.lipo }}" == "true" ]] && \
-        lipo \
-        -create bin/godot.macos.* \
-        -output bin/godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").universal
-      )
+      [[ "${{ inputs.lipo }}" == "true" ]] &&
+      lipo
+      -create bin/godot.macos.*
+      -output bin/godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").universal ||
+      :
 
-      $(
-        [[ "${{ inputs.app-bundle }}" == "true" ]] && \
-        cp -r misc/dist/macos_template.app bin && \
-        mkdir -p bin/macos_template.app/Contents/MacOS && \
-        TEMPLATE_NAME=godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").$([[ "${{ inputs.lipo }}" == "true" ]] && echo universal || echo ${{ inputs.arch }}) && \
-        cp bin/$TEMPLATE_NAME bin/macos_template.app/Contents/MacOS && \
-        zip bin/macos.zip bin/macos_template.app
-      )
+      [[ "${{ inputs.app-bundle }}" == "true" ]] &&
+      cp -r misc/dist/macos_template.app bin &&
+      mkdir -p bin/macos_template.app/Contents/MacOS &&
+      TEMPLATE_NAME=godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").$([[ "${{ inputs.lipo }}" == "true" ]] && echo universal || echo ${{ inputs.arch }}) &&
+      cp bin/$TEMPLATE_NAME bin/macos_template.app/Contents/MacOS &&
+      zip bin/macos.zip bin/macos_template.app ||
+      :
