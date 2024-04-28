@@ -59,6 +59,13 @@ jobs:
           files: export-godot-project-preset/windows/Dockerfile
 
   godot-major-minor-version:
+    needs: ["changes"]
+    if: |
+      needs.changes.outputs.compile-godot-export-template-macos == 'true' ||
+      needs.changes.outputs.compile-godot-export-template-windows == 'true' ||
+      needs.changes.outputs.export-godot-project-preset-macos == 'true' ||
+      needs.changes.outputs.export-godot-project-preset-windows == 'true'
+
     runs-on: ubuntu-latest
     timeout-minutes: 2
 
