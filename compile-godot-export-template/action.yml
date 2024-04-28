@@ -129,6 +129,7 @@ runs:
         (inputs.arch == 'x86_64' || inputs.arch == 'universal') &&
         steps.export-template.outputs.cache-hit != 'true'
       uses: "./compile-godot-export-template/macos"
+      continue-on-error: true
       with:
         app-bundle: ${{ inputs.arch == 'x86_64' }}
         arch: x86_64
