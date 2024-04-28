@@ -19,7 +19,13 @@ runs:
   steps:
     - name: Export the installation directory environment variable
       shell: bash
-      run: echo "GODOT_HOME=$(realpath ${{ inputs.install-dir }})" >> $GITHUB_ENV
+      run: |
+        if [[ "$(realpath ${{ inputs.install-dir }})" == "$(realpath $HOME)" ]]; then
+          echo "Refusing to install into \$HOME directory; consider using a different install path."
+          exit 1
+        fi
+
+        echo "GODOT_HOME=$(realpath ${{ inputs.install-dir }})" >> $GITHUB_ENV
 
     - name: Export the formatted Godot version
       id: version
