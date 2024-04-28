@@ -89,16 +89,6 @@ jobs:
           godot-src-rev: ${{ inputs.godot-src-rev }}
           godot-src-repository: ${{ inputs.godot-src-repository }}
 
-      # - name: Install 'gdenv'
-      #   uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
-      #   with:
-      #     skip-install: true
-
-      # - name: Vendor Godot source code
-      #   run: |
-      #     gdenv vendor -o ${{ github.workspace }}/godot ${{ inputs.godot-src-rev }}
-      #     rm -rf ${{ inputs.godot-src-rev }}/.git
-
       # --------------------- Compile the export template -------------------- #
 
       - name: Compile the export template

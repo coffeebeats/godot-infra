@@ -42,6 +42,7 @@ runs:
         ${{ inputs.godot-src-repository }}
         ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
         --
+        -b ${{ inputs.godot-src-rev }}
         --depth 1
         --no-tags
 
