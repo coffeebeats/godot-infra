@@ -56,7 +56,8 @@ jobs:
 
       arch: ${{ inputs.arch }}
       platform: ${{ inputs.platform }}
-      encryption-key: ${{ secrets.SCRIPT_AES256_ENCRYPTION_KEY }}
+
+      encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
       custompy-path: ./example/custom.py
       use-double-precision: false
       profile: ${{ inputs.profile }}
@@ -79,4 +80,4 @@ jobs:
       export-template-artifact-name: ${{ needs.compile.outputs.name }}
 
       profile: ${{ inputs.profile }}
-      encryption-key: ${{ secrets.SCRIPT_AES256_ENCRYPTION_KEY }}
+      encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
