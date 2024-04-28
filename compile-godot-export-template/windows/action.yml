@@ -39,7 +39,7 @@ runs:
     - >-
       scons
       -j$(nproc)
-      -C /github/workspace/${{ inputs.godot-src-path }}
+      -C ${{ inputs.godot-src-path }}
       platform=windows
       arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
