@@ -96,8 +96,8 @@ on:
         default: 60
 
     outputs:
-      path:
-        description: "The name of the Godot project export preset artifact."
+      name:
+        description: "The artifact name for the exported project preset."
         value: ${{ jobs.export.outputs.name }}
 
 defaults:
@@ -110,7 +110,7 @@ jobs:
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
     outputs:
-      name: TODO
+      name: ${{ inputs.preset-output-name }}
 
     steps:
       - uses: actions/checkout@v4
