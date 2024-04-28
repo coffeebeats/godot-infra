@@ -70,12 +70,19 @@ runs:
       --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
       --headless
       --verbose
+      --import
+      --quit
+
+      $GITHUB_WORKSPACE/${{ inputs.godot-editor-path }}
+      --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
+      --headless
+      --verbose
       $([[ "${{ inputs.profile }}" == "debug" ]] && echo "--export-debug")
       $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo "--export-debug")
       $([[ "${{ inputs.profile }}" == "release" ]] && echo "--export-release")
       $([[ "${{ inputs.pck-only }}" == "true" ]] && echo "--export-pck")
       '${{ inputs.preset-name }}'
-      /github/workspace/${{ inputs.preset-output-path }}
+      $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
       &> log.txt
 
       cat log.txt
