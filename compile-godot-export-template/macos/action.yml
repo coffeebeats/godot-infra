@@ -62,7 +62,7 @@ runs:
 
       [[ "${{ inputs.lipo }}" == "true" ]] &&
       echo "Creating export template with 'universal' architecture from the following inputs:" &&
-      ls -lsa $PATH_SRC/bin &&
+      ls -ls $PATH_SRC/bin &&
       lipo
       -create $PATH_SRC/bin/godot.macos.*
       -output $PATH_SRC/bin/$TEMPLATE_NAME &&
@@ -75,6 +75,6 @@ runs:
       mkdir -p $PATH_SRC/bin/macos_template.app/Contents/MacOS &&
       cp $PATH_SRC/bin/$TEMPLATE_NAME $PATH_SRC/bin/macos_template.app/Contents/MacOS/godot_macos_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug").universal &&
       chmod +x $PATH_SRC/bin/macos_template.app/Contents/MacOS/godot_macos* &&
-      zip -9 -r $PATH_SRC/bin/macos.zip $PATH_SRC/bin/macos_template.app &&
+      (cd $PATH_SRC/bin && zip -9 -r macos.zip macos_template.app) &&
       rm $PATH_SRC/bin/*[!zip] ||
       :
