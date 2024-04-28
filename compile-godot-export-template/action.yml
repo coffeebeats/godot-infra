@@ -86,9 +86,9 @@ runs:
       with:
         # NOTE: This path must match the one expected by the container action.
         path: ${{ github.workspace }}/.scons
-        key: scons-${{ runner.os }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.use-double-precision }}-${{ inputs.profile }}-${{ hashFiles(inputs.custompy-path) }}
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.use-double-precision }}-${{ inputs.profile }}-${{ hashFiles(inputs.custompy-path) }}
         restore-keys: |
-          scons-${{ runner.os }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.use-double-precision }}-${{ inputs.profile }}
+          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.use-double-precision }}-${{ inputs.profile }}
 
     # ------------------------ Set up build workspace ------------------------ #
 

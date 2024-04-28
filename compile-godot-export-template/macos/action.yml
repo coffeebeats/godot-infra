@@ -35,7 +35,7 @@ inputs:
 
 runs:
   using: docker
-  image: ubuntu:24.04
+  image: ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.2-macos
   env:
     SCONS_CACHE: /github/workspace/${{ inputs.scons-cache-path }}
     SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
