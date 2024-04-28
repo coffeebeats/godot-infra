@@ -1,9 +1,10 @@
 [gd_scene load_steps=2 format=3 uid="uid://oefjtjfh4bbx"]
 
-[ext_resource type="Texture2D" uid="uid://c8r3dpxpo2avs" path="res://icon.svg" id="1_wfnaf"]
+[ext_resource type="Texture2D" uid="uid://dynbfmbkuhdao" path="res://icon.svg" id="1_wfnaf"]
 
 [node name="Root" type="Node2D"]
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(604, 298)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("1_wfnaf")
