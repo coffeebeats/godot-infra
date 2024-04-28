@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1 (2024-04-28)
+
+## What's Changed
+* chore: unpin release version; switch to `github` changelog by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/96
+* fix(ci): skip `godot-major-minor-version` job if no changes found by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/98
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.1.0...v0.1.1
+
 ## [0.1.0](https://github.com/coffeebeats/godot-infra/compare/v0.1.0...v0.1.0) (2024-04-28)
 
 
