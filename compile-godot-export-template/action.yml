@@ -113,8 +113,6 @@ runs:
       run: |
         ICON_PATH="${{ inputs.icon-path }}"
         if [[ "${{ endsWith(inputs.icon-path, '.ico') }}" != "true" ]]; then
-          sudo apt-get install -y imagemagick
-
           ICON_PATH=${{ runner.temp }}/godot.ico
           convert ${{ inputs.icon-path }} -define icon:auto-resize=256,128,64,48,32,16 $ICON_PATH
         fi
