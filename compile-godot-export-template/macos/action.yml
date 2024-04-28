@@ -56,16 +56,24 @@ runs:
       $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
       $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes optimize=speed)
 
+      export
+      PATH_SRC=${{ inputs.godot-src-path }}
+      TEMPLATE_NAME=godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").$([[ "${{ inputs.lipo }}" == "true" ]] && echo "universal" || echo ${{ inputs.arch }})
+
       [[ "${{ inputs.lipo }}" == "true" ]] &&
+      echo "Creating export template with 'universal' architecture from the following inputs:" &&
+      ls -lsa $PATH_SRC/bin &&
       lipo
-      -create ${{ inputs.godot-src-path }}/bin/godot.macos.*
-      -output ${{ inputs.godot-src-path }}/bin/godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").universal ||
+      -create $PATH_SRC/bin/godot.macos.*
+      -output $PATH_SRC/bin/$TEMPLATE_NAME &&
+      rm $PATH_SRC/bin/godot.*[!universal] ||
       :
 
       [[ "${{ inputs.app-bundle }}" == "true" ]] &&
-      cp -r ${{ inputs.godot-src-path }}/misc/dist/macos_template.app ${{ inputs.godot-src-path }}/bin &&
-      mkdir -p ${{ inputs.godot-src-path }}/bin/macos_template.app/Contents/MacOS &&
-      TEMPLATE_NAME=godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").$([[ "${{ inputs.lipo }}" == "true" ]] && echo universal || echo ${{ inputs.arch }}) &&
-      cp ${{ inputs.godot-src-path }}/bin/$TEMPLATE_NAME ${{ inputs.godot-src-path }}/bin/macos_template.app/Contents/MacOS &&
-      zip ${{ inputs.godot-src-path }}/bin/macos.zip ${{ inputs.godot-src-path }}/bin/macos_template.app ||
+      echo "Creating MacOS application bundle 'macos.zip' from template: $TEMPLATE_NAME" &&
+      cp -r $PATH_SRC/misc/dist/macos_template.app $PATH_SRC/bin &&
+      mkdir -p $PATH_SRC/bin/macos_template.app/Contents/MacOS &&
+      cp $PATH_SRC/bin/$TEMPLATE_NAME $PATH_SRC/bin/macos_template.app/Contents/MacOS/godot_macos_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug").universal &&
+      chmod +x $PATH_SRC/bin/macos_template.app/Contents/MacOS/godot_macos* &&
+      zip -9 -r $PATH_SRC/bin/macos.zip $PATH_SRC/bin/macos_template.app ||
       :

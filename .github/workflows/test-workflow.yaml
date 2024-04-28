@@ -73,7 +73,7 @@ jobs:
       project-path: ./example
 
       preset-name: ${{ inputs.preset }}
-      preset-output-name: "game.exe"
+      preset-output-name: "game.app"
       pck-only: false
 
       godot-editor-version: ${{ inputs.godot-src-rev }}
