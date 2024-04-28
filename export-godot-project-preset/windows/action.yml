@@ -74,4 +74,4 @@ runs:
 
       cat log.txt
 
-      [[ $(grep "ERROR:" log.txt | wc -l) -eq 0 ]]
+      [[ $(grep "ERROR:" log.txt | wc -l) -ne 0 ]] && exit 1 || :
