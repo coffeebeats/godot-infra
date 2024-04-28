@@ -86,9 +86,9 @@ runs:
       with:
         # NOTE: This path must match the one expected by the container action.
         path: ${{ github.workspace }}/.scons
-        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.use-double-precision }}-${{ inputs.profile }}-${{ hashFiles(inputs.custompy-path) }}
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.godot-src-path) }}-${{ hashFiles(inputs.custompy-path) }}
         restore-keys: |
-          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.use-double-precision }}-${{ inputs.profile }}
+          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.godot-src-path) }}-
 
     # ------------------------ Set up build workspace ------------------------ #
 
@@ -121,6 +121,8 @@ runs:
 
     # ---------------------- Compile the export template --------------------- #
 
+    # MacOS
+
     - name: Compile the export template (MacOS - x86_64)
       if: |
         inputs.platform == 'macos' &&
@@ -128,6 +130,7 @@ runs:
         steps.export-template.outputs.cache-hit != 'true'
       uses: "./compile-godot-export-template/macos"
       with:
+        app-bundle: ${{ inputs.arch == 'x86_64' }}
         arch: x86_64
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
@@ -148,6 +151,8 @@ runs:
         lipo: ${{ inputs.arch == 'universal' }}
         profile: ${{ inputs.profile }}
         use-double-precision: ${{ inputs.use-double-precision }}
+
+    # Windows
 
     - name: Compile the export template (Windows - x86_64)
       if: |
