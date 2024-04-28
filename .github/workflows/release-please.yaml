@@ -12,7 +12,6 @@ env:
 permissions:
   contents: write
   pull-requests: write
-  packages: write
 
 jobs:
   release-please:
@@ -33,11 +32,3 @@ jobs:
           # NOTE: To handle releases on specific branches (e.g. a '1.X' release branch),
           # simply change the "branches" filter in the workflow's on-"push" trigger.
           target-branch: ${{ github.ref_name }}
-
-  publish-images:
-    needs: ["release-please"]
-    if: needs.release-please.outputs.release-created == 'true'
-
-    uses: "./.github/workflows/publish-image-godot-infra.yaml"
-    with:
-      ref_name: ${{ github.ref_name }}
