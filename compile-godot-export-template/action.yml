@@ -123,6 +123,10 @@ runs:
 
     # MacOS
 
+    # TODO: 'universal' builds cannot take advantage of 'x86_64'/'arm64'-
+    # specific caches. Consider restructuring, but this is unlikely to be an
+    # issue in practice because 'universal' is by far the most common arch.
+
     - name: Compile the export template (MacOS - x86_64)
       if: |
         inputs.platform == 'macos' &&
