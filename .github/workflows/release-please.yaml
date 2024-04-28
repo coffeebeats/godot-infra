@@ -37,26 +37,6 @@ jobs:
     needs: ["release-please"]
     if: needs.release-please.outputs.release-created == 'true'
 
-    strategy:
-      fail-fast: true
-      max-parallel: 2
-
-      matrix:
-        included:
-          - image: compile-godot-export-template
-            context: macos
-            timeout: 60
-          - image: compile-godot-export-template
-            platform: windows
-            timeout: 30
-
-          - image: export-godot-project-preset
-            platform: macos
-            timeout: 10
-          - image: export-godot-project-preset
-            platform: windows
-            timeout: 10
-
-    uses: "./.github/workflows/publish-image-${{ matrix.image }}-${{ matrix.platform }}.yaml"
+    uses: "./.github/workflows/publish-image-godot-infra.yaml"
     with:
-      timeout: ${{ matrix.timeout }}
+      ref_name: ${{ github.ref_name }}

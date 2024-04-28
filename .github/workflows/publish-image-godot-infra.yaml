@@ -1,0 +1,67 @@
+name: "🐳 Publish: 'godot-infra' images (all)"
+
+# NOTE: This workflow is intended to be used during releases.
+
+on:
+  workflow_call:
+    inputs:
+      ref_name:
+        type: string
+        description: "The branch name which triggered this workflow run; used to determine supported Godot version (e.g. 'godot-v4.2')."
+        required: true
+  workflow_dispatch:
+    inputs:
+      ref_name:
+        type: string
+        description: "The branch name which triggered this workflow run; used to determine supported Godot version (e.g. 'godot-v4.2')."
+        required: true
+
+jobs:
+  godot-major-minor-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    outputs:
+      value: ${{ steps.target.outputs.godot-major-minor-version }}
+
+    steps:
+      - name: Determine the target major-minor version
+        id: target
+        shell: bash
+        run: echo "godot-major-minor-version=$(echo ${{ inputs.ref_name }} | sed -E 's/^godot-//' | sed -E 's/^v//')"
+
+  compile-godot-export-template-macos:
+    needs: ["godot-major-minor-version"]
+
+    uses: "./.github/workflows/publish-image-compile-godot-export-template-macos.yaml"
+    with:
+      godot-major-minor-version: ${{ needs.godot-major-minor-version.outputs.value }}
+
+  compile-godot-export-template-windows:
+    needs: ["godot-major-minor-version"]
+
+    uses: "./.github/workflows/publish-image-compile-godot-export-template-windows.yaml"
+    with:
+      godot-major-minor-version: ${{ needs.godot-major-minor-version.outputs.value }}
+
+  export-godot-project-preset-macos:
+    needs:
+      - "godot-major-minor-version"
+      # NOTE: Fake a concurrency limit of '2' by depending on the two 'compile-*' images.
+      - "compile-godot-export-template-macos"
+      - "compile-godot-export-template-windows"
+
+    uses: "./.github/workflows/publish-image-export-godot-project-preset-macos.yaml"
+    with:
+      godot-major-minor-version: ${{ needs.godot-major-minor-version.outputs.value }}
+
+  export-godot-project-preset-windows:
+    needs:
+      - "godot-major-minor-version"
+      # NOTE: Fake a concurrency limit of '2' by depending on the two 'compile-*' images.
+      - "compile-godot-export-template-macos"
+      - "compile-godot-export-template-windows"
+
+    uses: "./.github/workflows/publish-image-export-godot-project-preset-windows.yaml"
+    with:
+      godot-major-minor-version: ${{ needs.godot-major-minor-version.outputs.value }}
