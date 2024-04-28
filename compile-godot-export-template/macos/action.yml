@@ -67,5 +67,5 @@ runs:
       mkdir -p ${{ inputs.godot-src-path }}/bin/macos_template.app/Contents/MacOS &&
       TEMPLATE_NAME=godot.macos.template_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")$([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo ".double").$([[ "${{ inputs.lipo }}" == "true" ]] && echo universal || echo ${{ inputs.arch }}) &&
       cp ${{ inputs.godot-src-path }}/bin/$TEMPLATE_NAME ${{ inputs.godot-src-path }}/bin/macos_template.app/Contents/MacOS &&
-      zip ${{ inputs.godot-src-path }}/bin/macos.zip bin/macos_template.app ||
+      zip ${{ inputs.godot-src-path }}/bin/macos.zip ${{ inputs.godot-src-path }}/bin/macos_template.app ||
       :
