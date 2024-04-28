@@ -1,4 +1,4 @@
-name: "🎮 godot-infra: Publish 'itch.io' project"
+name: "🎮 Publish: 'itch.io' project"
 description: "Publishes a game project to 'itch.io'."
 
 inputs:
