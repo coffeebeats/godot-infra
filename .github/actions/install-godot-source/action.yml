@@ -40,17 +40,17 @@ runs:
         GH_TOKEN=${{ github.token }}
         gh repo clone
         ${{ inputs.godot-src-repository }}
-        godot-${{ inputs.godot-src-rev }}
+        ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
         --
         --depth 1
         --no-tags
 
-        rm -rf godot-${{ inputs.godot-src-rev }}/.git
+        rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/.git
 
     - name: Determine the Godot version
       id: godot
       shell: bash
-      working-directory: ./godot-${{ inputs.godot-src-rev }}
+      working-directory: ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
       run: |
         echo "major-minor=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_OUTPUT
         echo "semver=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_OUTPUT
@@ -70,4 +70,10 @@ runs:
     - name: Copy the source code to 'dst-path'
       if: inputs.dst-path != ''
       shell: bash
-      run: mv $GITHUB_WORKSPACE/godot-${{ inputs.godot-src-rev }} ${{ inputs.dst-path }}
+      run: |
+        if [[ "$(realpath ${{ inputs.dst-path }})" == "$(realpath ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }})" ]]; then
+          echo "Godot source code already at target directory; exiting without making changes."
+          exit 0
+        fi
+
+        mv ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }} ${{ inputs.dst-path }}

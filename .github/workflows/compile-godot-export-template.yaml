@@ -82,22 +82,22 @@ jobs:
 
       # -------------------- Vendor the Godot source code -------------------- #
 
-      # - uses: ./.github/actions/install-godot-source
-      #   id: godot
-      #   with:
-      #     dst-path: ${{ github.workspace }}/godot
-      #     godot-src-rev: ${{ inputs.godot-src-rev }}
-      #     godot-src-repository: ${{ inputs.godot-src-repository }}
-
-      - name: Install 'gdenv'
-        uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
+      - uses: ./.github/actions/install-godot-source
+        id: godot
         with:
-          skip-install: true
+          dst-path: godot-${{ inputs.godot-src-rev }}
+          godot-src-rev: ${{ inputs.godot-src-rev }}
+          godot-src-repository: ${{ inputs.godot-src-repository }}
 
-      - name: Vendor Godot source code
-        run: |
-          gdenv vendor -o ${{ github.workspace }}/godot ${{ inputs.godot-src-rev }}
-          rm -rf ${{ inputs.godot-src-rev }}/.git
+      # - name: Install 'gdenv'
+      #   uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
+      #   with:
+      #     skip-install: true
+
+      # - name: Vendor Godot source code
+      #   run: |
+      #     gdenv vendor -o ${{ github.workspace }}/godot ${{ inputs.godot-src-rev }}
+      #     rm -rf ${{ inputs.godot-src-rev }}/.git
 
       # --------------------- Compile the export template -------------------- #
 
@@ -105,7 +105,7 @@ jobs:
         id: export-template
         uses: ./compile-godot-export-template
         with:
-          godot-src-path: ${{ github.workspace }}/godot
+          godot-src-path: ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
 
           arch: ${{ inputs.arch }}
           platform: ${{ inputs.platform }}
