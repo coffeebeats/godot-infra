@@ -82,12 +82,20 @@ jobs:
 
       # -------------------- Vendor the Godot source code -------------------- #
 
-      - uses: ./.github/actions/install-godot-source
-        id: godot
+      # - uses: ./.github/actions/install-godot-source
+      #   id: godot
+      #   with:
+      #     dst-path: ${{ github.workspace }}/godot
+      #     godot-src-rev: ${{ inputs.godot-src-rev }}
+      #     godot-src-repository: ${{ inputs.godot-src-repository }}
+
+      - name: Install 'gdenv'
+        uses: coffeebeats/gdenv/.github/actions/setup-gdenv@main
         with:
-          dst-path: ${{ github.workspace }}/godot
-          godot-src-rev: ${{ inputs.godot-src-rev }}
-          godot-src-repository: ${{ inputs.godot-src-repository }}
+          skip-install: true
+
+      - name: Vendor Godot source code
+        run: gdenv vendor -o ${{ github.workspace }}/godot ${{ inputs.godot-src-rev }}
 
       # --------------------- Compile the export template -------------------- #
 
