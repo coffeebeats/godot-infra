@@ -3,6 +3,7 @@ name: "🚀 Release: 'godot-infra'"
 on:
   push:
     branches:
+      - main
       - godot-v*
 
 env:
