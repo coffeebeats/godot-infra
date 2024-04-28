@@ -21,7 +21,7 @@ jobs:
       encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
       custompy-path: ./example/custom.py
       use-double-precision: false
-      profile: release
+      profile: debug
 
       # Windows-specific inputs.
       icon-path: ./example/icon.svg
@@ -40,5 +40,5 @@ jobs:
       godot-editor-version: 4.2.2-stable
       export-template-artifact-name: ${{ needs.compile.outputs.name }}
 
-      profile: release
+      profile: debug
       encryption-key: aeb1bc56aaf580cc31784e9c41551e9ed976ecba10d315db591e749f3f64890f
