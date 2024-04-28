@@ -174,7 +174,7 @@ runs:
 
     - name: Inspect compiled artifacts
       shell: bash
-      run: ls -lsa $GITHUB_WORKSPACE/godot/bin | tail -n+3
+      run: ls -lsa $GITHUB_WORKSPACE/godot/bin
 
     - name: Determine export template file name
       id: compiled-artifact

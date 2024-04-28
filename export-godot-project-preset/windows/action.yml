@@ -67,11 +67,11 @@ runs:
       $([[ "${{ inputs.pck-only }}" == "true" ]] && echo "--export-pck")
       '${{ inputs.preset-name }}'
       /github/workspace/${{ inputs.preset-output-path }}
-      2>&1 > log.txt
+      &> log.txt
 
       # FIXME(https://github.com/godotengine/godot/issues/83042): Remove this
       # after Godot v4.3, since exit codes will be properly set.
 
       cat log.txt
 
-      [[ $(grep "ERROR:" log.txt | wc -l) -ne 0 ]] && exit 1 || :
+      [[ $(grep "ERROR:" log.txt | wc -l) -eq 0 ]]
