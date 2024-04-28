@@ -1,0 +1,41 @@
+name: "🚀 Release: 'godot-infra'"
+
+on:
+  push:
+    branches:
+      - godot-*
+      - godot-v*
+
+env:
+  # This is required to use the 'gh' CLI in actions.
+  GH_TOKEN: ${{ github.token }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    outputs:
+      release-created: ${{ steps.release.outputs.releases_created }}
+      release-tag: ${{ steps.release.outputs.tag_name }}
+
+    steps:
+      - uses: google-github-actions/release-please-action@v4
+        id: release
+        with:
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+          # NOTE: A PAT is used so that workflows can run on the new, automatically
+          # created pull requests. This circumvents GitHub's recursive workflow
+          # protections, which block automated pull requests from triggering workflows
+          # under the same default GitHub Actions token.
+          token: ${{ secrets.RELEASE_PLEASE }}
+
+          # NOTE: To handle releases on specific branches (e.g. a '1.X' release branch),
+          # simply change the "branches" filter in the workflow's on-"push" trigger.
+          target-branch: ${{ github.ref_name }}
