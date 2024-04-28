@@ -120,7 +120,7 @@ jobs:
       - uses: ./.github/actions/setup-godot
         with:
           version: ${{ inputs.godot-editor-version }}
-          install-dir: ${{ github.workspace }}
+          install-dir: ${{ github.workspace }}/.godot
 
       # ---------------------- Export the project preset --------------------- #
 
@@ -132,7 +132,7 @@ jobs:
           preset-output-name: ${{ inputs.preset-output-name }}
 
           project-path: ${{ inputs.project-path }}
-          godot-editor-path: ${{ github.workspace }}/bin/godot
+          godot-editor-path: ${{ github.workspace }}/.godot/bin/godot
           export-template-artifact-name: ${{ inputs.export-template-artifact-name }}
 
           encryption-key: ${{ inputs.encryption-key }}
