@@ -36,10 +36,6 @@ runs:
     - /bin/bash
     - -c
     - >-
-      sha256sum $GITHUB_WORKSPACE/${{ inputs.godot-src-path }}/platform/windows/godot.ico
-
-      exit 1
-
       scons
       -j$(nproc)
       -C $GITHUB_WORKSPACE/${{ inputs.godot-src-path }}
