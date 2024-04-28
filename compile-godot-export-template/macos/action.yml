@@ -75,5 +75,6 @@ runs:
       mkdir -p $PATH_SRC/bin/macos_template.app/Contents/MacOS &&
       cp $PATH_SRC/bin/$TEMPLATE_NAME $PATH_SRC/bin/macos_template.app/Contents/MacOS/godot_macos_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug").universal &&
       chmod +x $PATH_SRC/bin/macos_template.app/Contents/MacOS/godot_macos* &&
-      zip -9 -r $PATH_SRC/bin/macos.zip $PATH_SRC/bin/macos_template.app ||
+      zip -9 -r $PATH_SRC/bin/macos.zip $PATH_SRC/bin/macos_template.app &&
+      rm $PATH_SRC/bin/*[!zip] ||
       :
