@@ -198,4 +198,4 @@ runs:
 
     - name: Inspect exported artifacts
       shell: bash
-      run: ls -lsa $GITHUB_WORKSPACE/dist
+      run: ls -ls $GITHUB_WORKSPACE/dist
