@@ -170,7 +170,11 @@ runs:
         profile: ${{ inputs.profile }}
         use-double-precision: ${{ inputs.use-double-precision }}
 
-    # ------------- Determine compiled export template file name ------------- #
+    # ---------------------- Inspect compiled artifacts ---------------------- #
+
+    - name: Inspect compiled artifacts
+      shell: bash
+      run: ls -lsa $GITHUB_WORKSPACE/godot/bin
 
     - name: Determine export template file name
       id: compiled-artifact

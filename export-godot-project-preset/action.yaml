@@ -73,7 +73,7 @@ inputs:
 outputs:
   path:
     description: "The path to the compiled export template artifact."
-    value: ${{ github.workspace }}/${{ inputs.preset-output-name }}
+    value: ${{ github.workspace }}/dist/${{ inputs.preset-output-name }}
 
 runs:
   using: composite
@@ -121,6 +121,8 @@ runs:
         --export-presets-path=project/export_presets.cfg
         --template-path="/github/workspace/${{ inputs.export-template-artifact-name }}"
 
+        echo "Set path to export template for preset '${{ inputs.preset-name }}': /github/workspace/${{ inputs.export-template-artifact-name }}"
+
     - name: Get the platform of the specified preset
       id: preset
       shell: bash
@@ -137,7 +139,13 @@ runs:
 
         echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
 
+        echo "Determined platform for preset '${{ inputs.preset-name }}': $PLATFORM"
+
     # ----------------------- Export the project preset ---------------------- #
+
+    - name: Create output directory
+      shell: bash
+      run: mkdir $GITHUB_WORKSPACE/dist
 
     - name: Export the Godot project preset (MacOS)
       if: steps.preset.outputs.platform == 'macos'
@@ -149,7 +157,7 @@ runs:
 
         godot-editor-path: godot
         godot-export-template-path: ${{ inputs.export-template-artifact-name }}
-        preset-output-path: ${{ inputs.preset-output-name }}
+        preset-output-path: dist/${{ inputs.preset-output-name }}
         project-path: project
 
         # Encryption secrets
@@ -175,7 +183,7 @@ runs:
 
         godot-editor-path: godot
         godot-export-template-path: ${{ inputs.export-template-artifact-name }}
-        preset-output-path: ${{ inputs.preset-output-name }}
+        preset-output-path: dist/${{ inputs.preset-output-name }}
         project-path: project
 
         # Encryption secrets
@@ -185,3 +193,9 @@ runs:
         codesign-identity-type: ${{ inputs.codesign-identity-type }}
         codesign-identity: ${{ inputs.codesign-identity }}
         codesign-password: ${{ inputs.codesign-password }}
+
+    # ---------------------- Inspect exported artifacts ---------------------- #
+
+    - name: Inspect exported artifacts
+      shell: bash
+      run: ls -lsa $GITHUB_WORKSPACE/dist
