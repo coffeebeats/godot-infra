@@ -47,7 +47,7 @@ runs:
     - >-
       scons
       -j$(nproc)
-      -C $GITHUB_WORKSPACE/${{ inputs.godot-src-path }}
+      -C /github/workspace/${{ inputs.godot-src-path }}
       platform=macos arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
