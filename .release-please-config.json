@@ -13,6 +13,8 @@
     ".": {
       "release-type": "simple",
 
+      "release-as": "0.1.0",
+
       "changelog-path": "CHANGELOG.md",
 
       "extra-files": []
