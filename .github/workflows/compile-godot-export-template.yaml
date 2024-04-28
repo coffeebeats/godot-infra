@@ -95,7 +95,9 @@ jobs:
           skip-install: true
 
       - name: Vendor Godot source code
-        run: gdenv vendor -o ${{ github.workspace }}/godot ${{ inputs.godot-src-rev }}
+        run: |
+          gdenv vendor -o ${{ github.workspace }}/godot ${{ inputs.godot-src-rev }}
+          rm -rf ${{ inputs.godot-src-rev }}/.git
 
       # --------------------- Compile the export template -------------------- #
 
