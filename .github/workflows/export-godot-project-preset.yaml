@@ -168,7 +168,7 @@ jobs:
             WRAPPER_DIR="${{ runner.temp }}/dist"
 
             mkdir "$WRAPPER_DIR"
-            mv "$ARTIFACT_PATH" "$WRAPPER_DIR"
+            sudo mv "$ARTIFACT_PATH" "$WRAPPER_DIR"
 
             ARTIFACT_PATH="$WRAPPER_DIR"
           fi
