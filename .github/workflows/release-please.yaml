@@ -34,6 +34,9 @@ jobs:
           # simply change the "branches" filter in the workflow's on-"push" trigger.
           target-branch: ${{ github.ref_name }}
 
+      - uses: actions/checkout@v4
+        if: steps.release.outputs.releases_created == 'true'
+
       - name: Publish major tag
         if: steps.release.outputs.releases_created == 'true'
         shell: bash
