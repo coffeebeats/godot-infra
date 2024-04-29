@@ -33,3 +33,19 @@ jobs:
           # NOTE: To handle releases on specific branches (e.g. a '1.X' release branch),
           # simply change the "branches" filter in the workflow's on-"push" trigger.
           target-branch: ${{ github.ref_name }}
+
+      - name: Publish major tag
+        if: steps.release.outputs.releases_created == 'true'
+        shell: bash
+        run: |
+          # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          # Delete existing tag
+          git tag -d v${{ steps.release.outputs.major }} || :
+          git push origin :v${{ steps.release.outputs.major }} || :
+
+          # Create new/updated major tag
+          git tag -a v${{ steps.release.outputs.major }} -m "chore: release v${{ steps.release.outputs.major }}"
+          git push origin v${{ steps.release.outputs.major }}
