@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 (2024-04-29)
+
+## What's Changed
+* feat: migrate public workflows to versioned actions by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/112
+* chore: remove `example` project by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/114
+* refactor(ci)!: replace `compile-` and `export-` workflows with existing actions by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/115
+* refactor(ci): merge platform-specific image publish workflows by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/116
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.1.5...v0.2.0
+
 ## 0.1.5 (2024-04-29)
 
 ## What's Changed
