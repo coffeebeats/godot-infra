@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 (2024-04-29)
+
+## What's Changed
+* chore(ci): reset test workflow by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/117
+* fix(ci): fix syntax error in `compile-godot-export-template` action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/119
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.0...v0.2.1
+
 ## 0.2.0 (2024-04-29)
 
 ## What's Changed
