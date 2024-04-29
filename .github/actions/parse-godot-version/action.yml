@@ -8,6 +8,10 @@ inputs:
     type: string
     description: "The path to a Godot editor to invoke 'godot --version' output from."
     required: false
+  gdenv-pin-path:
+    type: string
+    description: "A path to a '.godot-version' pin file."
+    required: false
   versionpy-path:
     type: string
     description: "A path to a 'version.py' file in a Godot source code checkout."
@@ -30,6 +34,7 @@ runs:
     - name: Parse version from 'godot --version'
       if: |
         editor-path != '' &&
+        hashFiles(inputs.gdenv-pin-path) == '' &&
         hashFiles(inputs.versionpy-path) == ''
       shell: bash
       run: |
@@ -45,7 +50,8 @@ runs:
     - name: Parse version from 'version.py'
       if: |
         hashFiles(inputs.versionpy-path) != '' &&
-        inputs.editor-path == ''
+        inputs.editor-path == '' &&
+        hashFiles(inputs.gdenv-pin-path) == ''
       shell: bash
       run: |
         echo "Parsing Godot version from 'version.py' file: '${{ inputs.versionpy-path }}'"
@@ -55,6 +61,21 @@ runs:
         echo "MAJOR_MINOR=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_ENV
         echo "MAJOR_MINOR_PATCH=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}')")" >> $GITHUB_ENV
         echo "SEMANTIC=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_ENV
+
+    - name: Parse version from '.godot-version'
+      if: |
+        hashFiles(inputs.gdenv-pin-path) != '' &&
+        inputs.editor-path == '' &&
+        hashFiles(inputs.versionpy-path) == ''
+      shell: bash
+      run: |
+        echo "Parsing Godot version from '.godot-version' file: '${{ inputs.gdenv-pin-path }}'"
+
+        VERSION=$(cat ${{ inputs.gdenv-pin-path }})
+
+        echo "SEMANTIC=$(echo "$VERSION" | sed 's/^v//')" >> $GITHUB_ENV
+        echo "MAJOR_MINOR=$(echo "$VERSION" | sed -E 's/^v//' | cut -d '-' -f 1 | sed -E 's/\.[0-9]+$//')" >> $GITHUB_ENV
+        echo "MAJOR_MINOR_PATCH=$(echo "$VERSION" | sed 's/^v//' | cut -d '-' -f 1)" >> $GITHUB_ENV
 
     # TODO: If another input type is added, check that a prior step hasn't
     # already succeeded. If so, throw an error if there's a mismatch.
