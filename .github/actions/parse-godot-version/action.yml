@@ -4,6 +4,10 @@ description: "Parses the Godot version from various inputs."
 # NOTE: This action can be updated with various other input types as needed.
 
 inputs:
+  editor-path:
+    type: string
+    description: "The path to a Godot editor to invoke 'godot --version' output from."
+    required: false
   versionpy-path:
     type: string
     description: "A path to a 'version.py' file in a Godot source code checkout."
@@ -23,9 +27,29 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Parse version from 'version.py'
-      if: hashFiles(inputs.versionpy-path) != ''
+    - name: Parse version from 'godot --version'
+      if: |
+        editor-path != '' &&
+        hashFiles(inputs.versionpy-path) == ''
+      shell: bash
       run: |
+        echo "Parsing Godot version from engine CLI: '${{ inputs.editor-path }}'"
+
+        OUTPUT=$(${{ inputs.editor-path }} --version)
+        echo "Engine '--version' output: '$OUTPUT'"
+
+        echo "MAJOR_MINOR=$(python3 -B -c "v='$OUTPUT'.strip();print(f'{v[0]}.{v[1]}')")" >> $GITHUB_ENV
+        echo "MAJOR_MINOR_PATCH=$(python3 -B -c "v='$OUTPUT'.strip();print(f'{v[0]}.{v[1]}.{v[2]}')")" >> $GITHUB_ENV
+        echo "SEMANTIC=$(python3 -B -c "v='$OUTPUT'.strip();print(f'{v[0]}.{v[1]}.{v[2]}-{v[3]}')")" >> $GITHUB_ENV
+
+    - name: Parse version from 'version.py'
+      if: |
+        hashFiles(inputs.versionpy-path) != '' &&
+        inputs.editor-path == ''
+      shell: bash
+      run: |
+        echo "Parsing Godot version from 'version.py' file: '${{ inputs.versionpy-path }}'"
+
         cd "$(dirname ${{ inputs.versionpy-path }})"
 
         echo "MAJOR_MINOR=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_ENV
