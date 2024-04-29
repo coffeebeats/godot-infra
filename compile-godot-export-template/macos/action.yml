@@ -43,6 +43,9 @@ runs:
   args:
     - /bin/bash
     - -c
+    # NOTE: Enable 'extglob' to support simpler deletion of compilation artifacts.
+    - -O
+    - extglob
     # NOTE: Any extra new-lines contained in this string will be executed as the
     # start of a new command.
     - >-
@@ -76,5 +79,5 @@ runs:
       cp $PATH_SRC/bin/$TEMPLATE_NAME $PATH_SRC/bin/macos_template.app/Contents/MacOS/godot_macos_$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug").universal &&
       chmod +x $PATH_SRC/bin/macos_template.app/Contents/MacOS/godot_macos* &&
       (cd $PATH_SRC/bin && zip -9 -r macos.zip macos_template.app) &&
-      rm -rf $PATH_SRC/bin/*[!zip] ||
+      rm -rf $PATH_SRC/bin/*.!(zip) ||
       :
