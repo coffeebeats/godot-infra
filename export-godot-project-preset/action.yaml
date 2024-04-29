@@ -81,6 +81,19 @@ runs:
   steps:
     # ----------------------------- Set up Godot ----------------------------- #
 
+    - name: Validate Godot editor version
+      shell: bash
+      env:
+        # TODO: If Godot ever releases more than '9' patch versions this will
+        # break. That's never happened before, so ignore for now.
+        GODOT_VERSION_MIN: 4.2.2
+      run: |
+        VERSION_ACTUAL="$(${{ inputs.godot-editor-path }} --version)"
+        if [[ "$VERSION_ACTUAL" < "${{ env.GODOT_VERSION_MIN }}"* ]]; then
+          echo "Supplied editor '$VERSION_ACTUAL' less than required minimum: ${{ env.GODOT_VERSION_MIN }}"
+          exit 1
+        fi
+
     - name: Copy the Godot project to the expected location
       shell: bash
       run: |
