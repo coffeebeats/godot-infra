@@ -156,9 +156,28 @@ jobs:
 
       # --------------------- Publish generated artifacts -------------------- #
 
+      # NOTE: Runnable MacOS exports are directories, which don't get uploaded
+      # correctly when the export path is used directly. To handle this case,
+      # create a wrapper directory and upload that instead.
+      - name: Normalize artifact path
+        id: artifact
+        run: |
+          ARTIFACT_PATH="${{ steps.export-preset.outputs.path }}"
+
+          if [[ -d "$ARTIFACT_PATH" ]]; then
+            WRAPPER_DIR="${{ runner.temp }}/dist"
+
+            mkdir "$WRAPPER_DIR"
+            mv "$ARTIFACT_PATH" "$WRAPPER_DIR"
+
+            ARTIFACT_PATH="$WRAPPER_DIR"
+          fi
+
+          echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+
       # Exported project preset
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.preset-output-name }}
-          path: ${{ steps.export-preset.outputs.path }}
+          path: ${{ steps.artifact.outputs.path }}
           if-no-files-found: error
