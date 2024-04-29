@@ -3,10 +3,15 @@ name: "🐳 Publish: 'export-godot-project-preset' image (MacOS)"
 on:
   workflow_call:
     inputs:
+      platform:
+        type: string
+        description: "The platform for which to build the image for."
+        required: true
       godot-major-minor-version:
         type: string
         description: "The Godot major-minor version supported by the image."
         required: true
+
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -14,10 +19,19 @@ on:
         default: 10
   workflow_dispatch:
     inputs:
+      platform:
+        type: choice
+        description: "The platform for which to build the image for."
+        default: "windows"
+        required: true
+        options:
+          - "macos"
+          - "windows"
       godot-major-minor-version:
         type: string
         description: "The Godot major-minor version supported by the image."
         required: true
+
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -39,8 +53,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
 
       # ------------------------------ Build the image ----------------------------- #
 
@@ -58,9 +70,9 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
-          context: export-godot-project-preset/macos
+          context: export-godot-project-preset/${{ inputs.platform }}
           push: true
-          tags: ghcr.io/coffeebeats/export-godot-project-preset:godot-v${{ inputs.godot-major-minor-version }}-macos
+          tags: ghcr.io/coffeebeats/export-godot-project-preset:godot-v${{ inputs.godot-major-minor-version }}-${{ inputs.platform }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
