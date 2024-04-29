@@ -78,7 +78,7 @@ jobs:
 
       # -------------------- Vendor the Godot source code -------------------- #
 
-      - uses: ./.github/actions/install-godot-source
+      - uses: coffeebeats/godot-infra/.github/actions/install-godot-source@v0
         id: godot
         with:
           dst-path: ${{ github.workspace }}/godot
@@ -89,7 +89,7 @@ jobs:
 
       - name: Compile the export template
         id: export-template
-        uses: ./compile-godot-export-template
+        uses: coffeebeats/godot-infra/compile-godot-export-template@v0
         with:
           godot-src-path: ${{ github.workspace }}/godot
 

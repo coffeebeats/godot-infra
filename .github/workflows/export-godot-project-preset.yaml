@@ -117,7 +117,7 @@ jobs:
 
       # ------------------------- Set up the project ------------------------- #
 
-      - uses: ./.github/actions/setup-godot
+      - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v0
         with:
           version: ${{ inputs.godot-editor-version }}
           install-dir: ${{ github.workspace }}/.godot
@@ -126,7 +126,7 @@ jobs:
 
       - name: Export the project preset
         id: export-preset
-        uses: ./export-godot-project-preset
+        uses: coffeebeats/godot-infra/export-godot-project-preset@v0
         with:
           preset-name: ${{ inputs.preset-name }}
           preset-output-name: ${{ inputs.preset-output-name }}

@@ -162,7 +162,7 @@ runs:
 
     - name: Export the Godot project preset (MacOS)
       if: steps.preset.outputs.platform == 'macos'
-      uses: "./export-godot-project-preset/macos"
+      uses: "coffeebeats/godot-infra/export-godot-project-preset/macos@v0"
       with:
         pck-only: ${{ inputs.pck-only }}
         preset-name: ${{ inputs.preset-name }}
@@ -188,7 +188,7 @@ runs:
 
     - name: Export the Godot project preset (Windows)
       if: steps.preset.outputs.platform == 'windows'
-      uses: "./export-godot-project-preset/windows"
+      uses: "coffeebeats/godot-infra/export-godot-project-preset/windows@v0"
       with:
         pck-only: ${{ inputs.pck-only }}
         preset-name: ${{ inputs.preset-name }}
