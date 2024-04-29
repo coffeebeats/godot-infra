@@ -81,14 +81,26 @@ runs:
   steps:
     # ----------------------------- Set up Godot ----------------------------- #
 
-    - name: Validate Godot editor version
+    - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v0
+      with:
+        version: ${{ inputs.godot-editor-version }}
+        install-dir: ${{ github.workspace }}/.godot
+
+    # TODO: Consider removing this and using the input editor version instead.
+    - name: Parse Godot editor version
+      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v0"
+      id: godot-version
+      with:
+        editor-path: ${{ inputs.godot-editor-path }}
+
+    - name: Validate Godot source code version
       shell: bash
       env:
         # TODO: If Godot ever releases more than '9' patch versions this will
         # break. That's never happened before, so ignore for now.
         GODOT_VERSION_MIN: 4.2.2
       run: |
-        VERSION_ACTUAL="$(${{ inputs.godot-editor-path }} --version)"
+        VERSION_ACTUAL="${{ steps.godot-version.outputs.major-minor-patch }}"
         if [[ "$VERSION_ACTUAL" < "${{ env.GODOT_VERSION_MIN }}"* ]]; then
           echo "Supplied editor '$VERSION_ACTUAL' less than required minimum: ${{ env.GODOT_VERSION_MIN }}"
           exit 1
@@ -212,3 +224,32 @@ runs:
     - name: Inspect exported artifacts
       shell: bash
       run: ls -ls $GITHUB_WORKSPACE/dist
+
+    # ---------------------- Publish generated artifacts --------------------- #
+
+    # NOTE: Runnable MacOS exports are directories, which don't get uploaded
+    # correctly when the export path is used directly. To handle this case,
+    # create a wrapper directory and upload that instead.
+    - name: Normalize artifact path
+      id: artifact
+      shell: bash
+      run: |
+        ARTIFACT_PATH="${{ steps.export-preset.outputs.path }}"
+
+        if [[ -d "$ARTIFACT_PATH" ]]; then
+          WRAPPER_DIR="${{ runner.temp }}/dist"
+
+          mkdir "$WRAPPER_DIR"
+          sudo mv "$ARTIFACT_PATH" "$WRAPPER_DIR"
+
+          ARTIFACT_PATH="$WRAPPER_DIR"
+        fi
+
+        echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+
+    # Exported project preset
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.preset-output-name }}
+        path: ${{ steps.artifact.outputs.path }}
+        if-no-files-found: error
