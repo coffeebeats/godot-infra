@@ -132,7 +132,7 @@ runs:
         inputs.platform == 'macos' &&
         (inputs.arch == 'x86_64' || inputs.arch == 'universal') &&
         steps.export-template.outputs.cache-hit != 'true'
-      uses: "./compile-godot-export-template/macos"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v0"
       with:
         app-bundle: ${{ inputs.arch == 'x86_64' }}
         arch: x86_64
@@ -146,7 +146,7 @@ runs:
         inputs.platform == 'macos'  &&
         (inputs.arch == 'arm64' || inputs.arch == 'universal') &&
         steps.export-template.outputs.cache-hit != 'true'
-      uses: "./compile-godot-export-template/macos"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v0"
       with:
         app-bundle: true
         arch: arm64
@@ -162,7 +162,7 @@ runs:
       if: |
         inputs.platform == 'windows' &&
         steps.export-template.outputs.cache-hit != 'true'
-      uses: "./compile-godot-export-template/windows"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/windows@v0"
       with:
         arch: ${{ inputs.arch }}
         encryption-key: ${{ inputs.encryption-key }}
