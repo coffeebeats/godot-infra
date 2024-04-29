@@ -53,35 +53,35 @@ outputs:
 runs:
   using: composite
 
-  # -------------------- Vendor the Godot source code -------------------- #
-
-  - uses: coffeebeats/godot-infra/.github/actions/install-godot-source@v0
-    id: godot
-    with:
-      dst-path: ${{ github.workspace }}/godot
-      godot-src-rev: ${{ inputs.godot-src-rev }}
-      godot-src-repository: ${{ inputs.godot-src-repository }}
-
-  - name: Parse Godot source code version
-    uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v0"
-    id: godot-version
-    with:
-      versionpy-path: ${{ github.workspace }}/godot/version.py
-
-  - name: Validate Godot source code version
-    shell: bash
-    env:
-      # TODO: If Godot ever releases more than '9' patch versions this will
-      # break. That's never happened before, so ignore for now.
-      GODOT_VERSION_MIN: 4.2.2
-    run: |
-      VERSION_ACTUAL="${{ steps.godot-version.outputs.major-minor-patch }}"
-      if [[ "$VERSION_ACTUAL" < "${{ env.GODOT_VERSION_MIN }}"* ]]; then
-        echo "Supplied editor '$VERSION_ACTUAL' less than required minimum: ${{ env.GODOT_VERSION_MIN }}"
-        exit 1
-      fi
-
   steps:
+    # --------------------- Vendor the Godot source code --------------------- #
+
+    - uses: coffeebeats/godot-infra/.github/actions/install-godot-source@v0
+      id: godot
+      with:
+        dst-path: ${{ github.workspace }}/godot
+        godot-src-rev: ${{ inputs.godot-src-rev }}
+        godot-src-repository: ${{ inputs.godot-src-repository }}
+
+    - name: Parse Godot source code version
+      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v0"
+      id: godot-version
+      with:
+        versionpy-path: ${{ github.workspace }}/godot/version.py
+
+    - name: Validate Godot source code version
+      shell: bash
+      env:
+        # TODO: If Godot ever releases more than '9' patch versions this will
+        # break. That's never happened before, so ignore for now.
+        GODOT_VERSION_MIN: 4.2.2
+      run: |
+        VERSION_ACTUAL="${{ steps.godot-version.outputs.major-minor-patch }}"
+        if [[ "$VERSION_ACTUAL" < "${{ env.GODOT_VERSION_MIN }}"* ]]; then
+          echo "Supplied editor '$VERSION_ACTUAL' less than required minimum: ${{ env.GODOT_VERSION_MIN }}"
+          exit 1
+        fi
+
     - name: Copy the Godot source code to the expected location
       shell: bash
       run: |
@@ -223,7 +223,6 @@ runs:
         DOUBLE=$([[ "${{ inputs.use-double-precision }}" == "true" ]] && echo ".double" || :)
 
         echo "name=godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}.exe" >> $GITHUB_OUTPUT
-
 
     # ---------------------- Publish generated artifacts --------------------- #
 
