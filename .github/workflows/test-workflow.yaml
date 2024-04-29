@@ -29,7 +29,7 @@ on:
       godot-src-rev:
         type: string
         required: false
-        default: 4.2.1-stable
+        default: 4.2.2-stable
       godot-src-repository:
         type: string
         required: false

@@ -84,7 +84,7 @@ runs:
     - name: Validate Godot editor version
       shell: bash
       env:
-        # TODO: If Godot ever releases more than '10' patch versions this will
+        # TODO: If Godot ever releases more than '9' patch versions this will
         # break. That's never happened before, so ignore for now.
         GODOT_VERSION_MIN: 4.2.2
       run: |
