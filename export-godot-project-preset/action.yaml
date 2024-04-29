@@ -13,10 +13,10 @@ inputs:
     description: "The path to the Godot project."
     required: false
     default: "."
-  godot-editor-path:
-    description: "The path to the Godot editor executable."
-    required: false
-    default: godot
+  godot-editor-version:
+    type: string
+    description: "The full semantic version of the Godot editor."
+    required: true
   export-template-artifact-name:
     description: "The name of the Godot export template artifact to download."
     required: true
@@ -91,7 +91,7 @@ runs:
       uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v0"
       id: godot-version
       with:
-        editor-path: ${{ inputs.godot-editor-path }}
+        editor-path: ${{ github.workspace }}/.godot/bin/godot
 
     - name: Validate Godot source code version
       shell: bash
@@ -120,12 +120,14 @@ runs:
     - name: Copy the Godot editor to the expected location
       shell: bash
       run: |
-        if [[ $(realpath "${{ inputs.godot-editor-path }}") == $(realpath "${{ github.workspace }}/godot") ]]; then
+        EDITOR_PATH="${{ github.workspace }}/.godot/bin/godot"
+
+        if [[ $(realpath "$EDITOR_PATH") == $(realpath "${{ github.workspace }}/godot") ]]; then
           echo "Godot editor already located at target path; exiting without making changes."
           exit 0
         fi
 
-        cp ${{ inputs.godot-editor-path }} ${{ github.workspace }}/godot
+        cp $EDITOR_PATH ${{ github.workspace }}/godot
         echo "Copied Godot editor to target path: ${{ github.workspace }}/godot"
 
     # ------------------- Install the Godot export template ------------------ #
