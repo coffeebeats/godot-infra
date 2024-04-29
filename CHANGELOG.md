@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 (2024-04-29)
+
+## What's Changed
+* feat(ci): maintain major tags during release by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/108
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.1.3...v0.1.4
+
 ## 0.1.3 (2024-04-29)
 
 ## What's Changed
