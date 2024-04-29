@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2 (2024-04-29)
+
+## What's Changed
+* feat(ci): build images if missing by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/99
+* feat(ci): set minimum Godot version for export action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/101
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.1.1...v0.1.2
+
 ## 0.1.1 (2024-04-28)
 
 ## What's Changed
