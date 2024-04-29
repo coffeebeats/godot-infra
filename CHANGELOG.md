@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 (2024-04-29)
+
+## What's Changed
+* fix(ci): ensure repository is checked out before creating tags by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/110
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.1.4...v0.1.5
+
 ## 0.1.4 (2024-04-29)
 
 ## What's Changed
