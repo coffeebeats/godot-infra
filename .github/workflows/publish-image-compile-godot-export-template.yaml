@@ -3,10 +3,16 @@ name: "🐳 Publish: 'compile-godot-export-template' image (MacOS)"
 on:
   workflow_call:
     inputs:
+      platform:
+        type: string
+        description: "The platform for which to build the image for."
+        required: true
       godot-major-minor-version:
         type: string
         description: "The Godot major-minor version supported by the image."
         required: true
+
+      # MacOS-specific inputs.
       llvm-version:
         type: string
         description: "The 'LLVM' version to install in the image."
@@ -37,6 +43,7 @@ on:
         description: "The 'Xcode' version to build 'macOS'-related SDKs with."
         required: false
         default: "15.2"
+
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -44,10 +51,20 @@ on:
         default: 60
   workflow_dispatch:
     inputs:
+      platform:
+        type: choice
+        description: "The platform for which to build the image for."
+        default: "windows"
+        required: true
+        options:
+          - "macos"
+          - "windows"
       godot-major-minor-version:
         type: string
         description: "The Godot major-minor version supported by the image."
         required: true
+
+      # MacOS-specific inputs.
       llvm-version:
         type: string
         description: "The 'LLVM' version to install in the image."
@@ -72,6 +89,7 @@ on:
         type: string
         description: "The 'Xcode' version to build 'macOS'-related SDKs with."
         required: true
+
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -111,15 +129,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: ${{ inputs.platform == 'macos' }}
 
       - name: Configure runner
+        if: inputs.platform == 'macos'
         uses: ./.github/actions/setup-runner
 
-      # --------------------------- Set up build contexts -------------------------- #
+      # -------------------- Set up build contexts (MacOS) ------------------- #
 
       # Extract macOS SDK
       - name: Download 'macOS' SDK artifact
+        if: inputs.platform == 'macos'
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.package-macos-sdk.outputs.name }}
@@ -127,11 +147,13 @@ jobs:
 
       # Extract MoltenVK SDK
       - name: Download 'MoltenVK' SDK artifact
+        if: inputs.platform == 'macos'
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.package-moltenvk-sdk.outputs.name }}
 
       - name: Copy 'MoltenVK' SDK into context
+        if: inputs.platform == 'macos'
         run: tar -C thirdparty/moltenvk -xf ${{ needs.package-moltenvk-sdk.outputs.name }}
 
       # ------------------------------ Build the image ----------------------------- #
@@ -146,8 +168,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      # MacOS
+
       - name: Build and push
-        id: build-and-push
+        id: build-and-push-macos
+        if: inputs.platform == 'macos'
         uses: docker/build-push-action@v5
         with:
           context: compile-godot-export-template/macos
@@ -166,4 +191,23 @@ jobs:
             vulkan=thirdparty/moltenvk
 
       - name: Display 'push' outputs
-        run: echo "${{ toJSON(steps.build-and-push.outputs.metadata) }}"
+        if: inputs.platform == 'macos'
+        run: echo "${{ toJSON(steps.build-and-push-macos.outputs.metadata) }}"
+
+      # Windows
+
+      - name: Build and push
+        id: build-and-push-windows
+        if: inputs.platform == 'windows'
+        uses: docker/build-push-action@v5
+        with:
+          context: compile-godot-export-template/windows
+          push: true
+          tags: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ inputs.godot-major-minor-version }}-windows
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Display 'push' outputs
+        if: inputs.platform == 'windows'
+        run: echo "${{ toJSON(steps.build-and-push-windows.outputs.metadata) }}"

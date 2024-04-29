@@ -99,8 +99,9 @@ jobs:
 
     if: needs.build-required.outputs.compile-godot-export-template-macos == 'true'
 
-    uses: "./.github/workflows/publish-image-compile-godot-export-template-macos.yaml"
+    uses: "./.github/workflows/publish-image-compile-godot-export-template.yaml"
     with:
+      platform: "macos"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
 
   compile-godot-export-template-windows:
@@ -108,8 +109,9 @@ jobs:
 
     if: needs.build-required.outputs.compile-godot-export-template-windows == 'true'
 
-    uses: "./.github/workflows/publish-image-compile-godot-export-template-windows.yaml"
+    uses: "./.github/workflows/publish-image-compile-godot-export-template.yaml"
     with:
+      platform: "windows"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
 
   export-godot-project-preset-macos:
@@ -121,8 +123,9 @@ jobs:
 
     if: needs.build-required.outputs.export-godot-project-preset-macos == 'true'
 
-    uses: "./.github/workflows/publish-image-export-godot-project-preset-macos.yaml"
+    uses: "./.github/workflows/publish-image-export-godot-project-preset.yaml"
     with:
+      platform: "macos"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
 
   export-godot-project-preset-windows:
@@ -134,6 +137,7 @@ jobs:
 
     if: needs.build-required.outputs.export-godot-project-preset-windows == 'true'
 
-    uses: "./.github/workflows/publish-image-export-godot-project-preset-windows.yaml"
+    uses: "./.github/workflows/publish-image-export-godot-project-preset.yaml"
     with:
+      platform: "windows"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
