@@ -29,7 +29,7 @@ outputs:
     value: ${{ steps.godot.outputs.major-minor }}
   semantic-version:
     description: "The full semantic version of the source code."
-    value: ${{ steps.godot.outputs.semver }}
+    value: ${{ steps.godot.outputs.semantic }}
 
 runs:
   using: "composite"
@@ -50,11 +50,9 @@ runs:
 
     - name: Determine the Godot version
       id: godot
-      shell: bash
-      working-directory: ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
-      run: |
-        echo "major-minor=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_OUTPUT
-        echo "semver=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_OUTPUT
+      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v0"
+      with:
+        versionpy-path: ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/version.py
 
     - name: Verify source code checkout
       shell: bash

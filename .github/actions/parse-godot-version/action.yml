@@ -1,0 +1,54 @@
+name: "🤖 Godot: Parse version"
+description: "Parses the Godot version from various inputs."
+
+# NOTE: This action can be updated with various other input types as needed.
+
+inputs:
+  versionpy-path:
+    type: string
+    description: "A path to a 'version.py' file in a Godot source code checkout."
+    required: false
+
+outputs:
+  major-minor:
+    description: "The major-minor version of the input."
+    value: ${{ steps.version.outputs.major-minor }}
+  major-minor-patch:
+    description: "The major-minor-patch version of the input."
+    value: ${{ steps.version.outputs.major-minor-patch }}
+  semantic:
+    description: "The semantic version of the input (without 'v' prefix)."
+    value: ${{ steps.version.outputs.semantic }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Parse version from 'version.py'
+      if: hashFiles(inputs.versionpy-path) != ''
+      run: |
+        cd "$(dirname ${{ inputs.versionpy-path }})"
+
+        echo "MAJOR_MINOR=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_ENV
+        echo "MAJOR_MINOR_PATCH=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}')")" >> $GITHUB_ENV
+        echo "SEMANTIC=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_ENV
+
+    # TODO: If another input type is added, check that a prior step hasn't
+    # already succeeded. If so, throw an error if there's a mismatch.
+
+    - name: Set version output
+      id: version
+      shell: bash
+      run: |
+        echo "major-minor: ${{ env.MAJOR_MINOR }}"
+        echo "major-minor=${{ env.MAJOR_MINOR }}" >> $GITHUB_OUTPUT
+
+        echo "major-minor-patch: ${{ env.MAJOR_MINOR_PATCH }}"
+        echo "major-minor-patch=${{ env.MAJOR_MINOR_PATCH }}" >> $GITHUB_OUTPUT
+
+        echo "semantic: ${{ env.SEMANTIC }}"
+        echo "semantic=${{ env.SEMANTIC }}" >> $GITHUB_OUTPUT
+
+        if [[ -z "${{ env.MAJOR_MINOR }}" ]] || [[ -z "${{ env.MAJOR_MINOR_PATCH }}" ]] || [[ -z "${{ env.SEMANTIC }}" ]]; then
+          echo "Failed to parse Godot version."
+          exit 1
+        fi
