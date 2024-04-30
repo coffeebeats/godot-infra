@@ -50,7 +50,7 @@ runs:
 
     - name: Determine the Godot version
       id: godot
-      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v0"
+      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@main"
       with:
         versionpy-path: ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/version.py
 
