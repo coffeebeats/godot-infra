@@ -33,7 +33,7 @@ runs:
   steps:
     - name: Parse version from 'godot --version'
       if: |
-        editor-path != '' &&
+        inputs.editor-path != '' &&
         hashFiles(inputs.gdenv-pin-path) == '' &&
         hashFiles(inputs.versionpy-path) == ''
       shell: bash
