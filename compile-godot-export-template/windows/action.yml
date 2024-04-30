@@ -32,11 +32,14 @@ runs:
   env:
     SCONS_CACHE: /github/workspace/${{ inputs.scons-cache-path }}
     SCONS_CACHE_LIMIT: 1500
-    SCRIPT_AES256_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
   args:
     - /bin/bash
     - -c
     - >-
+      if [[ ! -z "${{ inputs.encryption-key }}" ]]; then
+      SCRIPT_AES256_ENCRYPTION_KEY=${{ inputs.encryption-key }};
+      fi
+
       scons
       -j$(nproc)
       -C ${{ inputs.godot-src-path }}
