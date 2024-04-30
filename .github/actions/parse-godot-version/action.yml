@@ -43,9 +43,9 @@ runs:
         OUTPUT=$(${{ inputs.editor-path }} --version)
         echo "Engine '--version' output: '$OUTPUT'"
 
-        echo "MAJOR_MINOR=$(python3 -B -c "v='$OUTPUT'.strip();print(f'{v[0]}.{v[1]}')")" >> $GITHUB_ENV
-        echo "MAJOR_MINOR_PATCH=$(python3 -B -c "v='$OUTPUT'.strip();print(f'{v[0]}.{v[1]}.{v[2]}')")" >> $GITHUB_ENV
-        echo "SEMANTIC=$(python3 -B -c "v='$OUTPUT'.strip();print(f'{v[0]}.{v[1]}.{v[2]}-{v[3]}')")" >> $GITHUB_ENV
+        echo "MAJOR_MINOR=$(python3 -B -c "v='$OUTPUT'.strip().split('.');print(f'{v[0]}.{v[1]}')")" >> $GITHUB_ENV
+        echo "MAJOR_MINOR_PATCH=$(python3 -B -c "v='$OUTPUT'.strip().split('.');print(f'{v[0]}.{v[1]}.{v[2]}')")" >> $GITHUB_ENV
+        echo "SEMANTIC=$(python3 -B -c "v='$OUTPUT'.strip().split('.');print(f'{v[0]}.{v[1]}.{v[2]}-{v[3]}')")" >> $GITHUB_ENV
 
     - name: Parse version from 'version.py'
       if: |
