@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.2 (2024-04-30)
+
+## What's Changed
+* fix(ci): update export action to correctly accept editor version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/120
+* feat(ci): update `parse-godot-version` to handle `gdenv` pin files by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/122
+* feat(ci): make publish step optional; fix outputs by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/123
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.1...v0.2.2
+
 ## 0.2.1 (2024-04-29)
 
 ## What's Changed
