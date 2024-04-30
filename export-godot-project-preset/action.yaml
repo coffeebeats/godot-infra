@@ -109,7 +109,7 @@ runs:
         GODOT_VERSION_MIN: 4.2.2
       run: |
         VERSION_ACTUAL="${{ steps.godot-version.outputs.major-minor-patch }}"
-        if [[ "$VERSION_ACTUAL" < "${{ env.GODOT_VERSION_MIN }}"* ]]; then
+        if [[ "$VERSION_ACTUAL" < "${{ env.GODOT_VERSION_MIN }}" ]]; then
           echo "Supplied editor '$VERSION_ACTUAL' less than required minimum: ${{ env.GODOT_VERSION_MIN }}"
           exit 1
         fi
