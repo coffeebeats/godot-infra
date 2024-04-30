@@ -41,7 +41,7 @@ inputs:
 
 runs:
   using: docker
-  image: ghcr.io/coffeebeats/export-godot-project-preset:godot-v4.2-windows
+  image: docker://ghcr.io/coffeebeats/export-godot-project-preset:godot-v4.2-windows
   env:
     GODOT_SCRIPT_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
     GODOT_WINDOWS_CODESIGN_IDENTITY_TYPE: ${{ inputs.codesign-identity-type }}
