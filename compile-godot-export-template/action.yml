@@ -61,7 +61,7 @@ runs:
   steps:
     # --------------------- Vendor the Godot source code --------------------- #
 
-    - uses: coffeebeats/godot-infra/.github/actions/install-godot-source@v0
+    - uses: coffeebeats/godot-infra/.github/actions/install-godot-source@main
       id: godot
       with:
         dst-path: ${{ github.workspace }}/godot
@@ -69,7 +69,7 @@ runs:
         godot-src-repository: ${{ inputs.godot-src-repository }}
 
     - name: Parse Godot source code version
-      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v0"
+      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@main"
       id: godot-version
       with:
         versionpy-path: ${{ github.workspace }}/godot/version.py
@@ -171,7 +171,7 @@ runs:
         inputs.platform == 'macos' &&
         (inputs.arch == 'x86_64' || inputs.arch == 'universal') &&
         steps.export-template.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v0"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@main"
       with:
         app-bundle: ${{ inputs.arch == 'x86_64' }}
         arch: x86_64
@@ -185,7 +185,7 @@ runs:
         inputs.platform == 'macos'  &&
         (inputs.arch == 'arm64' || inputs.arch == 'universal') &&
         steps.export-template.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v0"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@main"
       with:
         app-bundle: true
         arch: arm64
@@ -201,7 +201,7 @@ runs:
       if: |
         inputs.platform == 'windows' &&
         steps.export-template.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/windows@v0"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/windows@main"
       with:
         arch: ${{ inputs.arch }}
         encryption-key: ${{ inputs.encryption-key }}

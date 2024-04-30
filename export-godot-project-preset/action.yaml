@@ -89,14 +89,14 @@ runs:
   steps:
     # ----------------------------- Set up Godot ----------------------------- #
 
-    - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v0
+    - uses: coffeebeats/godot-infra/.github/actions/setup-godot@main
       with:
         version: ${{ inputs.godot-editor-version }}
         install-dir: ${{ github.workspace }}/.godot
 
     # TODO: Consider removing this and using the input editor version instead.
     - name: Parse Godot editor version
-      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v0"
+      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@main"
       id: godot-version
       with:
         editor-path: ${{ github.workspace }}/.godot/bin/godot
@@ -184,7 +184,7 @@ runs:
 
     - name: Export the Godot project preset (MacOS)
       if: steps.preset.outputs.platform == 'macos'
-      uses: "coffeebeats/godot-infra/export-godot-project-preset/macos@v0"
+      uses: "coffeebeats/godot-infra/export-godot-project-preset/macos@main"
       with:
         pck-only: ${{ inputs.pck-only }}
         preset-name: ${{ inputs.preset-name }}
@@ -210,7 +210,7 @@ runs:
 
     - name: Export the Godot project preset (Windows)
       if: steps.preset.outputs.platform == 'windows'
-      uses: "coffeebeats/godot-infra/export-godot-project-preset/windows@v0"
+      uses: "coffeebeats/godot-infra/export-godot-project-preset/windows@main"
       with:
         pck-only: ${{ inputs.pck-only }}
         preset-name: ${{ inputs.preset-name }}
