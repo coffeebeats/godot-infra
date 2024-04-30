@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.4 (2024-04-30)
+
+## What's Changed
+* fix(action): reference docker images with protocol by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/127
+* fix(ci): eliminate unnecessary wildcard when comparing Godot versions by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/129
+* fix(ci): remove redundant source code relocate step by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/130
+* fix(ci): only set encryption key if one is passed by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/131
+* fix(ci): correctly parse Godot CLI version string by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/132
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.3...v0.2.4
+
 ## 0.2.3 (2024-04-30)
 
 ## What's Changed
