@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.3 (2024-04-30)
+
+## What's Changed
+* fix(ci): correct syntax error in `parse-godot-version` action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/124
+* fix(ci): pin workflows to `main` until such time that `v4.3` becomes primary by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/126
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.2...v0.2.3
+
 ## 0.2.2 (2024-04-30)
 
 ## What's Changed
