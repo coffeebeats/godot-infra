@@ -70,10 +70,18 @@ inputs:
     description: "The codesigning password for the identity (only used on Windows)."
     required: false
 
+  publish:
+    description: "Whether to publish an artifact to the workflow."
+    required: false
+    default: false
+
 outputs:
+  name:
+    description: "The file name of the exported project preset."
+    value: ${{ inputs.preset-output-name }}
   path:
-    description: "The path to the compiled export template artifact."
-    value: ${{ github.workspace }}/dist/${{ inputs.preset-output-name }}
+    description: "The path to the exported project preset."
+    value: ${{ steps.artifact.outputs.path }}
 
 runs:
   using: composite
@@ -236,7 +244,7 @@ runs:
       id: artifact
       shell: bash
       run: |
-        ARTIFACT_PATH="${{ steps.export-preset.outputs.path }}"
+        ARTIFACT_PATH="${{ github.workspace }}/dist/${{ inputs.preset-output-name }}"
 
         if [[ -d "$ARTIFACT_PATH" ]]; then
           WRAPPER_DIR="${{ runner.temp }}/dist"
@@ -251,6 +259,7 @@ runs:
 
     # Exported project preset
     - uses: actions/upload-artifact@v4
+      if: inputs.publish == 'true'
       with:
         name: ${{ inputs.preset-output-name }}
         path: ${{ steps.artifact.outputs.path }}
