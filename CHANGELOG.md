@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.5 (2024-05-01)
+
+## What's Changed
+* feat(ci): cache compiled export template immediately after success by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/133
+* fix(export): copy project source into unique temporary directory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/135
+* fix(ci): update export action to require a path to the export template by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/136
+* chore(ci): remove now-unused workflow `publish-image-compile-godot-export-template-windows.yaml` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/137
+* fix(ci): check out export scripts from `godot-infra` repository by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/138
+* refactor(export): simplify godot scripts for manipulating `export_presets.cfg` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/139
+* chore(thirdparty): add support for `phantom-camera` fork management by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/140
+* feat(ci): add support for syncing with a custom addon revision by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/141
+* fix(ci): only allow checking out a commit in `publish-addon-update.yaml` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/142
+* fix(ci): ensure addons don't publish Git-related files by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/143
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.4...v0.2.5
+
 ## 0.2.4 (2024-04-30)
 
 ## What's Changed
