@@ -159,33 +159,34 @@ runs:
 
     - name: Set path to export template in 'export_presets.cfg'
       shell: bash
+      env:
+        PRESET: ${{ inputs.preset-name }}
+        EXPORT_PRESETS_PATH: ${{ steps.project.outputs.dir }}/export_presets.cfg
+        TEMPLATE_PATH: /github/workspace/${{ steps.export-template.outputs.path }}
       run: >-
         ${{ github.workspace }}/.godot/bin/godot
         --headless
         --quit
         -s ./godot-infra/export-godot-project-preset/set-export-template-path.gd
-        --preset="${{ inputs.preset-name }}"
-        --export-presets-path=${{ steps.project.outputs.dir }}/export_presets.cfg
-        --template-path="/github/workspace/${{ steps.export-template.outputs.path }}"
 
-        echo "Set path to export template for preset '${{ inputs.preset-name }}': /github/workspace/${{ steps.export-template.outputs.path }}"
+        echo "Set path to export template for preset '${{ inputs.preset-name }}': $TEMPLATE_PATH"
 
     - name: Get the platform of the specified preset
       id: preset
       shell: bash
+      env:
+        PRESET: ${{ inputs.preset-name }}
+        EXPORT_PRESETS_PATH: ${{ steps.project.outputs.dir }}/export_presets.cfg
       run: |-
         PLATFORM=$(
           ${{ github.workspace }}/.godot/bin/godot \
           --headless \
           --quit \
           -s ./godot-infra/export-godot-project-preset/get-export-preset-platform.gd \
-          --preset="${{ inputs.preset-name }}" \
-          --export-presets-path=${{ steps.project.outputs.dir }}/export_presets.cfg  \
           | tail -n 1
         )
 
         echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
-
         echo "Determined platform for preset '${{ inputs.preset-name }}': $PLATFORM"
 
     # ----------------------- Export the project preset ---------------------- #
