@@ -99,7 +99,7 @@ jobs:
           cp README* ${{ runner.temp }}/addon 2>/dev/null || :
           cp -r addons/$NAME/* ${{ runner.temp }}/addon 2>/dev/null || :
 
-          echo "Target files included:"
+          echo "Addon files to publish:"
           ls -lsa ${{ runner.temp }}/addon
 
       - name: Check out to target branch
@@ -121,16 +121,20 @@ jobs:
         run: |
           cd thirdparty/${{ inputs.name }}
 
-          rm -rf *
+          rm -rf * .git*
+
+          echo "Target addon workspace (before):"
+          ls -lsa .
+
           cp -r ${{ runner.temp }}/addon/* .
+
+          echo "Target addon workspace (after):"
+          ls -lsa .
 
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "Target branch is up-to-date; exiting without making changes."
             exit 0
           fi
-
-          echo "Target files included:"
-          ls -lsa .
 
           # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
