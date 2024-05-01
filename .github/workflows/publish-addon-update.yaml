@@ -7,6 +7,11 @@ on:
         type: string
         description: "The 'thirdparty/' directory name of the addon to update."
         required: true
+      source-rev:
+        type: string
+        description: "The source repository Git revision at which to push changes from."
+        required: false
+        default: HEAD
       target-branch:
         type: string
         description: "The name of the branch to push changes to."
@@ -68,7 +73,10 @@ jobs:
             fi
           fi
 
-          echo "rev=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          # Fetch tags in case the revision is a tag.
+          git fetch --tags upstream
+
+          echo "rev=$(git rev-parse --short ${{ inputs.source-rev }})" >> $GITHUB_OUTPUT
 
       - name: Construct addon directory
         id: addon
