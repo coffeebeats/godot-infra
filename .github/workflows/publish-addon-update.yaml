@@ -99,6 +99,9 @@ jobs:
           cp README* ${{ runner.temp }}/addon 2>/dev/null || :
           cp -r addons/$NAME/* ${{ runner.temp }}/addon 2>/dev/null || :
 
+          echo "Addon files to publish:"
+          ls -lsa ${{ runner.temp }}/addon
+
       - name: Check out to target branch
         if: steps.update.outputs.current != 'true' || inputs.force == true
         run: |
@@ -118,8 +121,15 @@ jobs:
         run: |
           cd thirdparty/${{ inputs.name }}
 
-          rm -rf *
+          rm -rf * .git*
+
+          echo "Target addon workspace (before):"
+          ls -lsa .
+
           cp -r ${{ runner.temp }}/addon/* .
+
+          echo "Target addon workspace (after):"
+          ls -lsa .
 
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "Target branch is up-to-date; exiting without making changes."
