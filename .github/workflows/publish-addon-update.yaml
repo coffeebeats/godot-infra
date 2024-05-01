@@ -99,6 +99,9 @@ jobs:
           cp README* ${{ runner.temp }}/addon 2>/dev/null || :
           cp -r addons/$NAME/* ${{ runner.temp }}/addon 2>/dev/null || :
 
+          echo "Target files included:"
+          ls -lsa ${{ runner.temp }}/addon
+
       - name: Check out to target branch
         if: steps.update.outputs.current != 'true' || inputs.force == true
         run: |
@@ -125,6 +128,9 @@ jobs:
             echo "Target branch is up-to-date; exiting without making changes."
             exit 0
           fi
+
+          echo "Target files included:"
+          ls -lsa .
 
           # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
