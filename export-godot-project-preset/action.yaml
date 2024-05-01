@@ -115,15 +115,21 @@ runs:
         fi
 
     - name: Copy the Godot project to the expected location
+      id: project
       shell: bash
       run: |
-        if [[ $(realpath ${{ inputs.project-path }}) == $(realpath "${{ github.workspace }}/project") ]]; then
-          echo "Godot project already located at target directory; exiting without making changes."
-          exit 0
-        fi
+        PROJECT_DIR=$(mktemp -d -p ${{ github.workspace }})
 
-        cp -r $(realpath ${{ inputs.project-path }}) ${{ github.workspace }}/project
-        echo "Copied Godot project to target directory: ${{ github.workspace }}/project"
+        for f in $(ls ${{ inputs.project-path }}); do
+          if [[ "$f" == "$(basename $PROJECT_DIR)" ]]; then
+            continue
+          fi
+
+          cp -r ${{ inputs.project-path }}/$f $PROJECT_DIR
+        done
+
+        echo "Copied Godot project to target directory: $PROJECT_DIR"
+        echo "dir=${PROJECT_DIR#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
 
     - name: Copy the Godot editor to the expected location
       shell: bash
@@ -153,7 +159,7 @@ runs:
         --quit
         -s ./export-godot-project-preset/set-export-template-path.gd
         --preset="${{ inputs.preset-name }}"
-        --export-presets-path=project/export_presets.cfg
+        --export-presets-path=${{ steps.project.outputs.dir }}/export_presets.cfg
         --template-path="/github/workspace/${{ inputs.export-template-artifact-name }}"
 
         echo "Set path to export template for preset '${{ inputs.preset-name }}': /github/workspace/${{ inputs.export-template-artifact-name }}"
@@ -168,7 +174,7 @@ runs:
           --quit \
           -s ./export-godot-project-preset/get-export-preset-platform.gd \
           --preset="${{ inputs.preset-name }}" \
-          --export-presets-path=project/export_presets.cfg  \
+          --export-presets-path=${{ steps.project.outputs.dir }}/export_presets.cfg  \
           | tail -n 1
         )
 
@@ -193,7 +199,7 @@ runs:
         godot-editor-path: godot
         godot-export-template-path: ${{ inputs.export-template-artifact-name }}
         preset-output-path: dist/${{ inputs.preset-output-name }}
-        project-path: project
+        project-path: ${{ steps.project.outputs.dir }}
 
         # Encryption secrets
         encryption-key: ${{ inputs.encryption-key }}
@@ -219,7 +225,7 @@ runs:
         godot-editor-path: godot
         godot-export-template-path: ${{ inputs.export-template-artifact-name }}
         preset-output-path: dist/${{ inputs.preset-output-name }}
-        project-path: project
+        project-path: ${{ steps.project.outputs.dir }}
 
         # Encryption secrets
         encryption-key: ${{ inputs.encryption-key }}
