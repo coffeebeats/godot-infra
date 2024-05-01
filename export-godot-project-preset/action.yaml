@@ -17,8 +17,8 @@ inputs:
     type: string
     description: "The full semantic version of the Godot editor."
     required: true
-  export-template-artifact-name:
-    description: "The name of the Godot export template artifact to download."
+  export-template-path:
+    description: "The path to the Godot export template."
     required: true
 
   pck-only:
@@ -131,45 +131,43 @@ runs:
         echo "Copied Godot project to target directory: $PROJECT_DIR"
         echo "dir=${PROJECT_DIR#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
 
-    - name: Copy the Godot editor to the expected location
-      shell: bash
-      run: |
-        EDITOR_PATH="${{ github.workspace }}/.godot/bin/godot"
+    # ------------------- Install the Godot export template ------------------ #
 
-        if [[ $(realpath "$EDITOR_PATH") == $(realpath "${{ github.workspace }}/godot") ]]; then
-          echo "Godot editor already located at target path; exiting without making changes."
+    - name: Copy the export template to the expected location
+      shell: bash
+      id: export-template
+      run: |
+        TARGET="${{ github.workspace }}/$(basename ${{ inputs.export-template-path }})"
+
+        if [[ $(realpath "${{ inputs.export-template-path }}") == $(realpath "$TARGET") ]]; then
+          echo "Godot export template already located at target path; exiting without making changes."
           exit 0
         fi
 
-        cp $EDITOR_PATH ${{ github.workspace }}/godot
-        echo "Copied Godot editor to target path: ${{ github.workspace }}/godot"
+        cp ${{ inputs.export-template-path }} $TARGET
 
-    # ------------------- Install the Godot export template ------------------ #
-
-    - uses: actions/download-artifact@v4
-      with:
-        name: ${{ inputs.export-template-artifact-name }}
-        path: ${{ github.workspace }}
+        echo "Copied Godot export template to target path: $TARGET"
+        echo "path=${TARGET#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
 
     - name: Set path to export template in 'export_presets.cfg'
       shell: bash
       run: >-
-        ${{ github.workspace }}/godot
+        ${{ github.workspace }}/.godot/bin/godot
         --headless
         --quit
         -s ./export-godot-project-preset/set-export-template-path.gd
         --preset="${{ inputs.preset-name }}"
         --export-presets-path=${{ steps.project.outputs.dir }}/export_presets.cfg
-        --template-path="/github/workspace/${{ inputs.export-template-artifact-name }}"
+        --template-path="/github/workspace/${{ steps.export-template.outputs.path }}"
 
-        echo "Set path to export template for preset '${{ inputs.preset-name }}': /github/workspace/${{ inputs.export-template-artifact-name }}"
+        echo "Set path to export template for preset '${{ inputs.preset-name }}': /github/workspace/${{ steps.export-template.outputs.path }}"
 
     - name: Get the platform of the specified preset
       id: preset
       shell: bash
       run: |-
         PLATFORM=$(
-          ${{ github.workspace }}/godot \
+          ${{ github.workspace }}/.godot/bin/godot \
           --headless \
           --quit \
           -s ./export-godot-project-preset/get-export-preset-platform.gd \
@@ -196,8 +194,8 @@ runs:
         preset-name: ${{ inputs.preset-name }}
         profile: ${{ inputs.profile }}
 
-        godot-editor-path: godot
-        godot-export-template-path: ${{ inputs.export-template-artifact-name }}
+        godot-editor-path: .godot/bin/godot
+        godot-export-template-path: ${{ steps.export-template.outputs.path }}
         preset-output-path: dist/${{ inputs.preset-output-name }}
         project-path: ${{ steps.project.outputs.dir }}
 
@@ -222,8 +220,8 @@ runs:
         preset-name: ${{ inputs.preset-name }}
         profile: ${{ inputs.profile }}
 
-        godot-editor-path: godot
-        godot-export-template-path: ${{ inputs.export-template-artifact-name }}
+        godot-editor-path: .godot/bin/godot
+        godot-export-template-path: ${{ steps.export-template.outputs.path }}
         preset-output-path: dist/${{ inputs.preset-output-name }}
         project-path: ${{ steps.project.outputs.dir }}
 
