@@ -48,6 +48,12 @@ inputs:
     default: false
 
 outputs:
+  cache-key:
+    description: "The cache key for the export template."
+    value: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
+  cache-path:
+    description: "The path to the export template cache."
+    value: ${{ github.workspace }}/godot/bin
   name:
     description: "The file name of the compiled export template."
     value: ${{ steps.artifact.outputs.name }}
