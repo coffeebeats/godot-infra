@@ -105,6 +105,7 @@ runs:
       uses: actions/cache@v4
       with:
         # NOTE: This path must match the one expected by the container action.
+        # IF/ELSE: Update the 'save' step below if this changes.
         path: ${{ github.workspace }}/godot/bin
         key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
 
@@ -227,6 +228,14 @@ runs:
         echo "path=${{ github.workspace }}/godot/bin/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
 
     # ---------------------- Publish generated artifacts --------------------- #
+
+    # Save the export template cache (ahead of post- step)
+    - uses: actions/cache/save@v3
+      if: steps.export-template.outputs.cache-hit != 'true'
+      with:
+        # IF/ELSE: Update the 'cache' step above if this changes.
+        path: ${{ github.workspace }}/godot/bin
+        key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
 
     # Compiled export template
     - uses: actions/upload-artifact@v4
