@@ -149,13 +149,21 @@ runs:
         echo "Copied Godot export template to target path: $TARGET"
         echo "path=${TARGET#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
 
+    - name: Checkout out 'godot-infra' repository
+      uses: actions/checkout@v4
+      with:
+        path: godot-infra
+        ref: main
+        repository: coffeebeats/godot-infra
+        submodules: false
+
     - name: Set path to export template in 'export_presets.cfg'
       shell: bash
       run: >-
         ${{ github.workspace }}/.godot/bin/godot
         --headless
         --quit
-        -s ./export-godot-project-preset/set-export-template-path.gd
+        -s ./godot-infra/export-godot-project-preset/set-export-template-path.gd
         --preset="${{ inputs.preset-name }}"
         --export-presets-path=${{ steps.project.outputs.dir }}/export_presets.cfg
         --template-path="/github/workspace/${{ steps.export-template.outputs.path }}"
@@ -170,7 +178,7 @@ runs:
           ${{ github.workspace }}/.godot/bin/godot \
           --headless \
           --quit \
-          -s ./export-godot-project-preset/get-export-preset-platform.gd \
+          -s ./godot-infra/export-godot-project-preset/get-export-preset-platform.gd \
           --preset="${{ inputs.preset-name }}" \
           --export-presets-path=${{ steps.project.outputs.dir }}/export_presets.cfg  \
           | tail -n 1
