@@ -172,9 +172,10 @@ runs:
         TEMPLATE_PATH: /github/workspace/${{ steps.export-template.outputs.path }}
       run: >-
         ${{ steps.editor.outputs.path }}/bin/godot
+        --path $GITHUB_WORKSPACE/${{ steps.project.outputs.dir }}
         --headless
         --quit
-        -s ./godot-infra/export-godot-project-preset/set-export-template-path.gd
+        -s $GITHUB_WORKSPACE/godot-infra/export-godot-project-preset/set-export-template-path.gd
 
         echo "Set path to export template for preset '${{ inputs.preset-name }}': $TEMPLATE_PATH"
 
@@ -187,9 +188,10 @@ runs:
       run: |-
         PLATFORM=$(
           ${{ steps.editor.outputs.path }}/bin/godot \
+          --path $GITHUB_WORKSPACE/${{ steps.project.outputs.dir }} \
           --headless \
           --quit \
-          -s ./godot-infra/export-godot-project-preset/get-export-preset-platform.gd \
+          -s $GITHUB_WORKSPACE/godot-infra/export-godot-project-preset/get-export-preset-platform.gd \
           | tail -n 1
         )
 
