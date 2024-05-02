@@ -89,17 +89,24 @@ runs:
   steps:
     # ----------------------------- Set up Godot ----------------------------- #
 
+    - name: Determine Godot editor path
+      id: editor
+      shell: bash
+      run: |
+        EDITOR_PATH=$(mktemp -d -p ${{ github.workspace }})
+        echo "path=${EDITOR_PATH#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
+
     - uses: coffeebeats/godot-infra/.github/actions/setup-godot@main
       with:
         version: ${{ inputs.godot-editor-version }}
-        install-dir: ${{ github.workspace }}/.godot
+        install-dir: ${{ steps.editor.outputs.path }}
 
     # TODO: Consider removing this and using the input editor version instead.
     - name: Parse Godot editor version
       uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@main"
       id: godot-version
       with:
-        editor-path: ${{ github.workspace }}/.godot/bin/godot
+        editor-path: ${{ steps.editor.outputs.path }}/bin/godot
 
     - name: Validate Godot source code version
       shell: bash
@@ -164,7 +171,7 @@ runs:
         EXPORT_PRESETS_PATH: ${{ steps.project.outputs.dir }}/export_presets.cfg
         TEMPLATE_PATH: /github/workspace/${{ steps.export-template.outputs.path }}
       run: >-
-        ${{ github.workspace }}/.godot/bin/godot
+        ${{ steps.editor.outputs.path }}/bin/godot
         --headless
         --quit
         -s ./godot-infra/export-godot-project-preset/set-export-template-path.gd
@@ -179,7 +186,7 @@ runs:
         EXPORT_PRESETS_PATH: ${{ steps.project.outputs.dir }}/export_presets.cfg
       run: |-
         PLATFORM=$(
-          ${{ github.workspace }}/.godot/bin/godot \
+          ${{ steps.editor.outputs.path }}/bin/godot \
           --headless \
           --quit \
           -s ./godot-infra/export-godot-project-preset/get-export-preset-platform.gd \
@@ -203,7 +210,7 @@ runs:
         preset-name: ${{ inputs.preset-name }}
         profile: ${{ inputs.profile }}
 
-        godot-editor-path: .godot/bin/godot
+        godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
         godot-export-template-path: ${{ steps.export-template.outputs.path }}
         preset-output-path: dist/${{ inputs.preset-output-name }}
         project-path: ${{ steps.project.outputs.dir }}
@@ -229,7 +236,7 @@ runs:
         preset-name: ${{ inputs.preset-name }}
         profile: ${{ inputs.profile }}
 
-        godot-editor-path: .godot/bin/godot
+        godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
         godot-export-template-path: ${{ steps.export-template.outputs.path }}
         preset-output-path: dist/${{ inputs.preset-output-name }}
         project-path: ${{ steps.project.outputs.dir }}
