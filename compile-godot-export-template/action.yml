@@ -53,7 +53,7 @@ outputs:
     value: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
   cache-path:
     description: "The path to the export template cache."
-    value: ${{ github.workspace }}/godot/bin
+    value: ${{ github.workspace }}/dist
   name:
     description: "The file name of the compiled export template."
     value: ${{ steps.artifact.outputs.name }}
@@ -112,7 +112,7 @@ runs:
       with:
         # NOTE: This path must match the one expected by the container action.
         # IF/ELSE: Update the 'save' step below if this changes.
-        path: ${{ github.workspace }}/godot/bin
+        path: ${{ github.workspace }}/dist
         key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
 
     - name: Cache the 'SCons' build directory
@@ -207,9 +207,24 @@ runs:
 
     # ---------------------- Inspect compiled artifacts ---------------------- #
 
+    - name: Move compiled artifacts
+      if: steps.export-template.outputs.cache-hit != 'true'
+      shell: bash
+      run: |-
+        if [[ -d "$GITHUB_WORKSPACE/dist" ]]; then
+          echo "Unexpectedly found output directory: $GITHUB_WORKSPACE/dist"
+          exit 1
+        fi
+
+        mv $GITHUB_WORKSPACE/godot/bin $GITHUB_WORKSPACE/dist
+
     - name: Inspect compiled artifacts
       shell: bash
-      run: ls -ls $GITHUB_WORKSPACE/godot/bin
+      run: ls -ls $GITHUB_WORKSPACE/dist
+
+    - name: Clean up Godot source code
+      shell: bash
+      run: rm -rf $GITHUB_WORKSPACE/godot
 
     - name: Determine export template file name
       id: artifact
@@ -231,7 +246,7 @@ runs:
         esac
 
         echo "name=$TEMPLATE_NAME" >> $GITHUB_OUTPUT
-        echo "path=${{ github.workspace }}/godot/bin/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
+        echo "path=$GITHUB_WORKSPACE/dist/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
 
     # ---------------------- Publish generated artifacts --------------------- #
 
@@ -240,7 +255,7 @@ runs:
       if: steps.export-template.outputs.cache-hit != 'true'
       with:
         # IF/ELSE: Update the 'cache' step above if this changes.
-        path: ${{ github.workspace }}/godot/bin
+        path: ${{ github.workspace }}/dist
         key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
 
     # Compiled export template
