@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.6 (2024-05-03)
+
+## What's Changed
+* fix(ci): don't store editor binary in `.godot` directory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/144
+* fix(ci): run all Godot scripts from within project directory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/146
+* fix(ci): remove unnecessary path component by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/147
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.5...v0.2.6
+
 ## 0.2.5 (2024-05-01)
 
 ## What's Changed
