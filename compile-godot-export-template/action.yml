@@ -220,7 +220,11 @@ runs:
 
     - name: Inspect compiled artifacts
       shell: bash
-      run: ls -ls ${{ github.workspace }}/dist
+      run: ls -ls $GITHUB_WORKSPACE/dist
+
+    - name: Clean up Godot source code
+      shell: bash
+      run: rm -rf $GITHUB_WORKSPACE/godot
 
     - name: Determine export template file name
       id: artifact
