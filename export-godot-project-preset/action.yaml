@@ -168,7 +168,7 @@ runs:
       shell: bash
       env:
         PRESET: ${{ inputs.preset-name }}
-        EXPORT_PRESETS_PATH: ${{ steps.project.outputs.dir }}/export_presets.cfg
+        EXPORT_PRESETS_PATH: export_presets.cfg
         TEMPLATE_PATH: /github/workspace/${{ steps.export-template.outputs.path }}
       run: >-
         ${{ steps.editor.outputs.path }}/bin/godot
@@ -184,7 +184,7 @@ runs:
       shell: bash
       env:
         PRESET: ${{ inputs.preset-name }}
-        EXPORT_PRESETS_PATH: ${{ steps.project.outputs.dir }}/export_presets.cfg
+        EXPORT_PRESETS_PATH: export_presets.cfg
       run: |-
         PLATFORM=$(
           ${{ steps.editor.outputs.path }}/bin/godot \
