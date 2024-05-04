@@ -18,6 +18,13 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: actions/setup-python@v5
+      with:
+        cache: pip
+
+    - name: Set up 'gdtoolkit'
+      run: pip install "gdtoolkit==4.*"
+
     - uses: "coffeebeats/godot-infra/.github/actions/check-code-formatting@main"
       with:
         check-command: "gdformat -l ${{ inputs.line-length-max }} --check ${{ inputs.path }}/**/*.gd"
