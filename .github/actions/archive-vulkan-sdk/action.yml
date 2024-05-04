@@ -1,0 +1,87 @@
+name: "📁 Archive: Vulkan SDK"
+
+inputs:
+  out:
+    description: "The filename to write the archive to."
+    required: false
+    default: vulkan-sdk.tar.gz
+  vulkan-version:
+    description: "The Vulkan SDK version to archive."
+    required: true
+
+outputs:
+  name:
+    description: "The name of the 'Vulkan' SDK artifact."
+    value: ${{ steps.archive.outputs.name }}
+  path:
+    description: "The path to the 'Vulkan' SDK artifact."
+    value: ${{ steps.archive.outputs.path }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Verify runner OS
+      shell: bash
+      run: '[[ "${{ runner.os }}" != "macOS" ]] && exit 1 || :'
+
+    - name: Determine output filename
+      id: archive
+      shell: bash
+      run: |
+        OUT="${{ inputs.out }}"
+        if [[ "$OUT" != *".tar.gz" ]]; then
+          echo "Invalid compression; only 'gz' is supported!"
+          exit 1
+        fi
+
+        echo "name=$(basename $OUT)" >> "$GITHUB_OUTPUT"
+        echo "path=$OUT" >> "$GITHUB_OUTPUT"
+
+    # See https://vulkan.lunarg.com/doc/view/latest/mac/getting_started.html#user-content-install-and-uninstall-from-terminal
+    - name: Create 'Vulkan' SDK archive
+      shell: bash
+      run: |
+        curl -LO https://sdk.lunarg.com/sdk/download/${{ inputs.vulkan-version }}/mac/vulkan-sdk.dmg
+
+        VOLUME=$(
+          if [[ "${{ inputs.vulkan-version }}" == "latest" ]]; then
+            echo /Volumes/VulkanSDK
+          else
+            echo /Volumes/vulkansdk-macos-${{ inputs.vulkan-version }}
+          fi
+        )
+
+        hdiutil attach vulkan-sdk.dmg
+        sleep 5  # wait for mounting to complete
+
+        $VOLUME/InstallVulkan.app/Contents/MacOS/InstallVulkan \
+          --confirm-command install \
+          --accept-licenses \
+          --default-answer \
+          --root $PWD/vulkan-sdk \
+          copy_only=1
+
+        hdiutil detach $VOLUME
+
+        # Extract the only required library; see
+        # https://github.com/godotengine/godot/blob/9f12e7b52d944281a39b7d3a33de6700c76cc23a/platform/macos/detect.py#L256-L263.
+        PREFIX=vulkan-sdk/MoltenVK/MoltenVK.xcframework
+        TARGET_DIR=macos-arm64_x86_64
+
+        mv $PREFIX/$TARGET_DIR .
+
+        rm -rf vulkan-sdk
+        mkdir -p $PREFIX
+        mv $TARGET_DIR $PREFIX
+
+        find vulkan-sdk \
+          -type f \
+          -o -type l \
+          -o -type d | \
+          tail -n +2 | \
+          sed s,^vulkan-sdk/,, | \
+          tar \
+            -czf ${{ steps.archive.outputs.path }} \
+            --no-recursion \
+            -C vulkan-sdk \
+            -T -

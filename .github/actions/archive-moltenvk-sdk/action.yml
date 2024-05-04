@@ -1,4 +1,4 @@
-name: "📁 godot-infra: Create 'MoltenVK' SDK archive"
+name: "📁 Archive: MoltenVK SDK"
 
 inputs:
   version:
