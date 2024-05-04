@@ -1,0 +1,30 @@
+name: "✅ Check: Check Godot project source code"
+description: "Formats and lints source code for a Godot project."
+
+inputs:
+  path:
+    description: "Path to the Godot project."
+    required: false
+    default: "."
+  ignore-lint-errors:
+    description: "Whether to ignore 'gdlint' errors."
+    required: false
+    default: false
+  line-length-max:
+    description: "The maximum allow line length for '.gd' files."
+    required: false
+    default: 88
+
+runs:
+  using: "composite"
+  steps:
+    - uses: "coffeebeats/godot-infra/.github/actions/check-and-fix-formatting@main"
+      with:
+        check-command: "gdformat -l ${{ inputs.line-length-max }} --check ${{ inputs.path }}/**/*.gd"
+        fix-command: "gdformat -l ${{ inputs.line-length-max }} ${{ inputs.path }}/**/*.gd"
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+
+    - name: Lint project
+      shell: bash
+      continue-on-error: ${{ fromJson(inputs.ignore-lint-errors) }}
+      run: gdlint ${{ inputs.path }}/**/*.gd
