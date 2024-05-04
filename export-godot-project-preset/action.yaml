@@ -74,11 +74,11 @@ inputs:
     description: "Whether to publish an artifact to the workflow."
     required: false
     default: false
+  artifact-name:
+    description: "The uploaded artifact's name (only used if 'publish' is 'true')."
+    required: false
 
 outputs:
-  name:
-    description: "The file name of the exported project preset."
-    value: ${{ inputs.preset-output-name }}
   path:
     description: "The path to the exported project preset."
     value: ${{ steps.artifact.outputs.path }}
@@ -283,12 +283,13 @@ runs:
           ARTIFACT_PATH="$WRAPPER_DIR"
         fi
 
+        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo ${{ inputs.preset-output-name }} || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
         echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
     # Exported project preset
     - uses: actions/upload-artifact@v4
       if: inputs.publish == 'true'
       with:
-        name: ${{ inputs.preset-output-name }}
+        name: ${{ steps.artifact.outputs.name }}
         path: ${{ steps.artifact.outputs.path }}
         if-no-files-found: error
