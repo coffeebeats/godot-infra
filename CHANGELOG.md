@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.8 (2024-05-04)
+
+## What's Changed
+* feat: create an action for checking a Godot project by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/153
+* chore(ci): create action to archive Vulkan SDK by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/155
+* feat: add action to commit changes by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/156
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.7...v0.2.8
+
 ## 0.2.7 (2024-05-04)
 
 ## What's Changed
