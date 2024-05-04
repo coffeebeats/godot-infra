@@ -48,12 +48,6 @@ inputs:
     default: false
 
 outputs:
-  cache-key:
-    description: "The cache key for the export template."
-    value: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
-  cache-path:
-    description: "The path to the export template cache."
-    value: ${{ github.workspace }}/dist
   name:
     description: "The file name of the compiled export template."
     value: ${{ steps.artifact.outputs.name }}
@@ -106,13 +100,26 @@ runs:
 
         echo "value=$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
 
+    - name: Validate build directories don't exist
+      shell: bash
+      run: |
+        if [[ -d "${{ github.workspace }}/build" ]]; then
+          echo "Unexpectedly found build directory."
+          exit 1
+        fi
+
+        if [[ -d "${{ github.workspace }}/.scons" ]]; then
+          echo "Unexpectedly found SCons cache directory."
+          exit 1
+        fi
+
     - name: Cache the Godot export template
       id: export-template
       uses: actions/cache@v4
       with:
         # NOTE: This path must match the one expected by the container action.
         # IF/ELSE: Update the 'save' step below if this changes.
-        path: ${{ github.workspace }}/dist
+        path: ${{ github.workspace }}/build
         key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
 
     - name: Cache the 'SCons' build directory
@@ -211,16 +218,16 @@ runs:
       if: steps.export-template.outputs.cache-hit != 'true'
       shell: bash
       run: |-
-        if [[ -d "$GITHUB_WORKSPACE/dist" ]]; then
-          echo "Unexpectedly found output directory: $GITHUB_WORKSPACE/dist"
+        if [[ -d "$GITHUB_WORKSPACE/build" ]]; then
+          echo "Unexpectedly found output directory: $GITHUB_WORKSPACE/build"
           exit 1
         fi
 
-        sudo mv $GITHUB_WORKSPACE/godot/bin $GITHUB_WORKSPACE/dist
+        sudo mv $GITHUB_WORKSPACE/godot/bin $GITHUB_WORKSPACE/build
 
     - name: Inspect compiled artifacts
       shell: bash
-      run: ls -ls $GITHUB_WORKSPACE/dist
+      run: ls -ls $GITHUB_WORKSPACE/build
 
     - name: Clean up Godot source code
       shell: bash
@@ -246,7 +253,7 @@ runs:
         esac
 
         echo "name=$TEMPLATE_NAME" >> $GITHUB_OUTPUT
-        echo "path=$GITHUB_WORKSPACE/dist/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
+        echo "path=$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
 
     # ---------------------- Publish generated artifacts --------------------- #
 
@@ -255,7 +262,7 @@ runs:
       if: steps.export-template.outputs.cache-hit != 'true'
       with:
         # IF/ELSE: Update the 'cache' step above if this changes.
-        path: ${{ github.workspace }}/dist
+        path: ${{ github.workspace }}/build
         key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
 
     # Compiled export template
