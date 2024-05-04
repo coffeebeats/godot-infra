@@ -21,7 +21,7 @@ runs:
       id: check-formatting
       continue-on-error: ${{ fromJSON(inputs.continue-on-error) }}
       shell: bash
-      run: ${{ inputs.check-command }}
+      run: "${{ inputs.check-command }}"
 
     - uses: actions/checkout@v4
       if: steps.check-formatting.outcome == 'failure'

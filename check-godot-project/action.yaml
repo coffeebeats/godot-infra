@@ -18,6 +18,14 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: actions/setup-python@v5
+      with:
+        cache: pip
+
+    - name: Set up 'gdtoolkit'
+      shell: bash
+      run: pip install "gdtoolkit==4.*"
+
     - uses: "coffeebeats/godot-infra/.github/actions/check-code-formatting@main"
       with:
         check-command: "gdformat -l ${{ inputs.line-length-max }} --check ${{ inputs.path }}/**/*.gd"
@@ -27,4 +35,4 @@ runs:
     - name: Lint project
       shell: bash
       continue-on-error: ${{ fromJson(inputs.ignore-lint-errors) }}
-      run: gdlint ${{ inputs.path }}/**/*.gd
+      run: "gdlint ${{ inputs.path }}/**/*.gd"
