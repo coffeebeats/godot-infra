@@ -1,0 +1,39 @@
+name: "🐙 Commit: Source code changes"
+description: "Commits and pushes source code changes."
+
+inputs:
+  path-expression:
+    description: "Path expression to stage."
+    required: false
+    default: "."
+  description:
+    description: "The commit message body to write (will be set as a 'chore:' conventional commit)."
+    required: false
+    default: "commit changes"
+  push:
+    description: Whether to push the staged changes.
+    required: false
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Commit changes
+      shell: bash
+      continue-on-error: ${{ fromJson(inputs.ignore-lint-errors) }}
+      run: |-
+        if [[ "$(git status --porcelain)" == "" ]]; then
+          echo "No changes found; exiting without committing."
+          exit 0
+        fi
+
+        # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config user.name "github-actions[bot]"
+
+        git add --all ${{ inputs.path-expression }}
+        git commit -m "chore: ${{ inputs.description }} (on behalf of '${{ github.triggering_actor }}')"
+
+        if [[ "${{ inputs.push }}" == "true" ]]; then
+          git push
+        fi
