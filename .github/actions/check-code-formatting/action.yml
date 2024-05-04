@@ -1,0 +1,47 @@
+name: "🐙 Git: Check and fix formatting"
+description: "Check project formatting, and if it fails, fix it."
+
+inputs:
+  check-command:
+    description: "The command that checks if formatting is correct."
+    required: true
+  fix-command:
+    description: "The command that fixes formatting if incorrect."
+    required: true
+  continue-on-error:
+    description: "Whether to fix formatting if it's incorrect (instead of failing)."
+    required: false
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+    # Check source code
+    - name: Check formatting
+      id: check-formatting
+      continue-on-error: ${{ fromJSON(inputs.continue-on-error) }}
+      shell: bash
+      run: ${{ inputs.check-command }}
+
+    - uses: actions/checkout@v4
+      if: steps.check-formatting.outcome == 'failure'
+      with:
+        # Checkout the "head_ref" (i.e. PR branch HEAD) in case a commit is
+        # later needed. See https://github.com/stefanzweifel/git-auto-commit-action
+        # for more details.
+        ref: ${{ github.head_ref }}
+
+    - name: Fix formatting
+      if: steps.check-formatting.outcome == 'failure'
+      shell: bash
+      run: |
+        ${{ inputs.fix-command }}
+
+        # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config user.name "github-actions[bot]"
+
+        git add --all .
+        git commit -m "chore: fix formatting (on behalf of '${{ github.triggering_actor }}')"
+
+        git push
