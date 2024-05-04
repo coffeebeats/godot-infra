@@ -23,6 +23,7 @@ runs:
         cache: pip
 
     - name: Set up 'gdtoolkit'
+      shell: bash
       run: pip install "gdtoolkit==4.*"
 
     - uses: "coffeebeats/godot-infra/.github/actions/check-code-formatting@main"
