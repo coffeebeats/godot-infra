@@ -216,7 +216,7 @@ runs:
           exit 1
         fi
 
-        mv $GITHUB_WORKSPACE/godot/bin $GITHUB_WORKSPACE/dist
+        sudo mv $GITHUB_WORKSPACE/godot/bin $GITHUB_WORKSPACE/dist
 
     - name: Inspect compiled artifacts
       shell: bash
