@@ -202,7 +202,13 @@ runs:
 
     - name: Create output directory
       shell: bash
-      run: mkdir $GITHUB_WORKSPACE/dist
+      run: |
+        if [[ -d "$GITHUB_WORKSPACE/dist" ]]; then
+          echo "Unexpectedly found output directory."
+          exit 1
+        fi        
+
+        mkdir $GITHUB_WORKSPACE/dist
 
     - name: Export the Godot project preset (MacOS)
       if: steps.preset.outputs.platform == 'macos'
