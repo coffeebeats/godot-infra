@@ -46,11 +46,11 @@ inputs:
     description: "Whether to publish an artifact to the workflow."
     required: false
     default: false
+  artifact-name:
+    description: "The uploaded artifact's name (only used if 'publish' is 'true')."
+    required: false
 
 outputs:
-  name:
-    description: "The file name of the compiled export template."
-    value: ${{ steps.artifact.outputs.name }}
   path:
     description: "The path to the compiled export template artifact."
     value: ${{ steps.artifact.outputs.path }}
@@ -252,7 +252,7 @@ runs:
             ;;
         esac
 
-        echo "name=$TEMPLATE_NAME" >> $GITHUB_OUTPUT
+        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $TEMPLATE_NAME || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
         echo "path=$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
 
     # ---------------------- Publish generated artifacts --------------------- #
