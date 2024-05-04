@@ -224,7 +224,7 @@ runs:
 
     - name: Clean up Godot source code
       shell: bash
-      run: rm -rf $GITHUB_WORKSPACE/godot
+      run: sudo rm -rf $GITHUB_WORKSPACE/godot
 
     - name: Determine export template file name
       id: artifact
