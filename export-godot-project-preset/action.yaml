@@ -228,13 +228,11 @@ runs:
           --quit \
           -s $GITHUB_WORKSPACE/godot-infra/export-godot-project-preset/export-preset.gd -- \
           get ${{ inputs.preset-name }} export_path \
-          | tail -n 1
+          | tail -n 1 \
+          | xargs realpath -m
         )
 
-        if [[ -z "$EXPORT_PATH" ]]; then
-          echo "Missing 'export_path' property; set in 'export_presets.cfg'."
-          exit 1
-        fi
+        EXPORT_PATH="${EXPORT_PATH#${{ steps.project.outputs.dir }}/}"
 
         if [[ "$EXPORT_PATH" == "/"* ]] || [[ "$EXPORT_PATH" == ".."* ]]; then
           echo "Invalid 'export_path' property; expected project subpath: $EXPORT_PATH"
