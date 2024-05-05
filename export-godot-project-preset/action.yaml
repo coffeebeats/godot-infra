@@ -5,9 +5,6 @@ inputs:
   preset-name:
     description: "The name of the Godot project export preset."
     required: true
-  preset-output-name:
-    description: "The output filename of the exported Godot project preset."
-    required: true
 
   project-path:
     description: "The path to the Godot project."
@@ -166,34 +163,44 @@ runs:
 
     - name: Set path to export template in 'export_presets.cfg'
       shell: bash
-      env:
-        PRESET: ${{ inputs.preset-name }}
-        EXPORT_PRESETS_PATH: export_presets.cfg
-        TEMPLATE_PATH: /github/workspace/${{ steps.export-template.outputs.path }}
       run: >-
         ${{ steps.editor.outputs.path }}/bin/godot
         --path $GITHUB_WORKSPACE/${{ steps.project.outputs.dir }}
         --headless
         --quit
-        -s $GITHUB_WORKSPACE/godot-infra/export-godot-project-preset/set-export-template-path.gd
+        -s $GITHUB_WORKSPACE/godot-infra/export-godot-project-preset/set-export-template-path.gd -- \
+        set \
+          ${{ inputs.preset-name }} \
+          "options.custom_template/$([[ "${{ inputs.profile }}" == "release" ]] && echo "release" || echo "debug")" \
+          "/github/workspace/${{ steps.export-template.outputs.path }}"
 
         echo "Set path to export template for preset '${{ inputs.preset-name }}': $TEMPLATE_PATH"
 
     - name: Get the platform of the specified preset
       id: preset
       shell: bash
-      env:
-        PRESET: ${{ inputs.preset-name }}
-        EXPORT_PRESETS_PATH: export_presets.cfg
       run: |-
         PLATFORM=$(
           ${{ steps.editor.outputs.path }}/bin/godot \
           --path $GITHUB_WORKSPACE/${{ steps.project.outputs.dir }} \
           --headless \
           --quit \
-          -s $GITHUB_WORKSPACE/godot-infra/export-godot-project-preset/get-export-preset-platform.gd \
+          -s $GITHUB_WORKSPACE/godot-infra/export-godot-project-preset/export-preset.gd -- \
+          get \
+            ${{ inputs.preset-name }} \
+            platform \
           | tail -n 1
         )
+
+        case "$PLATFORM" in
+          "Windows Desktop" ) PLATFORM="windows" ;;
+          "macOS" ) PLATFORM="macos" ;;
+          "Linux/X11" ) PLATFORM="linux" ;;
+          "Web" ) PLATFORM="web" ;;
+          *)
+            echo "Unknown platform: $PLATFORM"
+            exit 1
+            ;;
 
         echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
         echo "Determined platform for preset '${{ inputs.preset-name }}': $PLATFORM"
@@ -210,6 +217,33 @@ runs:
 
         mkdir $GITHUB_WORKSPACE/dist
 
+    - name: Get the output path for the preset
+      id: preset-artifact
+      shell: bash
+      run: |-
+        EXPORT_PATH=$(
+          ${{ steps.editor.outputs.path }}/bin/godot \
+          --path $GITHUB_WORKSPACE/${{ steps.project.outputs.dir }} \
+          --headless \
+          --quit \
+          -s $GITHUB_WORKSPACE/godot-infra/export-godot-project-preset/export-preset.gd -- \
+          get ${{ inputs.preset-name }} export_path \
+          | tail -n 1
+        )
+
+        if [[ -z "$EXPORT_PATH" ]]; then
+          echo "Missing 'export_path' property; set in 'export_presets.cfg'."
+          exit 1
+        fi
+
+        if [[ "$EXPORT_PATH" == "/"* ]] || [[ "$EXPORT_PATH" == ".."* ]]; then
+          echo "Invalid 'export_path' property; expected project subpath: $EXPORT_PATH"
+          exit 1
+        fi
+
+        echo "path=./dist/$EXPORT_PATH" >> $GITHUB_OUTPUT
+        echo "Determined output path for preset '${{ inputs.preset-name }}': ./dist/$EXPORT_PATH"
+
     - name: Export the Godot project preset (MacOS)
       if: steps.preset.outputs.platform == 'macos'
       uses: "coffeebeats/godot-infra/export-godot-project-preset/macos@main"
@@ -220,7 +254,7 @@ runs:
 
         godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
         godot-export-template-path: ${{ steps.export-template.outputs.path }}
-        preset-output-path: dist/${{ inputs.preset-output-name }}
+        preset-output-path: ${{ steps.preset-artifact.outputs.path }}
         project-path: ${{ steps.project.outputs.dir }}
 
         # Encryption secrets
@@ -246,7 +280,7 @@ runs:
 
         godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
         godot-export-template-path: ${{ steps.export-template.outputs.path }}
-        preset-output-path: dist/${{ inputs.preset-output-name }}
+        preset-output-path: ${{ steps.preset-artifact.outputs.path }}
         project-path: ${{ steps.project.outputs.dir }}
 
         # Encryption secrets
@@ -272,7 +306,7 @@ runs:
       id: artifact
       shell: bash
       run: |
-        ARTIFACT_PATH="${{ github.workspace }}/dist/${{ inputs.preset-output-name }}"
+        ARTIFACT_PATH="${{ github.workspace }}/${{ steps.preset-artifact.outputs.path }}"
 
         if [[ -d "$ARTIFACT_PATH" ]]; then
           WRAPPER_DIR="${{ runner.temp }}/dist"
@@ -283,7 +317,7 @@ runs:
           ARTIFACT_PATH="$WRAPPER_DIR"
         fi
 
-        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo ${{ inputs.preset-output-name }} || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
+        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $(basename $ARTIFACT_PATH) || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
         echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
     # Exported project preset
