@@ -21,7 +21,12 @@ runs:
       id: check-formatting
       continue-on-error: ${{ fromJSON(inputs.continue-on-error) }}
       shell: bash
-      run: "${{ inputs.check-command }}"
+      run: |-
+        # Set options to enable more extensive globbing.
+        shopt -s extglob
+        shopt -s globstar
+
+        ${{ inputs.check-command }}
 
     - uses: actions/checkout@v4
       if: steps.check-formatting.outcome == 'failure'
@@ -30,6 +35,16 @@ runs:
         # later needed. See https://github.com/stefanzweifel/git-auto-commit-action
         # for more details.
         ref: ${{ github.head_ref }}
+
+    # Fix source code
+    - name: Check formatting
+      shell: bash
+      run: |-
+        # Set options to enable more extensive globbing.
+        shopt -s extglob
+        shopt -s globstar
+
+        ${{ inputs.fix-command }}
 
     - uses: coffeebeats/godot-infra/commit-changes@main
       if: steps.check-formatting.outcome == 'failure'
