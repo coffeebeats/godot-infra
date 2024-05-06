@@ -62,4 +62,13 @@ runs:
           | tail -n +2
         )
 
-        echo "value=$(echo $VALUE | tail -n 1)" >> $GITHUB_OUTPUT
+        VALUE="$(echo $VALUE | tail -n 1)"
+        echo "value=$VALUE" >> $GITHUB_OUTPUT
+
+        echo "Executed export presets inspection command; output was:"
+        echo $VALUE
+
+        if [[ "${{ inputs.operation }}" == "set" ]]; then
+          echo "Resulting 'export_presets.cfg:"
+          cat ${{ inputs.project-path }}/export_presets.cfg
+        fi
