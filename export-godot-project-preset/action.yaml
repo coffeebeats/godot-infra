@@ -233,7 +233,6 @@ runs:
         profile: ${{ inputs.profile }}
 
         godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
-        godot-export-template-path: ${{ steps.export-template.outputs.path }}
         preset-output-path: ${{ steps.export-path.outputs.path }}
         project-path: ${{ steps.project.outputs.dir }}
 
@@ -259,7 +258,6 @@ runs:
         profile: ${{ inputs.profile }}
 
         godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
-        godot-export-template-path: ${{ steps.export-template.outputs.path }}
         preset-output-path: ${{ steps.export-path.outputs.path }}
         project-path: ${{ steps.project.outputs.dir }}
 
