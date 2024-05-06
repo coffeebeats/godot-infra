@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.2.9 (2024-05-06)
+
+## What's Changed
+* fix(ci): use correct action name `check-code-formatting` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/157
+* fix: update how `check-godot-project` invokes its command by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/159
+* feat: allow customizing the published artifact name by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/160
+* fix(export): remove `preset-output-name` input; gather from `export_presets.cfg` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/161
+* fix(ci): correct output syntax for `inspect-godot-export-presets` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/162
+* fix: use correct path to script in `inspect-godot-export-presets` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/163
+* fix(ci): check for correct length of set arguments by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/164
+* fix(inspect): skip CLI version output by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/165
+* fix(ci): add missing `esac` to run step by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/166
+* fix(ci): correct form export path by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/167
+* fix(ci): refactor export presets script; ensure changes are saved by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/168
+* chore(ci): add debug logging to `inspect-godot-export-presets` action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/169
+* chore: delete unused input in platform-specific export actions by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/170
+* fix(export): pass correct project path to export presets inspect action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/171
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.8...v0.2.9
+
 ## 0.2.8 (2024-05-04)
 
 ## What's Changed
