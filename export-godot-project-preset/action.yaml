@@ -183,6 +183,7 @@ runs:
             echo "Unknown platform: $PLATFORM"
             exit 1
             ;;
+        esac
 
         echo "value=$PLATFORM" >> $GITHUB_OUTPUT
         echo "Determined platform for preset '${{ inputs.preset-name }}': $PLATFORM"
