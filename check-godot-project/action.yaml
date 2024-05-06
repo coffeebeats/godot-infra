@@ -35,4 +35,9 @@ runs:
     - name: Lint project
       shell: bash
       continue-on-error: ${{ fromJson(inputs.ignore-lint-errors) }}
-      run: "gdlint ${{ inputs.path }}/**/*.gd"
+      run: |
+        # Set options to enable more extensive globbing.
+        shopt -s extglob
+        shopt -s globstar
+
+        gdlint ${{ inputs.path }}/**/*.gd
