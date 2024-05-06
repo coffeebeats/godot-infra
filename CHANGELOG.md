@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.10 (2024-05-06)
+
+## What's Changed
+* fix(ci): enable glob-related options in `check-code-formatting` action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/172
+* fix(ci): enable `globstar` and `extglob` during linting by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/174
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.9...v0.2.10
+
 ## 0.2.9 (2024-05-06)
 
 ## What's Changed
