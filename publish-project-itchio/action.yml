@@ -1,5 +1,5 @@
-name: "🎮 Publish: 'itch.io' project"
-description: "Publishes a game project to 'itch.io'."
+name: "🎮 Publish: itch.io"
+description: "Publishes a game project to itch.io."
 
 inputs:
   path:
@@ -18,9 +18,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Check if 'butler' is installed
-      shell: bash
-      run: command -v butler >/dev/null 2>&1 || exit 1
+    - uses: coffeebeats/godot-infra/.github/actions/setup-butler@main
 
     - name: Publish game executable to 'itch.io'
       shell: bash
