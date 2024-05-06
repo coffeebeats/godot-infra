@@ -34,7 +34,7 @@ func _initialize():
 
 		"set":
 			var set_args := args.slice(1)
-			if len(set_args) != 2:
+			if len(set_args) != 3:
 				return fail(
 					(
 						"unexpected input; wanted <PRESET> <KEY> <VALUE>, but was: "
