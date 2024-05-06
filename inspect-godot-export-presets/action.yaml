@@ -58,7 +58,8 @@ runs:
               ${{ inputs.operation }} \
               ${{ inputs.preset }} \
               ${{ inputs.key }} \
-              ${{ inputs.value }}
+              ${{ inputs.value }} \
+          | tail -n +2
         )
 
         echo "value=$(echo $VALUE | tail -n 1)" >> $GITHUB_OUTPUT
