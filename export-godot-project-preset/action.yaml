@@ -198,8 +198,10 @@ runs:
       id: export-path
       shell: bash
       run: |-
-        EXPORT_PATH=$(echo ${{ steps.preset-export-path.outputs.value }} | xargs realpath -m)
-        EXPORT_PATH="${EXPORT_PATH#${{ steps.project.outputs.dir }}/}"
+        EXPORT_PATH=$(
+          echo ${{ steps.preset-export-path.outputs.value }} \
+            | xargs realpath -m --relative-to ${{ steps.project.outputs.dir }}
+        )
 
         if [[ "$EXPORT_PATH" == "/"* ]] || [[ "$EXPORT_PATH" == ".."* ]]; then
           echo "Invalid 'export_path' property; expected project subpath: $EXPORT_PATH"
