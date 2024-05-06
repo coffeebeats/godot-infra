@@ -54,7 +54,7 @@ runs:
             --path ${{ inputs.project-path }} \
             --headless \
             --quit \
-            -s ${{ inputs.godot-infra-path }}/inspect-godot-export-presets/export-preset.gd -- \
+            -s ${{ inputs.godot-infra-path }}/inspect-godot-export-presets/export-presets.gd -- \
               ${{ inputs.operation }} \
               ${{ inputs.preset }} \
               ${{ inputs.key }} \
