@@ -29,8 +29,9 @@ inputs:
     default: ${{ github.workspace }}/godot-infra
 
 outputs:
-  description: "The output of the command."
-  value: ${{ steps.execute.outputs.value }}
+  value:
+    description: "The output of the command."
+    value: ${{ steps.execute.outputs.value }}
 
 runs:
   using: "composite"
