@@ -22,32 +22,21 @@ func _initialize():
 	if not args:
 		return fail("missing required arguments: <OPERATION> <PRESET> <KEY> [VALUE]")
 
-	match args[0]:
-		"get":
-			var get_args := args.slice(1)
-			if len(get_args) != 2:
-				return fail(
-					"unexpected input; wanted <PRESET> <KEY>, but was: " + " ".join(get_args)
-				)
+	var op := args[0]
+	if op != "get" and op != "set":
+		return fail("unexpected operation; wanted 'get' or 'set', but was: %s" % args[0])
 
-			return _handle_get(cfg, get_args[0], get_args[1])
+	if args[0] == "get" and len(args) != 3:
+		return fail("unexpected input; wanted <PRESET> <KEY>, but was: %s" % args.slice(1))
 
-		"set":
-			var set_args := args.slice(1)
-			if len(set_args) != 3:
-				return fail(
-					(
-						"unexpected input; wanted <PRESET> <KEY> <VALUE>, but was: "
-						+ " ".join(set_args)
-					)
-				)
+	if args[0] == "set" and len(args) != 4:
+		return fail("unexpected input; wanted <PRESET> <KEY> <VALUE>, but was: %s" % args.slice(1))
 
-			return _handle_set(cfg, set_args[0], set_args[1], set_args[2])
-
-
-func _handle_get(cfg: ConfigFile, preset: String, key: String):
+	var preset := args[1]
 	if not preset:
 		return fail("missing argument: 'preset'")
+
+	var key := args[2]
 	if not key:
 		return fail("missing argument: 'key'")
 
@@ -60,27 +49,19 @@ func _handle_get(cfg: ConfigFile, preset: String, key: String):
 		section += ".options"
 		key = key.trim_prefix("options.")
 
-	var value: String = cfg.get_value(section, key, "")
-	if value:
-		print(value)
+	match op:
+		"get":
+			var value: String = cfg.get_value(section, key, "")
+			if value:
+				print(value)
 
+		"set":
+			var value := args[3]
 
-func _handle_set(cfg: ConfigFile, preset: String, key: String, value: String):
-	if not preset:
-		return fail("missing argument: 'preset'")
-	if not key:
-		return fail("missing argument: 'key'")
+			cfg.set_value(section, key, value)
 
-	var index := _find_preset_index(cfg, preset)
-	if index == -1:
-		return fail("failed to find preset: " + preset)
-
-	var section := "preset." + str(index)
-	if key.begins_with("options."):
-		section += ".options"
-		key = key.trim_prefix(".options")
-
-	cfg.set_value(section, key, value)
+			if cfg.save("res://" + path_export_presets) != OK:
+				return fail("failed to save file: " + path_export_presets)
 
 
 func _find_preset_index(cfg: ConfigFile, preset: String) -> int:
