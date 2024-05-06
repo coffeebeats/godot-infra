@@ -156,6 +156,7 @@ runs:
     - name: Set path to export template in 'export_presets.cfg'
       uses: coffeebeats/godot-infra/inspect-godot-export-presets@main
       with:
+        project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
         operation: "set"
         preset: "${{ inputs.preset-name }}"
         key: "options.custom_template/$([[ ${{ inputs.profile }} == release ]] && echo release || echo debug)"
@@ -167,6 +168,7 @@ runs:
       uses: coffeebeats/godot-infra/inspect-godot-export-presets@main
       id: preset-platform
       with:
+        project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
         preset: "${{ inputs.preset-name }}"
         key: "platform"
 
@@ -192,6 +194,7 @@ runs:
       uses: coffeebeats/godot-infra/inspect-godot-export-presets@main
       id: preset-export-path
       with:
+        project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
         preset: "${{ inputs.preset-name }}"
         key: "export_path"
 
@@ -284,7 +287,7 @@ runs:
       id: artifact
       shell: bash
       run: |
-        ARTIFACT_PATH="${{ github.workspace }}/${{ steps.export-path.outputs.path }}"
+        ARTIFACT_PATH="$(realpath ${{ github.workspace }}/${{ steps.export-path.outputs.path }})"
 
         if [[ -d "$ARTIFACT_PATH" ]]; then
           WRAPPER_DIR="${{ runner.temp }}/dist"
