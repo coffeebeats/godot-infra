@@ -1,0 +1,63 @@
+name: "🔧 Inspect: Godot project's 'export_presets.cfg'"
+description: "Inspects and/or modifies a Godot project's 'export_presets.cfg'."
+
+inputs:
+  preset:
+    description: "The name of the export preset to inspect."
+    required: true
+  key:
+    description: "The name of the property (within the specified preset) to operate on."
+    required: true
+  value:
+    description: "The value of the specified 'key' to set (ignored when 'operation' is 'get')."
+    required: false
+  operation:
+    description: "The name of the script operation (one of 'get' or 'set')."
+    required: false
+    default: "get"
+  project-path:
+    description: "The path to the project repository containing the 'export_presets.cfg' file."
+    required: false
+    default: ${{ github.workspace }}
+  godot-editor-path:
+    description: "The path to the Godot editor."
+    required: false
+    default: godot
+  godot-infra-path:
+    description: "The path to the 'godot-infra' repository containing the inspect script."
+    required: false
+    default: ${{ github.workspace }}/godot-infra
+
+outputs:
+  description: "The output of the command."
+  value: ${{ steps.execute.outputs.value }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout out 'godot-infra' repository
+      if: hashFiles(inputs.godot-infra-path) == ''
+      uses: actions/checkout@v4
+      with:
+        path: ${{ inputs.godot-infra-path }}
+        ref: main
+        repository: coffeebeats/godot-infra
+        submodules: false
+
+    - name: Execute specified command
+      id: execute
+      shell: bash
+      run: |-
+        VALUE=$(
+          ${{ inputs.godot-editor-path }} \
+            --path ${{ inputs.project-path }} \
+            --headless \
+            --quit \
+            -s ${{ inputs.godot-infra-path }}/inspect-godot-export-presets/export-preset.gd -- \
+              ${{ inputs.operation }} \
+              ${{ inputs.preset }} \
+              ${{ inputs.key }} \
+              ${{ inputs.value }} \
+        )
+
+        echo "value=$(echo $VALUE | tail -n 1)" >> $GITHUB_OUTPUT
