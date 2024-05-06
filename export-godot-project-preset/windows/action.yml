@@ -16,9 +16,6 @@ inputs:
   godot-editor-path:
     description: "A path, relative to 'github.workspace', where the Godot editor executable is located."
     required: true
-  godot-export-template-path:
-    description: "A path, relative to 'github.workspace', where the Godot editor executable is located."
-    required: true
 
   pck-only:
     description: "Whether to export a PCK file instead of an executable."
