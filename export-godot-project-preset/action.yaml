@@ -200,7 +200,7 @@ runs:
       shell: bash
       run: |-
         EXPORT_PATH=$(
-          echo ${{ steps.preset-export-path.outputs.value }} \
+          echo ${{ steps.project.outputs.dir }}/${{ steps.preset-export-path.outputs.value }} \
             | xargs realpath -m --relative-to ${{ steps.project.outputs.dir }}
         )
 
