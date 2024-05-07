@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.11 (2024-05-07)
+
+## What's Changed
+* chore(ci): move `publish-project-itchio` action to public directory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/175
+* feat(export): publish an output `root` for locating the root of exported files by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/177
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.10...v0.2.11
+
 ## 0.2.10 (2024-05-06)
 
 ## What's Changed
