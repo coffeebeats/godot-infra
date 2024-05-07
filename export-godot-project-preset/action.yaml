@@ -76,8 +76,11 @@ inputs:
     required: false
 
 outputs:
+  root:
+    description: "The path to the root directory in which artifacts are exported into."
+    value: ${{ github.workspace }}/dist
   path:
-    description: "The path to the exported project preset."
+    description: "The path to the exported artifact."
     value: ${{ steps.artifact.outputs.path }}
 
 runs:
@@ -216,8 +219,8 @@ runs:
           exit 1
         fi
 
-        echo "path=./dist/$EXPORT_PATH" >> $GITHUB_OUTPUT
-        echo "Determined output path for preset '${{ inputs.preset-name }}': ./dist/$EXPORT_PATH"
+        echo "path=$EXPORT_PATH" >> $GITHUB_OUTPUT
+        echo "Determined output path for preset '${{ inputs.preset-name }}': ./$EXPORT_PATH"
 
     # ----------------------- Export the project preset ---------------------- #
 
@@ -240,7 +243,7 @@ runs:
         profile: ${{ inputs.profile }}
 
         godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
-        preset-output-path: ${{ steps.export-path.outputs.path }}
+        preset-output-path: dist/${{ steps.export-path.outputs.path }}
         project-path: ${{ steps.project.outputs.dir }}
 
         # Encryption secrets
@@ -265,7 +268,7 @@ runs:
         profile: ${{ inputs.profile }}
 
         godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
-        preset-output-path: ${{ steps.export-path.outputs.path }}
+        preset-output-path: dist/${{ steps.export-path.outputs.path }}
         project-path: ${{ steps.project.outputs.dir }}
 
         # Encryption secrets
@@ -284,31 +287,36 @@ runs:
 
     # ---------------------- Publish generated artifacts --------------------- #
 
-    # NOTE: Runnable MacOS exports are directories, which don't get uploaded
-    # correctly when the export path is used directly. To handle this case,
-    # create a wrapper directory and upload that instead.
-    - name: Normalize artifact path
+    - name: Evaluate exported artifact path
       id: artifact
       shell: bash
       run: |
-        ARTIFACT_PATH="$(realpath ${{ github.workspace }}/${{ steps.export-path.outputs.path }})"
+        ARTIFACT_PATH="$(realpath $GITHUB_WORKSPACE/dist/${{ steps.export-path.outputs.path }})"
+        UPLOAD_PATH="$ARTIFACT_PATH"
+
+        # NOTE: Runnable MacOS exports are directories, which don't get uploaded
+        # correctly when the export path is used directly. To handle this case,
+        # create a wrapper directory and upload that instead. This approach does
+        # *not* preserve subpaths, but that's okay because there's no need to
+        # for uploaded artifacts.
 
         if [[ -d "$ARTIFACT_PATH" ]]; then
           WRAPPER_DIR="${{ runner.temp }}/dist"
 
           mkdir "$WRAPPER_DIR"
-          sudo mv "$ARTIFACT_PATH" "$WRAPPER_DIR"
+          cp -r "$ARTIFACT_PATH" "$WRAPPER_DIR"
 
-          ARTIFACT_PATH="$WRAPPER_DIR"
+          UPLOAD_PATH="$WRAPPER_DIR"
         fi
 
-        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $(basename $ARTIFACT_PATH) || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
+        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $(basename ${{ steps.export-path.outputs.path }}) || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
         echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+        echo "upload-path=$UPLOAD_PATH" >> $GITHUB_OUTPUT
 
-    # Exported project preset
+    # Upload exported artifact
     - uses: actions/upload-artifact@v4
       if: inputs.publish == 'true'
       with:
         name: ${{ steps.artifact.outputs.name }}
-        path: ${{ steps.artifact.outputs.path }}
+        path: ${{ steps.artifact.outputs.upload-path }}
         if-no-files-found: error
