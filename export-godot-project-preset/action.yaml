@@ -76,8 +76,11 @@ inputs:
     required: false
 
 outputs:
+  root:
+    description: "The path to the root directory in which exported artifacts are placed."
+    value: ${{ steps.artifact.outputs.root }}
   path:
-    description: "The path to the exported project preset."
+    description: "The path to the exported artifact."
     value: ${{ steps.artifact.outputs.path }}
 
 runs:
@@ -304,6 +307,7 @@ runs:
 
         echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $(basename $ARTIFACT_PATH) || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
         echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+        echo "root=$GITHUB_WORKSPACE/dist" >> $GITHUB_OUTPUT
 
     # Exported project preset
     - uses: actions/upload-artifact@v4
