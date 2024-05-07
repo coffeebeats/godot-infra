@@ -76,6 +76,9 @@ inputs:
     required: false
 
 outputs:
+  root:
+    description: "The path to the root directory in which artifacts are exported into."
+    value: ${{ github.workspace }}/dist
   path:
     description: "The path to the exported artifact."
     value: ${{ steps.artifact.outputs.path }}
