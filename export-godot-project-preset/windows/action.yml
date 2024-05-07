@@ -55,6 +55,6 @@ runs:
       $([[ ${{ inputs.profile }} == debug && ${{ inputs.pck-only }} != true ]] && echo --export-debug)
       $([[ ${{ inputs.profile }} == release_debug && ${{ inputs.pck-only }} != true ]] && echo --export-debug)
       $([[ ${{ inputs.profile }} == release && ${{ inputs.pck-only }} != true ]] && echo --export-release)
-      $([[ ${{ inputs.pck-only }} == true ]] && echo --export-pck)
+      $([[ ${{ inputs.pck-only }} == true ]] && echo --export-pack)
       '${{ inputs.preset-name }}'
       $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
