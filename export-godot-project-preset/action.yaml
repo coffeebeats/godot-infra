@@ -296,7 +296,9 @@ runs:
 
         # NOTE: Runnable MacOS exports are directories, which don't get uploaded
         # correctly when the export path is used directly. To handle this case,
-        # create a wrapper directory and upload that instead.
+        # create a wrapper directory and upload that instead. This approach does
+        # *not* preserve subpaths, but that's okay because there's no need to
+        # for uploaded artifacts.
 
         if [[ -d "$ARTIFACT_PATH" ]]; then
           WRAPPER_DIR="${{ runner.temp }}/dist"
