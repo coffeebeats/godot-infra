@@ -1,4 +1,4 @@
-name: "🐳 Publish: 'compile-godot-export-template' image (MacOS)"
+name: "🐳 Publish: 'compile-godot-export-template' image"
 
 on:
   workflow_call:
@@ -44,6 +44,13 @@ on:
         required: false
         default: "15.2"
 
+      # Web-specific inputs.
+      emscripten-version:
+        type: string
+        description: "The 'Emscripten' SDK version to install in the image."
+        required: false
+        default: "latest"
+
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -59,6 +66,7 @@ on:
         options:
           - "macos"
           - "windows"
+          - "web"
       godot-major-minor-version:
         type: string
         description: "The Godot major-minor version supported by the image."
@@ -68,27 +76,33 @@ on:
       llvm-version:
         type: string
         description: "The 'LLVM' version to install in the image."
-        required: true
+        required: false
       moltenvk-version:
         type: string
         description: "The 'MoltenVK' SDK version to install in the image."
-        required: true
+        required: false
       osx-version:
         type: string
         description: "The 'MacOS' SDK version to install in the image."
-        required: true
+        required: false
       osx-version-min:
         type: string
         description: "The minimum 'MacOS' SDK version to support."
-        required: true
+        required: false
       osxcross-sdk:
         type: string
         description: "The 'darwin*' SDK name for the 'osx-version' specified."
-        required: true
+        required: false
       xcode-version:
         type: string
         description: "The 'Xcode' version to build 'macOS'-related SDKs with."
-        required: true
+        required: false
+
+      # Web-specific inputs.
+      emscripten-version:
+        type: string
+        description: "The 'Emscripten' SDK version to install in the image."
+        required: false
 
       timeout:
         type: number
@@ -102,6 +116,8 @@ permissions:
 
 jobs:
   package-macos-sdk:
+    if: inputs.platform == 'macos'
+
     uses: "./.github/workflows/package-macos-sdk.yml"
     secrets: "inherit"
     with:
@@ -109,6 +125,8 @@ jobs:
       xcode-version: ${{ inputs.xcode-version }}
 
   package-moltenvk-sdk:
+    if: inputs.platform == 'macos'
+
     uses: "./.github/workflows/package-moltenvk-sdk.yml"
     secrets: "inherit"
     with:
@@ -117,6 +135,17 @@ jobs:
       xcode-version: ${{ inputs.xcode-version }}
 
   build-and-publish:
+    if: |
+      always() &&
+      (
+        needs.package-macos-sdk.result == 'success' ||
+        (inputs.platform != 'macos' && needs.package-macos-sdk.result == 'skipped')
+      ) ||
+      (
+        needs.package-moltenvk-sdk.result == 'success' ||
+        (inputs.platform != 'macos' && needs.package-moltenvk-sdk.result == 'skipped')
+      )
+
     needs: ["package-macos-sdk", "package-moltenvk-sdk"]
 
     runs-on: ubuntu-latest
@@ -193,6 +222,22 @@ jobs:
       - name: Display 'push' outputs
         if: inputs.platform == 'macos'
         run: echo "${{ toJSON(steps.build-and-push-macos.outputs.metadata) }}"
+
+      # Web
+
+      - name: Build and push
+        id: build-and-push-web
+        if: inputs.platform == 'web'
+        uses: docker/build-push-action@v5
+        with:
+          context: compile-godot-export-template/web
+          push: true
+          tags: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ inputs.godot-major-minor-version }}-web
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          build-args: |
+            EMSCRIPTEN_SDK_VERSION=${{ inputs.emscripten-version }}
 
       # Windows
 
