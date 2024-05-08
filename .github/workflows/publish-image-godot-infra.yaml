@@ -115,7 +115,9 @@ jobs:
   compile-godot-export-template-macos:
     needs: ["build-required"]
 
-    if: needs.build-required.outputs.compile-godot-export-template-macos == 'true'
+    if: |
+      github.event_name == 'schedule' ||
+      needs.build-required.outputs.compile-godot-export-template-macos == 'true'
 
     uses: "./.github/workflows/publish-image-compile-godot-export-template.yaml"
     with:
@@ -125,7 +127,9 @@ jobs:
   compile-godot-export-template-windows:
     needs: ["build-required"]
 
-    if: needs.build-required.outputs.compile-godot-export-template-windows == 'true'
+    if: |
+      github.event_name == 'schedule' ||
+      needs.build-required.outputs.compile-godot-export-template-windows == 'true'
 
     uses: "./.github/workflows/publish-image-compile-godot-export-template.yaml"
     with:
@@ -135,7 +139,9 @@ jobs:
   compile-godot-export-template-web:
     needs: ["build-required"]
 
-    if: needs.build-required.outputs.compile-godot-export-template-web == 'true'
+    if: |
+      github.event_name == 'schedule' ||
+      needs.build-required.outputs.compile-godot-export-template-web == 'true'
 
     uses: "./.github/workflows/publish-image-compile-godot-export-template.yaml"
     with:
@@ -145,7 +151,9 @@ jobs:
   export-godot-project-preset-macos:
     needs: ["build-required"]
 
-    if: needs.build-required.outputs.export-godot-project-preset-macos == 'true'
+    if: |
+      github.event_name == 'schedule' ||
+      needs.build-required.outputs.export-godot-project-preset-macos == 'true'
 
     uses: "./.github/workflows/publish-image-export-godot-project-preset.yaml"
     with:
@@ -155,7 +163,9 @@ jobs:
   export-godot-project-preset-windows:
     needs: ["build-required"]
 
-    if: needs.build-required.outputs.export-godot-project-preset-windows == 'true'
+    if: |
+      github.event_name == 'schedule' ||
+      needs.build-required.outputs.export-godot-project-preset-windows == 'true'
 
     uses: "./.github/workflows/publish-image-export-godot-project-preset.yaml"
     with:
@@ -165,7 +175,9 @@ jobs:
   export-godot-project-preset-web:
     needs: ["build-required"]
 
-    if: needs.build-required.outputs.export-godot-project-preset-web == 'true'
+    if: |
+      github.event_name == 'schedule' ||
+      needs.build-required.outputs.export-godot-project-preset-web == 'true'
 
     uses: "./.github/workflows/publish-image-export-godot-project-preset.yaml"
     with:
