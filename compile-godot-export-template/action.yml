@@ -37,6 +37,16 @@ inputs:
   # MacOS-specific inputs.
   # ...
 
+  # Web-specific inputs.
+  enable-javascript-eval:
+    description: "Whether to expose the JavaScript singleton to the engine."
+    required: false
+    default: false
+  enable-gdextension:
+    description: "Whether to enable support for GDExtensions (degrades performance/compatibility)."
+    required: false
+    default: false
+
   # Windows-specific inputs.
   icon-path:
     description: "A path to an application icon (only used on Windows)."
@@ -195,6 +205,21 @@ runs:
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         lipo: ${{ inputs.arch == 'universal' }}
+        profile: ${{ inputs.profile }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+
+    # Web
+
+    - name: Compile the export template (Web - wasm32)
+      if: |
+        inputs.platform == 'web' &&
+        steps.export-template.outputs.cache-hit != 'true'
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/web@main"
+      with:
+        enable-gdextension: ${{ inputs.enable-gdextension }}
+        enable-javascript-eval: ${{ inputs.enable-javascript-eval }}
+        encryption-key: ${{ inputs.encryption-key }}
+        godot-src-path: godot
         profile: ${{ inputs.profile }}
         use-double-precision: ${{ inputs.use-double-precision }}
 

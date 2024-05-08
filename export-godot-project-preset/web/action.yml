@@ -1,0 +1,49 @@
+name: "🤖 Export: Godot project export preset (Web)"
+description: "Exports a Godot project export preset for the Web (HTML5) platform."
+
+inputs:
+  preset-name:
+    description: "The name of the Godot project export preset."
+    required: true
+  preset-output-path:
+    description: "A path, relative to 'github.workspace', where the exported Godot preset will be output."
+    required: true
+
+  project-path:
+    description: "A path, relative to 'github.workspace', where the Godot project is located."
+    required: false
+    default: "."
+  godot-editor-path:
+    description: "A path, relative to 'github.workspace', where the Godot editor executable is located."
+    required: true
+
+  pck-only:
+    description: "Whether to export a PCK file instead of an executable."
+    required: true
+  profile:
+    description: "The optimization profile of the exported project preset."
+    required: false
+    default: release
+  encryption-key:
+    description: "A Godot script encryption key to encrypt exported resources with."
+    required: false
+
+runs:
+  using: docker
+  image: docker://ghcr.io/coffeebeats/export-godot-project-preset:godot-v4.2-web
+  env:
+    GODOT_SCRIPT_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
+  args:
+    - /bin/bash
+    - -c
+    - >-
+      $GITHUB_WORKSPACE/${{ inputs.godot-editor-path }}
+      --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
+      --headless
+      --verbose
+      $([[ ${{ inputs.profile }} == debug && ${{ inputs.pck-only }} != true ]] && echo --export-debug)
+      $([[ ${{ inputs.profile }} == release_debug && ${{ inputs.pck-only }} != true ]] && echo --export-debug)
+      $([[ ${{ inputs.profile }} == release && ${{ inputs.pck-only }} != true ]] && echo --export-release)
+      $([[ ${{ inputs.pck-only }} == true ]] && echo --export-pack)
+      '${{ inputs.preset-name }}'
+      $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
