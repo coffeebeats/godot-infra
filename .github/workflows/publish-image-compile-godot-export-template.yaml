@@ -49,7 +49,9 @@ on:
         type: string
         description: "The 'Emscripten' SDK version to install in the image."
         required: false
-        default: "latest"
+        # NOTE: This should match official build images:
+        # https://github.com/godotengine/build-containers/blob/4.2/Dockerfile.web#L4.
+        default: "3.1.39"
 
       timeout:
         type: number
