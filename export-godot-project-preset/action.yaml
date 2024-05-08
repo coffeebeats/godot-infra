@@ -307,31 +307,16 @@ runs:
       shell: bash
       run: |
         ARTIFACT_PATH="$(realpath $GITHUB_WORKSPACE/dist/${{ steps.export-path.outputs.value }})"
-        UPLOAD_PATH="$ARTIFACT_PATH"
-
-        # NOTE: Runnable MacOS exports are directories, which don't get uploaded
-        # correctly when the export path is used directly. To handle this case,
-        # create a wrapper directory and upload that instead. This approach does
-        # *not* preserve subpaths, but that's okay because there's no need to
-        # for uploaded artifacts.
-
-        if [[ -d "$ARTIFACT_PATH" ]]; then
-          WRAPPER_DIR="${{ runner.temp }}/dist"
-
-          mkdir "$WRAPPER_DIR"
-          cp -r "$ARTIFACT_PATH" "$WRAPPER_DIR"
-
-          UPLOAD_PATH="$WRAPPER_DIR"
-        fi
 
         echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $(basename ${{ steps.export-path.outputs.value }}) || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
         echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
-        echo "upload-path=$UPLOAD_PATH" >> $GITHUB_OUTPUT
 
     # Upload exported artifact
     - uses: actions/upload-artifact@v4
       if: inputs.publish == 'true'
       with:
         name: ${{ steps.artifact.outputs.name }}
-        path: ${{ steps.artifact.outputs.upload-path }}
+        # NOTE: Use a directory as opposed to specific files so that platforms
+        # which generated folders or multiple files are supported.
+        path: $GITHUB_WORKSPACE/dist
         if-no-files-found: error
