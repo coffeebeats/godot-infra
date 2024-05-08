@@ -68,10 +68,6 @@ RUN git clone \
 
 FROM img-setup-base
 
-# ----------------------------- Clean: Apt cache ----------------------------- #
-
-RUN apt-get clean
-
 # ------------------------------ Install: Python ----------------------------- #
 
 COPY --from=img-setup-python "/venv" "/opt/python3"
@@ -91,9 +87,18 @@ ARG EMSCRIPTEN_SDK_VERSION=latest
 
 RUN \
     /opt/emsdk/emsdk install "$EMSCRIPTEN_SDK_VERSION" && \
-    /opt/emsdk/emsdk activate "$EMSCRIPTEN_SDK_VERSION"
+    /opt/emsdk/emsdk activate "$EMSCRIPTEN_SDK_VERSION" && \
+    # Clean up installation
+    rm -fr /opt/emsdk/upstream/emscripten/tests && \
+    apt-get install -y --no-install-recommends binutils && \
+    (find /opt/emsdk/upstream/bin -type f -exec strip -s {} + || :) && \
+    apt-get remove -y --purge binutils
 
-ENV PATH="/opt/emsdk/bin:$PATH"
+ENV PATH="/opt/emsdk/upstream/emscripten:/opt/emsdk/upstream/bin:$PATH"
+
+# ----------------------------- Clean: Apt cache ----------------------------- #
+
+RUN apt-get clean
 
 # ------------------------------ Install: SCons ------------------------------ #
 
