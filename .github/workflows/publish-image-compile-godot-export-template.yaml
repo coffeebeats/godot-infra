@@ -116,6 +116,8 @@ permissions:
 
 jobs:
   package-macos-sdk:
+    if: inputs.platform == 'macos'
+
     uses: "./.github/workflows/package-macos-sdk.yml"
     secrets: "inherit"
     with:
@@ -123,6 +125,8 @@ jobs:
       xcode-version: ${{ inputs.xcode-version }}
 
   package-moltenvk-sdk:
+    if: inputs.platform == 'macos'
+
     uses: "./.github/workflows/package-moltenvk-sdk.yml"
     secrets: "inherit"
     with:
@@ -131,6 +135,17 @@ jobs:
       xcode-version: ${{ inputs.xcode-version }}
 
   build-and-publish:
+    if: |
+      always() &&
+      (
+        needs.package-macos-sdk.result == 'success' ||
+        (inputs.platform != 'macos' && needs.package-macos-sdk.result == 'skipped')
+      ) ||
+      (
+        needs.package-moltenvk-sdk.result == 'success' ||
+        (inputs.platform != 'macos' && needs.package-moltenvk-sdk.result == 'skipped')
+      )
+
     needs: ["package-macos-sdk", "package-moltenvk-sdk"]
 
     runs-on: ubuntu-latest
