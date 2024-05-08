@@ -2,11 +2,20 @@
 
 A repository for Godot build and release infrastructure using [@coffeebeats](https://github.com/coffeebeats?tab=repositories)' tools.
 
-> ⚠️ **WARNING:** This project is in a very early stage. API instability, missing features, and bugs are to be expected for now.
+> [!WARNING]
+> This project is in a very early stage. API instability, missing features, and bugs are to be expected for now.
 
 ## **How it works**
 
-TODO
+This repository contains a number of GitHub actions useful for compiling and exporting Godot projects. See [Example usage](#example-usage) below for demonstrations of how to use the repository.
+
+### Supported platforms
+
+Currently, `godot-infra` supports targeting three platforms:
+
+- `macos`
+- `web`
+- `windows`
 
 ## **Getting started**
 
@@ -14,15 +23,21 @@ These instructions will help you install `godot-infra` and export your _Godot_ p
 
 ### **Example usage**
 
-TODO
+#### **`compile-godot-export-template`**
 
-### **Installation**
+```yaml
+- uses: "coffeebeats/godot-infra/compile-godot-export-template@v0" # x-release-please-major
+  with:
+    # See the action implementation for avaliable inputs.
+```
 
-See [docs/installation.md](./docs/installation.md#installation) for detailed instructions on how to download `godot-infra`.
+#### **`export-godot-project-preset`**
 
-## **API Reference**
-
-TODO
+```yaml
+- uses: "coffeebeats/godot-infra/export-godot-project-preset@v0" # x-release-please-major
+  with:
+    # See the action implementation for avaliable inputs.
+```
 
 ## **Development**
 

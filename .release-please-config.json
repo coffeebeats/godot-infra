@@ -15,7 +15,7 @@
 
       "changelog-path": "CHANGELOG.md",
 
-      "extra-files": []
+      "extra-files": ["README.md"]
     }
   }
 }
