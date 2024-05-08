@@ -17,6 +17,17 @@ Currently, `godot-infra` supports targeting three platforms:
 - `web`
 - `windows`
 
+### Godot versions
+
+This repository supports multiple minor versions of Godot. The `main` branch always contains the latest `godot-infra` changes and targets support for the latest Godot stable release. See the list below for the mapping of `godot-infra` release versions to supported Godot version.
+
+> [!NOTE]
+> It's recommended to use the release tag as the version pin in your GitHub Actions workflow files since these represent stable, tested versions of this project.
+
+#### Branch name / Release tag: Godot version
+
+- `main` / `v0`: `v4.2`
+
 ## **Getting started**
 
 These instructions will help you install `godot-infra` and export your _Godot_ projects.
