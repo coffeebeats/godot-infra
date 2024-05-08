@@ -4,8 +4,7 @@ description: "Compiles a Godot export template for the Web (HTML5) platform."
 inputs:
   arch:
     description: "The target architecture to build the export template for."
-    required: false
-    default: wasm32
+    required: true
   encryption-key:
     description: "A Godot script encryption key to embed within the export template."
     required: false

@@ -216,6 +216,7 @@ runs:
         steps.export-template.outputs.cache-hit != 'true'
       uses: "coffeebeats/godot-infra/compile-godot-export-template/web@main"
       with:
+        arch: ${{ inputs.arch }}
         enable-gdextension: ${{ inputs.enable-gdextension }}
         enable-javascript-eval: ${{ inputs.enable-javascript-eval }}
         encryption-key: ${{ inputs.encryption-key }}
