@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 (2024-05-08)
+
+## What's Changed
+* feat(compile): create an image and action for compiling `web` builds by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/182
+* feat(export): add an action for `web` exports by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/184
+* feat!: document supported platforms and usage by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/185
+* fix(ci): ensure scheduled image builds can run without changes by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/186
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.12...v0.3.0
+
 ## 0.2.12 (2024-05-08)
 
 ## What's Changed
