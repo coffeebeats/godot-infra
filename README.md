@@ -39,20 +39,6 @@ These instructions will help you install `godot-infra` and export your _Godot_ p
     # See the action implementation for avaliable inputs.
 ```
 
-## **Development**
-
-### Setup
-
-The following instructions outline how to get the project set up for local development:
-
-TODO
-
-### Code submission
-
-When submitting code for review, ensure the following requirements are met:
-
-TODO
-
 ## **Contributing**
 
 All contributions are welcome! Feel free to file [bugs](https://github.com/coffeebeats/godot-infra/issues/new?assignees=&labels=bug&projects=&template=bug-report.md&title=) and [feature requests](https://github.com/coffeebeats/godot-infra/issues/new?assignees=&labels=enhancement&projects=&template=feature-request.md&title=) and/or open pull requests.
