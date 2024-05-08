@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.2 (2024-05-08)
+
+## What's Changed
+* chore(compile): remove redundant platform argument by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/191
+* fix(ci): pin the `emscripten` SDK version to match the official Godot builds by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/193
+* fix(ci): install missing dependency for `web` compile image by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/194
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.3.1...v0.3.2
+
 ## 0.3.1 (2024-05-08)
 
 ## What's Changed
