@@ -1,4 +1,4 @@
-name: "🐳 Publish: 'export-godot-project-preset' image (MacOS)"
+name: "🐳 Publish: 'export-godot-project-preset' image"
 
 on:
   workflow_call:

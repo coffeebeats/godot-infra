@@ -1,4 +1,4 @@
-name: "🐳 Publish: 'godot-infra' images (all)"
+name: "🐳 Publish: 'godot-infra' images (all platforms)"
 
 # NOTE: This workflow is intended to be used during releases.
 

@@ -1,4 +1,4 @@
-name: "🐳 Publish: 'compile-godot-export-template' image (MacOS)"
+name: "🐳 Publish: 'compile-godot-export-template' image"
 
 on:
   workflow_call:
