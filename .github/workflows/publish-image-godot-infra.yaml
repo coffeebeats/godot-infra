@@ -31,8 +31,10 @@ jobs:
       version: ${{ steps.target.outputs.version }}
       compile-godot-export-template-macos: ${{ steps.compile-godot-export-template-macos.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-macos == 'true' }}
       compile-godot-export-template-windows: ${{ steps.compile-godot-export-template-windows.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-windows == 'true' }}
+      compile-godot-export-template-web: ${{ steps.compile-godot-export-template-web.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-web == 'true' }}
       export-godot-project-preset-macos: ${{ steps.export-godot-project-preset-macos.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-macos == 'true' }}
       export-godot-project-preset-windows: ${{ steps.export-godot-project-preset-windows.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-windows == 'true' }}
+      export-godot-project-preset-web: ${{ steps.export-godot-project-preset-web.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-web == 'true' }}
 
     steps:
       - name: Determine the target major-minor version
@@ -55,29 +57,41 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Check for any non-source code changes
-        id: compile-godot-export-template-macos
+      # compile-godot-export-template
+
+      - id: compile-godot-export-template-macos
         uses: tj-actions/changed-files@v44
         with:
           files: compile-godot-export-template/macos/Dockerfile
 
-      - name: Check for any non-source code changes
-        id: compile-godot-export-template-windows
+      - id: compile-godot-export-template-windows
         uses: tj-actions/changed-files@v44
         with:
           files: compile-godot-export-template/windows/Dockerfile
 
-      - name: Check for any non-source code changes
-        id: export-godot-project-preset-macos
+      - id: compile-godot-export-template-web
+        uses: tj-actions/changed-files@v44
+        with:
+          files: compile-godot-export-template/web/Dockerfile
+
+      # export-godot-project-preset
+
+      - id: export-godot-project-preset-macos
         uses: tj-actions/changed-files@v44
         with:
           files: export-godot-project-preset/macos/Dockerfile
 
-      - name: Check for any non-source code changes
-        id: export-godot-project-preset-windows
+      - id: export-godot-project-preset-windows
         uses: tj-actions/changed-files@v44
         with:
           files: export-godot-project-preset/windows/Dockerfile
+
+      - id: export-godot-project-preset-web
+        uses: tj-actions/changed-files@v44
+        with:
+          files: export-godot-project-preset/web/Dockerfile
+
+      # Check for images
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -91,7 +105,7 @@ jobs:
         shell: bash
         run: |
           for img in compile-godot-export-template export-godot-project-preset; do
-            for platform in macos windows; do
+            for platform in macos windows web; do
               if [[ $(docker manifest inspect ghcr.io/coffeebeats/$img:godot-v${{ steps.target.outputs.version }}-$platform &>/dev/null; echo $?) -ne 0 ]]; then
                 echo "$img-$platform=true" >> $GITHUB_OUTPUT
               fi
@@ -118,12 +132,18 @@ jobs:
       platform: "windows"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
 
+  compile-godot-export-template-web:
+    needs: ["build-required"]
+
+    if: needs.build-required.outputs.compile-godot-export-template-web == 'true'
+
+    uses: "./.github/workflows/publish-image-compile-godot-export-template.yaml"
+    with:
+      platform: "web"
+      godot-major-minor-version: ${{ needs.build-required.outputs.version }}
+
   export-godot-project-preset-macos:
-    needs:
-      - "build-required"
-      # NOTE: Fake a concurrency limit of '2' by depending on the two 'compile-*' images.
-      - "compile-godot-export-template-macos"
-      - "compile-godot-export-template-windows"
+    needs: ["build-required"]
 
     if: needs.build-required.outputs.export-godot-project-preset-macos == 'true'
 
@@ -133,15 +153,21 @@ jobs:
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
 
   export-godot-project-preset-windows:
-    needs:
-      - "build-required"
-      # NOTE: Fake a concurrency limit of '2' by depending on the two 'compile-*' images.
-      - "compile-godot-export-template-macos"
-      - "compile-godot-export-template-windows"
+    needs: ["build-required"]
 
     if: needs.build-required.outputs.export-godot-project-preset-windows == 'true'
 
     uses: "./.github/workflows/publish-image-export-godot-project-preset.yaml"
     with:
       platform: "windows"
+      godot-major-minor-version: ${{ needs.build-required.outputs.version }}
+
+  export-godot-project-preset-web:
+    needs: ["build-required"]
+
+    if: needs.build-required.outputs.export-godot-project-preset-web == 'true'
+
+    uses: "./.github/workflows/publish-image-export-godot-project-preset.yaml"
+    with:
+      platform: "web"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
