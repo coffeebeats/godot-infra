@@ -55,7 +55,7 @@ runs:
       scons
       -j$(nproc)
       -C ${{ inputs.godot-src-path }}
-      platform=macos arch=${{ inputs.arch }}
+      arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
       $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug debug_symbols=yes optimize=debug)
