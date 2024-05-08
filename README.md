@@ -17,7 +17,7 @@ Currently, `godot-infra` supports targeting three platforms:
 - `web`
 - `windows`
 
-### Godot versions
+### Supported Godot versions
 
 This repository supports multiple minor versions of Godot. The `main` branch always contains the latest `godot-infra` changes and targets support for the latest Godot stable release. See the list below for the mapping of `godot-infra` release versions to supported Godot version.
 
@@ -30,7 +30,7 @@ This repository supports multiple minor versions of Godot. The `main` branch alw
 
 ## **Getting started**
 
-These instructions will help you install `godot-infra` and export your _Godot_ projects.
+The `godot-infra` repository does not need to be installed. Simply add the actions defined in the repository to your GitHub actions workflows.
 
 ### **Example usage**
 
@@ -39,7 +39,7 @@ These instructions will help you install `godot-infra` and export your _Godot_ p
 ```yaml
 - uses: "coffeebeats/godot-infra/compile-godot-export-template@v0" # x-release-please-major
   with:
-    # See the action implementation for avaliable inputs.
+    # See the action implementation for available inputs.
 ```
 
 #### **`export-godot-project-preset`**
@@ -47,7 +47,7 @@ These instructions will help you install `godot-infra` and export your _Godot_ p
 ```yaml
 - uses: "coffeebeats/godot-infra/export-godot-project-preset@v0" # x-release-please-major
   with:
-    # See the action implementation for avaliable inputs.
+    # See the action implementation for available inputs.
 ```
 
 ## **Contributing**
