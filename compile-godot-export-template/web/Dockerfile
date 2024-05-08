@@ -27,6 +27,8 @@ RUN \
     ca-certificates \
     pkg-config \
     python3.12 \
+    # Install 'emscripten' dependencies
+    lbzip2 \
     xz-utils
 
 # ---------------------------------------------------------------------------- #
