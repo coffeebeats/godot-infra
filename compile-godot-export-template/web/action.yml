@@ -60,3 +60,7 @@ runs:
       $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug debug_symbols=yes optimize=debug)
       $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
       $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes optimize=speed)
+
+      mv
+      bin/godot.web.*
+      "bin/web$([[ ${{ inputs.enable-gdextension }} == true ]] && echo _dlink)_$([[ ${{ inputs.profile }} == release ]] && echo release || echo debug).zip"

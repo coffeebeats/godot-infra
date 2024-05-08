@@ -264,7 +264,13 @@ runs:
       run: |
         case "${{ inputs.platform }}" in
           macos) TEMPLATE_NAME=macos.zip ;;
-          *)
+          web)
+            PROFILE="$([[ ${{ inputs.profile }} == release ]] && echo release || echo debug)"
+            DLINK="$([[ ${{ inputs.enable-gdextension }} == true ]] && echo _dlink)"
+
+            TEMPLATE_NAME="web${DLINK}_${PROFILE}.zip"
+            ;;
+          windows)
             TARGET=$([[ "${{ inputs.profile }}" == "release" ]] && echo template_release || echo template_debug)
             DOUBLE=$([[ "${{ inputs.use-double-precision }}" == "true" ]] && echo ".double" || :)
 
@@ -275,6 +281,9 @@ runs:
             fi
 
             ;;
+          *)
+            echo "Unknown/unsupported platform: ${{ inputs.platform }}"
+            exit 1
         esac
 
         echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $TEMPLATE_NAME || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
