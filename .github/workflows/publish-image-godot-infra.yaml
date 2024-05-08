@@ -3,6 +3,10 @@ name: "🐳 Publish: 'godot-infra' images (all platforms)"
 # NOTE: This workflow is intended to be used during releases.
 
 on:
+  # Schedule regular updates for the currently supported Godot major-minor
+  # version. This ensures dependencies get security patches applied.
+  schedule:
+    - cron: "0 14 * * 0" # Every Sunday at 14:00 UTC
   push:
     branches:
       - main
