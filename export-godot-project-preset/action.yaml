@@ -259,6 +259,21 @@ runs:
         notarization-apple-id-name: ${{ inputs.notarization-apple-id-name }}
         notarization-apple-id-password: ${{ inputs.notarization-apple-id-password }}
 
+    - name: Export the Godot project preset (Web)
+      if: steps.platform.outputs.value == 'web'
+      uses: "coffeebeats/godot-infra/export-godot-project-preset/web@main"
+      with:
+        pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
+        preset-name: ${{ inputs.preset-name }}
+        profile: ${{ inputs.profile }}
+
+        godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
+        preset-output-path: dist/${{ steps.export-path.outputs.value }}
+        project-path: ${{ steps.project.outputs.dir }}
+
+        # Encryption secrets
+        encryption-key: ${{ inputs.encryption-key }}
+
     - name: Export the Godot project preset (Windows)
       if: steps.platform.outputs.value == 'windows'
       uses: "coffeebeats/godot-infra/export-godot-project-preset/windows@main"
