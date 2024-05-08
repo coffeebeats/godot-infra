@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1 (2024-05-08)
+
+## What's Changed
+* fix(compile): correctly handle `web` export template filename by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/187
+* fix(export): always upload the entire `dist/` directory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/189
+* fix(compile): use correct `web` image for compile action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/190
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.3.0...v0.3.1
+
 ## 0.3.0 (2024-05-08)
 
 ## What's Changed
