@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.12 (2024-05-08)
+
+## What's Changed
+* fix(export): correctly pass `--export-pack` flag by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/178
+* fix(export): use correct PCK export flag by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/180
+* feat(export): set `pck-only` based on extension of exported file by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/181
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.2.11...v0.2.12
+
 ## 0.2.11 (2024-05-07)
 
 ## What's Changed
