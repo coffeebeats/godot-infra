@@ -43,7 +43,6 @@ runs:
       scons
       -j$(nproc)
       -C ${{ inputs.godot-src-path }}
-      platform=windows
       arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
