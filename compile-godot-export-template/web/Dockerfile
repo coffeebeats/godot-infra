@@ -90,7 +90,7 @@ RUN \
     /emsdk/emsdk install "$EMSCRIPTEN_SDK_VERSION" && \
     /emsdk/emsdk activate "$EMSCRIPTEN_SDK_VERSION" && \
     # Clean up installation
-    rm -fr /emsdk/upstream/emscripten/tests && \
+    rm -rf /emsdk/upstream/emscripten/tests && \
     apt-get install -y --no-install-recommends binutils && \
     (find /emsdk/upstream/bin -type f -exec strip -s {} + || :)
 
