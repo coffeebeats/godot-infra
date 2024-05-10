@@ -60,5 +60,10 @@ runs:
       $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes optimize=speed)
 
       mv
-      bin/godot.web.*
-      "bin/web$([[ ${{ inputs.enable-gdextension }} == true ]] && echo _dlink)_$([[ ${{ inputs.profile }} == release ]] && echo release || echo debug).zip"
+      ${{ inputs.godot-src-path }}/bin/godot.web.*.zip
+      "${{ inputs.godot-src-path }}/bin/web$([[ ${{ inputs.enable-gdextension }} == true ]] && echo _dlink)_$([[ ${{ inputs.profile }} == release ]] && echo release || echo debug).zip"
+
+      rm -rf
+      .web_zip
+      *.js
+      *.wasm
