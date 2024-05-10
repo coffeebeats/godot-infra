@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.3 (2024-05-10)
+
+## What's Changed
+* fix(compile): reduce `web` image size; correctly set `emscripten` version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/195
+* fix(compile): add a linker flag to potentially solve compilation error on `web` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/197
+* fix(compile): correctly generate `web` export template by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/198
+* fix(export): fix upload path; don't use an environment variable by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/199
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.3.2...v0.3.3
+
 ## 0.3.2 (2024-05-08)
 
 ## What's Changed
