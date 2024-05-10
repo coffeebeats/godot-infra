@@ -1,4 +1,4 @@
-name: "🐙 Git: Check and fix formatting"
+name: "🐙 Check: Check and fix source code formatting"
 description: "Check project formatting, and if it fails, fix it."
 
 inputs:

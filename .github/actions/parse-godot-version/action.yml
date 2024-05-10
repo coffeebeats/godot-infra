@@ -1,4 +1,4 @@
-name: "🤖 Godot: Parse version"
+name: "🤖 Parse: Godot version"
 description: "Parses the Godot version from various inputs."
 
 # NOTE: This action can be updated with various other input types as needed.
