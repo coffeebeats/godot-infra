@@ -305,11 +305,12 @@ runs:
     - name: Evaluate exported artifact path
       id: artifact
       shell: bash
-      run: |
-        ARTIFACT_PATH="$(realpath $GITHUB_WORKSPACE/dist/${{ steps.export-path.outputs.value }})"
-
-        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $(basename ${{ steps.export-path.outputs.value }}) || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
-        echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+      run: |-
+        echo name=$(
+          [[ -z "${{ inputs.artifact-name }}" ]] &&
+          echo $(basename "${{ steps.export-path.outputs.value }}") ||
+          echo "${{ inputs.artifact-name }}"
+        ) >> $GITHUB_OUTPUT
 
     # Upload exported artifact
     - uses: actions/upload-artifact@v4
@@ -318,5 +319,5 @@ runs:
         name: ${{ steps.artifact.outputs.name }}
         # NOTE: Use a directory as opposed to specific files so that platforms
         # which generated folders or multiple files are supported.
-        path: $GITHUB_WORKSPACE/dist
+        path: ${{ github.workspace }}/dist
         if-no-files-found: error
