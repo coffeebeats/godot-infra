@@ -7,7 +7,7 @@ inputs:
   version:
     description: "The version of 'butler' to install."
     required: false
-    default: "latest"
+    default: "LATEST"
   install-dir:
     description: "The 'butler' installation directory."
     required: false
