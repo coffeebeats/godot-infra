@@ -37,6 +37,11 @@ runs:
     - /bin/bash
     - -c
     - >-
+      if [[ "${{ inputs.preset-output-path }}" != *".html" ]]; then
+      echo "Invalid output path; expected an '.html' file: ${{ inputs.preset-output-path }}";
+      exit 1;
+      fi
+
       $GITHUB_WORKSPACE/${{ inputs.godot-editor-path }}
       --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
       --headless
@@ -49,5 +54,5 @@ runs:
       $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
 
       mv
-      $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}/*.html
-      $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}/index.html
+      $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
+      $(dirname $GITHUB_WORKSPACE/${{ inputs.preset-output-path }})/index.html
