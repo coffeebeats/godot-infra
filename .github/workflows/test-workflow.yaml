@@ -1,4 +1,4 @@
-name: "🧪 godot-infra: Placeholder workflow for testing"
+name: "🧪 Test: Placeholder workflow for testing"
 
 on:
   workflow_dispatch:

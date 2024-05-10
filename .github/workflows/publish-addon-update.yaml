@@ -1,4 +1,4 @@
-name: "🔄 godot-infra: Publish addon update"
+name: "🔄 Publish: Godot addon update"
 
 on:
   workflow_dispatch:
