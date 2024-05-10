@@ -14,11 +14,20 @@ inputs:
   itch-channel:
     description: "The name of the 'itch.io' project channel (e.g. 'windows-stable')."
     required: true
+  api-key:
+    description: "The API key used to authenticate with itch.io."
+    required: true
 
 runs:
   using: "composite"
   steps:
     - uses: coffeebeats/godot-infra/.github/actions/setup-butler@main
+
+    - name: Log in to itch.io
+      shell: bash
+      env:
+        BUTLER_API_KEY: ${{ inputs.api-key }}
+      run: butler login
 
     - name: Publish game executable to 'itch.io'
       shell: bash
