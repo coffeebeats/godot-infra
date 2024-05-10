@@ -36,9 +36,9 @@ runs:
       shell: bash
       run: |
         case ${{ runner.os }} in
-          Linux) platform="linux-amd64"
-          macOS) platform="darwin-amd64"
-          Windows) platform="windows-amd64"
+          Linux) platform="linux-amd64" ;;
+          macOS) platform="darwin-amd64" ;;
+          Windows) platform="windows-amd64" ;;
         esac
 
         curl -L -o butler.zip "https://broth.itch.ovh/butler/${platform}/${{ inputs.version }}/archive/default"
