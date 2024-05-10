@@ -33,6 +33,6 @@ runs:
       shell: bash
       run: butler push \
         --if-changed \
-        --userversion ${{ inputs.version }} \
+        --userversion=${{ inputs.version }} \
         ${{ inputs.path }}
         ${{ inputs.itchio-project }}:${{ inputs.itchio-channel }}
