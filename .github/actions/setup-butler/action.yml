@@ -56,7 +56,7 @@ runs:
     - name: Validate 'butler' executable was set up correctly
       shell: bash
       run: |
-        if [[ "$(${{ env.BUTLER_HOME }}/bin/butler -V)" != "v"* ]]; then
+        if [[ "$(${{ env.BUTLER_HOME }}/bin/butler -V 2>&1)" != "v"* ]]; then
           echo "Failed to install 'butler@v${{ inputs.version }}'!"
           exit 1
         fi
