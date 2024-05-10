@@ -31,7 +31,9 @@ runs:
 
     - name: Publish game executable to 'itch.io'
       shell: bash
-      run: butler push \
-        --if-changed ${{ inputs.path }} \
-        --userversion ${{ inputs.version }} \
+      run: >-
+        butler push
+        --if-changed
+        --userversion=${{ inputs.version }}
+        ${{ inputs.path }}
         ${{ inputs.itchio-project }}:${{ inputs.itchio-channel }}
