@@ -47,3 +47,7 @@ runs:
       $([[ ${{ inputs.pck-only }} == true ]] && echo --export-pack)
       '${{ inputs.preset-name }}'
       $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
+
+      mv
+      $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}/*.html
+      $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}/index.html
