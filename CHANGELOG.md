@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.4 (2024-05-10)
+
+## What's Changed
+* chore(ci): standardize action and workflow names by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/200
+* feat(ci): log in to `itch.io` prior to pushing a build by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/202
+* fix(ci): pass correct `itch.io` project input by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/203
+* fix(ci): correct syntax error in `setup-butler` action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/204
+* fix(ci): set correct default version `LATEST` for `setup-butler` action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/205
+* fix(ci): redirect `butler` version output to `stdout` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/206
+* fix(ci): correct order of `butler` args by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/207
+* fix(export): rename web HTML file to `index.html` for GH pages/`itchio` support by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/208
+* fix(export): correctly rename HTML file to `index.html` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/209
+* fix(ci): set `butler` API key for `push` step by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/210
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.3.3...v0.3.4
+
 ## 0.3.3 (2024-05-10)
 
 ## What's Changed
