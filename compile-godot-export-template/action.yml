@@ -266,18 +266,18 @@ runs:
         case "${{ inputs.platform }}" in
           macos) TEMPLATE_NAME=macos.zip ;;
           web)
-            PROFILE="$([[ ${{ inputs.profile }} == release ]] && echo release || echo debug)"
-            DLINK="$([[ ${{ inputs.enable-gdextension }} == true ]] && echo _dlink)"
+            PROFILE=$([[ "${{ inputs.profile }}" == release ]] && echo release || echo debug)
+            DLINK=$([[ "${{ inputs.enable-gdextension }}" == true ]] && echo _dlink || :)
 
             TEMPLATE_NAME="web${DLINK}_${PROFILE}.zip"
             ;;
           windows)
-            TARGET=$([[ "${{ inputs.profile }}" == "release" ]] && echo template_release || echo template_debug)
-            DOUBLE=$([[ "${{ inputs.use-double-precision }}" == "true" ]] && echo ".double" || :)
+            TARGET=$([[ "${{ inputs.profile }}" == release ]] && echo template_release || echo template_debug)
+            DOUBLE=$([[ "${{ inputs.use-double-precision }}" == true ]] && echo ".double" || :)
 
             TEMPLATE_NAME="godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}"
 
-            if [[ "${{ inputs.platform }}" == "windows" ]]; then
+            if [[ "${{ inputs.platform }}" == windows ]]; then
               TEMPLATE_NAME="${TEMPLATE_NAME}.exe"
             fi
 
