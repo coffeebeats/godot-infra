@@ -101,10 +101,11 @@ jobs:
           echo "Addon files to publish:"
           ls -lsa ${{ runner.temp }}/addon
 
-      - name: Check out to target branch
+      - name: Push the latest changes to the target branch
         if: steps.update.outputs.current != 'true' || inputs.force == true
         working-directory: thirdparty/${{ inputs.name }}
         run: |
+          # Check out to target branch
           BRANCHES=$(git ls-remote --heads origin ${{ inputs.target-branch }})
 
           if [[ -z "$BRANCHES" ]]; then
@@ -114,10 +115,6 @@ jobs:
             git checkout ${{ inputs.target-branch }}
           fi
 
-      - name: Push the latest changes to the target branch
-        if: steps.update.outputs.current != 'true' || inputs.force == true
-        working-directory: thirdparty/${{ inputs.name }}
-        run: |
           # Set options to enable more extensive globbing.
           shopt -s extglob
           shopt -s globstar
