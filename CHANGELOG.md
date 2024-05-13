@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.5 (2024-05-13)
+
+## What's Changed
+* fix(ci): prefix addon branches with `godot-` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/211
+* fix(ci): commit changes even if change set is empty by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/213
+* fix(ci): correctly handle committing a subdirectory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/214
+* chore(thirdparty): update `godot-steam` to latest by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/215
+* chore: remove unnecessary branch property in `.gitmodules` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/216
+* chore(thirdparty): update `gut` and `phantom-camera` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/217
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.3.4...v0.3.5
+
 ## 0.3.4 (2024-05-10)
 
 ## What's Changed
