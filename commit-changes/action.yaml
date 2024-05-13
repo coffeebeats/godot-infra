@@ -17,6 +17,10 @@ inputs:
   target-branch:
     description: "The name of the remote branch to push to (only used if 'push' is 'true')."
     required: false
+  working-directory:
+    description: "A specific directory to run changes in."
+    required: false
+    default: "."
 
 runs:
   using: "composite"
@@ -24,6 +28,7 @@ runs:
     - name: Evaluate target branch
       id: target-branch
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: |-
         TARGET_BRANCH=$([[ ! -z "${{ inputs.target-branch }}" ]] && echo "${{ inputs.target-branch }}" || git branch --show-current)
         REMOTE_BRANCHES="$(git ls-remote --heads origin $TARGET_BRANCH)"
@@ -34,12 +39,16 @@ runs:
     - name: Evaluate change set
       id: changeset
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: echo empty=$([[ "$(git status --porcelain)" == "" ]] && echo true || echo false) >> $GITHUB_OUTPUT
 
     - name: Commit changes
       if: steps.changeset.outputs.empty == 'false'
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: |-
+        git status 
+
         # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config user.name "github-actions[bot]"
@@ -55,4 +64,5 @@ runs:
           steps.target-branch.outputs.exists == 'false'
         )
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: git push origin "${{ steps.target-branch.outputs.name }}"
