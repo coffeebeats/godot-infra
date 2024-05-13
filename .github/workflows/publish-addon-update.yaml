@@ -129,7 +129,7 @@ jobs:
           echo "Target addon workspace (after):"
           ls -lsa .
 
-      - uses: coffeebeats/godot-infra/commit-changes@fix/addon-update
+      - uses: coffeebeats/godot-infra/commit-changes@main
         if: steps.update.outputs.current != 'true' || inputs.force == true
         with:
           description: "updating ${{ inputs.name }} to ${{ steps.update.outputs.rev }}"
