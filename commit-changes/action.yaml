@@ -40,6 +40,8 @@ runs:
       if: steps.changeset.outputs.empty == 'false'
       shell: bash
       run: |-
+        git status 
+
         # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config user.name "github-actions[bot]"
