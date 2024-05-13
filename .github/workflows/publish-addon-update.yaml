@@ -134,3 +134,4 @@ jobs:
         with:
           description: "updating ${{ inputs.name }} to ${{ steps.update.outputs.rev }}"
           target-branch: ${{ inputs.target-branch }}
+          working-directory: "thirdparty/${{ inputs.name }}"
