@@ -11,9 +11,12 @@ inputs:
     required: false
     default: "commit changes"
   push:
-    description: Whether to push the staged changes.
+    description: "Whether to push the staged changes."
     required: false
     default: true
+  target-branch:
+    description: "The name of the remote branch to push to (only used if 'push' is 'true')."
+    required: false
 
 runs:
   using: "composite"
@@ -35,5 +38,7 @@ runs:
         git commit -m "chore: ${{ inputs.description }} (on behalf of '${{ github.triggering_actor }}')"
 
         if [[ "${{ inputs.push }}" == "true" ]]; then
-          git push
+          git push \
+            origin \
+            $([[ ! -z "${{ inputs.target-branch }}" ]] && echo "${{ inputs.target-branch }}" || git branch --show-current)
         fi
