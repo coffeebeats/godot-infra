@@ -16,7 +16,7 @@ on:
         type: string
         description: "The name of the branch to push changes to."
         required: true
-        default: v4.2
+        default: godot-v4.2
       subfolder:
         type: string
         description: "The 'addons/' directory name of the addon to update."
@@ -136,11 +136,7 @@ jobs:
             exit 0
           fi
 
-          # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-
-          git add --all .
-          git commit -m "chore: updating ${{ inputs.name }} to ${{ steps.update.outputs.rev }} (on behalf of '${{ github.triggering_actor }}')"
-
-          git push origin ${{ inputs.target-branch }}
+      - uses: coffeebeats/godot-infra/commit-changes@main
+        with:
+          description: "updating ${{ inputs.name }} to ${{ steps.update.outputs.rev }}"
+          target-branch: ${{ inputs.target-branch }}
