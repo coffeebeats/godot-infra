@@ -61,9 +61,8 @@ jobs:
 
       - name: Update dependency
         id: update
+        working-directory: thirdparty/${{ inputs.name }}
         run: |
-          cd thirdparty/${{ inputs.name }}
-
           CHANGES=$(git submodule update --remote)
           if [[ -z "$CHANGES" ]]; then
             echo "current=true" >> $GITHUB_OUTPUT
@@ -104,9 +103,8 @@ jobs:
 
       - name: Check out to target branch
         if: steps.update.outputs.current != 'true' || inputs.force == true
+        working-directory: thirdparty/${{ inputs.name }}
         run: |
-          cd thirdparty/${{ inputs.name }}
-
           BRANCHES=$(git ls-remote --heads origin ${{ inputs.target-branch }})
 
           if [[ -z "$BRANCHES" ]]; then
@@ -118,10 +116,13 @@ jobs:
 
       - name: Push the latest changes to the target branch
         if: steps.update.outputs.current != 'true' || inputs.force == true
+        working-directory: thirdparty/${{ inputs.name }}
         run: |
-          cd thirdparty/${{ inputs.name }}
+          # Set options to enable more extensive globbing.
+          shopt -s extglob
+          shopt -s globstar
 
-          rm -rf * .git*
+          rm -rf * .@(!(.||git))
 
           echo "Target addon workspace (before):"
           ls -lsa .
@@ -131,12 +132,8 @@ jobs:
           echo "Target addon workspace (after):"
           ls -lsa .
 
-          if [[ -z "$(git status --porcelain)" ]]; then
-            echo "Target branch is up-to-date; exiting without making changes."
-            exit 0
-          fi
-
       - uses: coffeebeats/godot-infra/commit-changes@main
+        if: steps.update.outputs.current != 'true' || inputs.force == true
         with:
           description: "updating ${{ inputs.name }} to ${{ steps.update.outputs.rev }}"
           target-branch: ${{ inputs.target-branch }}
