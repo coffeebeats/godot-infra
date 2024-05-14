@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.6 (2024-05-14)
+
+## What's Changed
+* chore(ci): migrate `release-please` to new repository by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/218
+* chore(ci): move `release-please` configuration into directory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/220
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.3.5...v0.3.6
+
 ## 0.3.5 (2024-05-13)
 
 ## What's Changed
