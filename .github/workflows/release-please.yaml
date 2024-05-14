@@ -27,8 +27,8 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          config-file: .release-please-config.json
-          manifest-file: .release-please-manifest.json
+          config-file: .release-please/config.json
+          manifest-file: .release-please/manifest.json
 
           # NOTE: To handle releases on specific branches (e.g. a '1.X' release branch),
           # simply change the "branches" filter in the workflow's on-"push" trigger.
