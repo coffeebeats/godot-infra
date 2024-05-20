@@ -47,3 +47,8 @@ runs:
       if: steps.check-formatting.outcome == 'failure'
       with:
         description: "fix formatting"
+
+    - name: Fail workflow
+      if: steps.check-formatting.outcome == 'failure'
+      shell: bash
+      run: exit 1
