@@ -30,7 +30,6 @@ runs:
       with:
         check-command: "gdformat -l ${{ inputs.line-length-max }} --check ${{ inputs.path }}/**/*.gd"
         fix-command: "gdformat -l ${{ inputs.line-length-max }} ${{ inputs.path }}/**/*.gd"
-        continue-on-error: ${{ github.event_name == 'pull_request' }}
 
     - name: Lint project
       shell: bash
