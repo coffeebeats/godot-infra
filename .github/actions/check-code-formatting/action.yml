@@ -24,14 +24,6 @@ runs:
 
         ${{ inputs.check-command }}
 
-    - uses: actions/checkout@v4
-      if: steps.check-formatting.outcome == 'failure'
-      with:
-        # Checkout the "head_ref" (i.e. PR branch HEAD) in case a commit is
-        # later needed. See https://github.com/stefanzweifel/git-auto-commit-action
-        # for more details.
-        ref: ${{ github.head_ref }}
-
     # Fix source code
     - name: Fix formatting
       if: steps.check-formatting.outcome == 'failure'
