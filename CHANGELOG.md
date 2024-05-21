@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.7 (2024-05-21)
+
+## What's Changed
+* fix(ci): better handle errors when checking source code formatting by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/221
+* fix(ci): don't check out in code formatting action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/223
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.3.6...v0.3.7
+
 ## 0.3.6 (2024-05-14)
 
 ## What's Changed
