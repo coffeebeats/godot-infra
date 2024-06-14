@@ -25,7 +25,7 @@ on:
         type: boolean
         description: "Create the target branch even if the addon is up-to-date."
         required: false
-        default: false
+        default: true
       os:
         type: string
         description: "The runner's operating system."
