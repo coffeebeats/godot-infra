@@ -204,7 +204,7 @@ jobs:
       - name: Build and push
         id: build-and-push-macos
         if: inputs.platform == 'macos'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: compile-godot-export-template/macos
           push: true
@@ -230,7 +230,7 @@ jobs:
       - name: Build and push
         id: build-and-push-web
         if: inputs.platform == 'web'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: compile-godot-export-template/web
           push: true
@@ -246,7 +246,7 @@ jobs:
       - name: Build and push
         id: build-and-push-windows
         if: inputs.platform == 'windows'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: compile-godot-export-template/windows
           push: true
