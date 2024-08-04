@@ -70,6 +70,10 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@v6
         with:
+          # FIXME(https://github.com/time-rs/time/issues/693): 'time-rs' needs to be
+          # updated to at least '0.3.36'. Current version (transitive dependency of
+          # 'apple-codesign') is '0.3.31' and fails to compile on rust '1.80.0'.
+          build-args: RUST_VERSION=1.79.0
           context: export-godot-project-preset/${{ inputs.platform }}
           push: true
           tags: ghcr.io/coffeebeats/export-godot-project-preset:godot-v${{ inputs.godot-major-minor-version }}-${{ inputs.platform }}
