@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.8 (2024-08-04)
+
+## What's Changed
+* chore(thirdparty): update all plugin dependencies to latest by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/224
+* chore(ci): default `force` option to `true` when publishing addon updates by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/226
+* chore(deps): bump docker/build-push-action from 5 to 6 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/227
+* fix(ci): pin to rust `1.79.0`; mitigate `time-rs` compilation error on rust version `1.80.0` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/228
+
+## New Contributors
+* @dependabot made their first contribution in https://github.com/coffeebeats/godot-infra/pull/227
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.3.7...v0.3.8
+
 ## 0.3.7 (2024-05-21)
 
 ## What's Changed
