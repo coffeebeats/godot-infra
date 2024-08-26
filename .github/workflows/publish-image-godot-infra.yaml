@@ -60,34 +60,34 @@ jobs:
       # compile-godot-export-template
 
       - id: compile-godot-export-template-macos
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         with:
           files: compile-godot-export-template/macos/Dockerfile
 
       - id: compile-godot-export-template-windows
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         with:
           files: compile-godot-export-template/windows/Dockerfile
 
       - id: compile-godot-export-template-web
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         with:
           files: compile-godot-export-template/web/Dockerfile
 
       # export-godot-project-preset
 
       - id: export-godot-project-preset-macos
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         with:
           files: export-godot-project-preset/macos/Dockerfile
 
       - id: export-godot-project-preset-windows
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         with:
           files: export-godot-project-preset/windows/Dockerfile
 
       - id: export-godot-project-preset-web
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         with:
           files: export-godot-project-preset/web/Dockerfile
 
