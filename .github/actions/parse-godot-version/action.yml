@@ -17,13 +17,44 @@ inputs:
     description: "A path to a 'version.py' file in a Godot source code checkout."
     required: false
 
+  fail-on-requirements-not-met:
+    description: "Whether to fail if the parsed version does not meet version constraints."
+    required: false
+    default: true
+  minimum-major-version:
+    description: "The minimum required major version."
+    required: false
+    default: 4
+  minimum-minor-version:
+    description: "The minimum required minor version (must pass major version constraint first)."
+    required: false
+    default: 2
+  minimum-patch-version:
+    description: "The minimum required patch version (must pass major and minor version constraints first)."
+    required: false
+    default: 2
+
 outputs:
+  major:
+    description: "The major version of the input."
+    value: ${{ steps.version.outputs.major }}
+  minor:
+    description: "The minor version of the input."
+    value: ${{ steps.version.outputs.minor }}
+  patch:
+    description: "The patch version of the input."
+    value: ${{ steps.version.outputs.patch }}
+  status:
+    description: "The status/label of the input."
+    value: ${{ steps.version.outputs.status }}
+
   major-minor:
     description: "The major-minor version of the input."
     value: ${{ steps.version.outputs.major-minor }}
   major-minor-patch:
     description: "The major-minor-patch version of the input."
     value: ${{ steps.version.outputs.major-minor-patch }}
+
   semantic:
     description: "The semantic version of the input (without 'v' prefix)."
     value: ${{ steps.version.outputs.semantic }}
@@ -40,12 +71,13 @@ runs:
       run: |
         echo "Parsing Godot version from engine CLI: '${{ inputs.editor-path }}'"
 
-        OUTPUT=$(${{ inputs.editor-path }} --version)
-        echo "Engine '--version' output: '$OUTPUT'"
+        INPUT=$(${{ inputs.editor-path }} --version)
+        echo "Engine '--version' output: '$INPUT'"
 
-        echo "MAJOR_MINOR=$(python3 -B -c "v='$OUTPUT'.strip().split('.');print(f'{v[0]}.{v[1]}')")" >> $GITHUB_ENV
-        echo "MAJOR_MINOR_PATCH=$(python3 -B -c "v='$OUTPUT'.strip().split('.');print(f'{v[0]}.{v[1]}.{v[2]}')")" >> $GITHUB_ENV
-        echo "SEMANTIC=$(python3 -B -c "v='$OUTPUT'.strip().split('.');print(f'{v[0]}.{v[1]}.{v[2]}-{v[3]}')")" >> $GITHUB_ENV
+        echo "MAJOR=$(python3 -B -c "v='$INPUT'.strip().split('.');print(v[0])")" >> $GITHUB_ENV
+        echo "MINOR=$(python3 -B -c "v='$INPUT'.strip().split('.');print(v[1])")" >> $GITHUB_ENV
+        echo "PATCH=$(python3 -B -c "v='$INPUT'.strip().split('.');print(v[2] if v[2].isdigit() else 0)")" >> $GITHUB_ENV
+        echo "STATUS=$(python3 -B -c "v='$INPUT'.strip().split('.');print(v[3] if v[2].isdigit() else v[2])")" >> $GITHUB_ENV
 
     - name: Parse version from 'version.py'
       if: |
@@ -58,9 +90,10 @@ runs:
 
         cd "$(dirname ${{ inputs.versionpy-path }})"
 
-        echo "MAJOR_MINOR=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}')")" >> $GITHUB_ENV
-        echo "MAJOR_MINOR_PATCH=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}')")" >> $GITHUB_ENV
-        echo "SEMANTIC=$(python3 -B -c "import version as v;print(f'{v.major}.{v.minor}.{v.patch}-{v.status}')")" >> $GITHUB_ENV
+        echo "MAJOR=$(python3 -B -c "import version as v;print(f'{v.major}')")" >> $GITHUB_ENV
+        echo "MINOR=$(python3 -B -c "import version as v;print(f'{v.minor}')")" >> $GITHUB_ENV
+        echo "PATCH=$(python3 -B -c "import version as v;print(f'{v.patch}')")" >> $GITHUB_ENV
+        echo "STATUS=$(python3 -B -c "import version as v;print(f'{v.status}')")" >> $GITHUB_ENV
 
     - name: Parse version from '.godot-version'
       if: |
@@ -71,11 +104,12 @@ runs:
       run: |
         echo "Parsing Godot version from '.godot-version' file: '${{ inputs.gdenv-pin-path }}'"
 
-        VERSION=$(cat ${{ inputs.gdenv-pin-path }})
+        INPUT=$(cat ${{ inputs.gdenv-pin-path }} | sed 's/^v//')
 
-        echo "SEMANTIC=$(echo "$VERSION" | sed 's/^v//')" >> $GITHUB_ENV
-        echo "MAJOR_MINOR=$(echo "$VERSION" | sed -E 's/^v//' | cut -d '-' -f 1 | sed -E 's/\.[0-9]+$//')" >> $GITHUB_ENV
-        echo "MAJOR_MINOR_PATCH=$(echo "$VERSION" | sed 's/^v//' | cut -d '-' -f 1)" >> $GITHUB_ENV
+        echo "MAJOR=$(python3 -B -c "v='$INPUT'.strip().split('-')[0].split('.');print(v[0])")" >> $GITHUB_ENV
+        echo "MINOR=$(python3 -B -c "v='$INPUT'.strip().split('-')[0].split('.');print(v[1])")" >> $GITHUB_ENV
+        echo "PATCH=$(python3 -B -c "v='$INPUT'.strip().split('-')[0].split('.');print(v[2] if len(v) == 3 else 0)")" >> $GITHUB_ENV
+        echo "STATUS=$(echo $INPUT | sed 's/^.*\-//')" >> $GITHUB_ENV
 
     # TODO: If another input type is added, check that a prior step hasn't
     # already succeeded. If so, throw an error if there's a mismatch.
@@ -84,16 +118,49 @@ runs:
       id: version
       shell: bash
       run: |
-        echo "major-minor: ${{ env.MAJOR_MINOR }}"
-        echo "major-minor=${{ env.MAJOR_MINOR }}" >> $GITHUB_OUTPUT
-
-        echo "major-minor-patch: ${{ env.MAJOR_MINOR_PATCH }}"
-        echo "major-minor-patch=${{ env.MAJOR_MINOR_PATCH }}" >> $GITHUB_OUTPUT
-
-        echo "semantic: ${{ env.SEMANTIC }}"
-        echo "semantic=${{ env.SEMANTIC }}" >> $GITHUB_OUTPUT
-
-        if [[ -z "${{ env.MAJOR_MINOR }}" ]] || [[ -z "${{ env.MAJOR_MINOR_PATCH }}" ]] || [[ -z "${{ env.SEMANTIC }}" ]]; then
-          echo "Failed to parse Godot version."
+        echo "major: ${{ env.MAJOR }}"
+        echo "major=${{ env.MAJOR }}" >> $GITHUB_OUTPUT
+        if [[ -z "${{ env.MAJOR }}" ]]; then
+          echo "Failed to parse major version."
           exit 1
         fi
+
+        if [[ "${{ env.MAJOR }}" -lt "${{ inputs.minimum-major-version }}" && "${{ inputs.fail-on-requirements-not-met }}" == true ]]; then
+          echo "Major version less than required minimum: ${{ env.MAJOR }} (requires ${{ inputs.minimum-major-version }})"\
+          exit 1
+        fi
+
+        echo "minor: ${{ env.MINOR }}"
+        echo "minor=${{ env.MINOR }}" >> $GITHUB_OUTPUT
+        if [[ -z "${{ env.MINOR }}" ]]; then
+          echo "Failed to parse minor version."
+          exit 1
+        fi
+
+        if [[ "${{ env.MINOR }}" -lt "${{ inputs.minimum-minor-version }}" && "${{ inputs.fail-on-requirements-not-met }}" == true ]]; then
+          echo "Minor version less than required minimum: ${{ env.MINOR }} (requires ${{ inputs.minimum-minor-version }})"\
+          exit 1
+        fi
+
+        echo "patch: ${{ env.PATCH }}"
+        echo "patch=${{ env.PATCH }}" >> $GITHUB_OUTPUT
+        if [[ -z "${{ env.PATCH }}" ]]; then
+          echo "Failed to parse patch version."
+          exit 1
+        fi
+
+        if [[ "${{ env.PATCH }}" -lt "${{ inputs.minimum-patch-version }}" && "${{ inputs.fail-on-requirements-not-met }}" == true ]]; then
+          echo "Patch version less than required minimum: ${{ env.PATCH }} (requires ${{ inputs.minimum-patch-version }})"\
+          exit 1
+        fi
+
+        echo "status: ${{ env.STATUS }}"
+        echo "status=${{ env.STATUS }}" >> $GITHUB_OUTPUT
+        if [[ -z "${{ env.STATUS }}" ]]; then
+          echo "Failed to parse status/label of version."
+          exit 1
+        fi
+
+        echo "major-minor=${{ env.MAJOR }}.${{ env.MINOR }}" >> $GITHUB_OUTPUT
+        echo "major-minor-patch=${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.PATCH }}" >> $GITHUB_OUTPUT
+        echo "semantic=${{ env.MAJOR }}.${{ env.MINOR }}$([[ ${{ env.PATCH }} -ne 0 ]] && echo ".${{ env.PATCH }}" || :)-${{ env.STATUS }}" >> $GITHUB_OUTPUT
