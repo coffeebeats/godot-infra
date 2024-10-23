@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0 (2024-10-23)
+
+## What's Changed
+* chore(deps): bump tj-actions/changed-files from 44 to 45 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/229
+* fix(ci): improve version parsing in `parse-godot-version`; allow setting version constraints by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/231
+* feat(ci)!: upgrade to `godot-4.3` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/232
+* fix: allow bumping major version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/233
+* chore(thirdparty): update all dependencies to latest by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/234
+* chore(ci): upgrade `compile-godot-export-template` dependencies; use pre-built MoltenVK by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/235
+* fix(ci): add logging when packaging macOS SDK by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/236
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v0.3.8...v1.0.0
+
 ## 0.3.8 (2024-08-04)
 
 ## What's Changed
