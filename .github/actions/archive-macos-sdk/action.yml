@@ -40,6 +40,9 @@ runs:
         XCODEDIR=/Applications/Xcode_${{ inputs.xcode-version }}.app \
           thirdparty/osxcross/tools/gen_sdk_package.sh
 
+        echo "Files in current directory:"
+        ls -l
+
         mkdir -p ${{ inputs.dir }}
 
         # Only move the file if necessary.
