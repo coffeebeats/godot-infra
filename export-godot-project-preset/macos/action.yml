@@ -48,7 +48,7 @@ inputs:
 
 runs:
   using: docker
-  image: docker://ghcr.io/coffeebeats/export-godot-project-preset:godot-v4.2-macos
+  image: docker://ghcr.io/coffeebeats/export-godot-project-preset:godot-v4.3-macos
   env:
     GODOT_SCRIPT_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
     GODOT_MACOS_CODESIGN_CERTIFICATE_FILE: ${{ inputs.codesign-certificate-file }}
