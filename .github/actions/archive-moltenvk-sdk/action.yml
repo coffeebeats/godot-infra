@@ -54,7 +54,7 @@ runs:
       shell: bash
       run: |
         GH_TOKEN=${{ github.token }} gh release download \
-          v${{ steps.version.outputs.value }}-artifacts \
+          v${{ inputs.version }}-artifacts \
           --repo KhronosGroup/MoltenVK \
           --pattern "MoltenVK-macos.tar" \
           --output moltenvk.tar
