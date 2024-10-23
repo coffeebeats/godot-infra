@@ -7,6 +7,7 @@
 [submodule "thirdparty/godot-steam"]
 	path = thirdparty/godot-steam
 	url = https://github.com/coffeebeats/GodotSteam
+	branch = gdextension-plugin
 [submodule "thirdparty/phantom-camera"]
 	path = thirdparty/phantom-camera
 	url = git@github.com:coffeebeats/phantom-camera.git
