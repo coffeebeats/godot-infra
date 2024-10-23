@@ -133,8 +133,6 @@ jobs:
     secrets: "inherit"
     with:
       version: ${{ inputs.moltenvk-version }}
-      osx-version-min: ${{ inputs.osx-version-min }}
-      xcode-version: ${{ inputs.xcode-version }}
 
   build-and-publish:
     if: |

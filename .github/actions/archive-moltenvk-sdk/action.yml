@@ -4,12 +4,6 @@ inputs:
   version:
     description: "The 'MoltenVK' version to archive."
     required: true
-  xcode-version:
-    description: "The 'Xcode' version to use for building/extracting."
-    required:
-  osx-version-min:
-    description: "The minimum supported 'macOS' version."
-    required: true
   out:
     description: "The filename to write the archive to."
     required: false
@@ -42,13 +36,6 @@ runs:
 
         echo "name=$(basename $OUT)" >> "$GITHUB_OUTPUT"
         echo "path=$OUT" >> "$GITHUB_OUTPUT"
-
-    - name: Switch 'Xcode' versions
-      if: inputs.xcode-version != ''
-      shell: bash
-      run: |
-        sudo xcode-select -s /Applications/Xcode_${{ inputs.xcode-version }}.app
-        xcodebuild -version
 
     - name: Package SDK
       shell: bash
