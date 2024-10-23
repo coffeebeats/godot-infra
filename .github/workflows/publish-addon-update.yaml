@@ -16,7 +16,7 @@ on:
         type: string
         description: "The name of the branch to push changes to."
         required: true
-        default: godot-v4.2
+        default: godot-v4.3
       subfolder:
         type: string
         description: "The 'addons/' directory name of the addon to update."

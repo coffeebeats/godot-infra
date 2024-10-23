@@ -108,8 +108,8 @@ runs:
       with:
         editor-path: ${{ steps.editor.outputs.path }}/bin/godot
         minimum-major-version: 4
-        minimum-minor-version: 2
-        minimum-patch-version: 2
+        minimum-minor-version: 3
+        minimum-patch-version: 0
 
     - name: Copy the Godot project to the expected location
       id: project

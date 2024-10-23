@@ -74,7 +74,7 @@ runs:
         cd ..
 
         # Extract the only required library; see
-        # https://github.com/godotengine/godot/blob/4.2/platform/macos/detect.py#L77-L88.
+        # https://github.com/godotengine/godot/blob/4.3/platform_methods.py#L121-L144.
 
         OUT_DIR=dist/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64
 
