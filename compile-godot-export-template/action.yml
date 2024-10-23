@@ -84,8 +84,8 @@ runs:
       with:
         versionpy-path: ${{ github.workspace }}/godot/version.py
         minimum-major-version: 4
-        minimum-minor-version: 2
-        minimum-patch-version: 2
+        minimum-minor-version: 3
+        minimum-patch-version: 0
 
     # -------------- Restore the export template + SCons caches -------------- #
 
