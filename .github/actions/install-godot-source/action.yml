@@ -24,6 +24,18 @@ inputs:
     default: ""
 
 outputs:
+  major-version:
+    description: "The major version of the source code."
+    value: ${{ steps.godot.outputs.major }}
+  minor-version:
+    description: "The minor version of the source code."
+    value: ${{ steps.godot.outputs.minor }}
+  patch-version:
+    description: "The patch version of the source code."
+    value: ${{ steps.godot.outputs.patch }}
+  status-version:
+    description: "The status label of the source code."
+    value: ${{ steps.godot.outputs.status }}
   major-minor-version:
     description: "The major-minor version of the source code."
     value: ${{ steps.godot.outputs.major-minor }}
@@ -52,6 +64,7 @@ runs:
       id: godot
       uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@main"
       with:
+        fail-on-requirements-not-met: false
         versionpy-path: ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/version.py
 
     - name: Verify source code checkout
