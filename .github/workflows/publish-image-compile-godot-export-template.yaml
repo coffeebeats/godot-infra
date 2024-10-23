@@ -17,17 +17,17 @@ on:
         type: string
         description: "The 'LLVM' version to install in the image."
         required: false
-        default: "17"
+        default: "19"
       moltenvk-version:
         type: string
         description: "The 'MoltenVK' SDK version to install in the image."
         required: false
-        default: "1.2.7"
+        default: "1.2.11"
       osx-version:
         type: string
         description: "The 'MacOS' SDK version to install in the image."
         required: false
-        default: "14"
+        default: "15.4"
       osx-version-min:
         type: string
         description: "The minimum 'MacOS' SDK version to support."
@@ -37,12 +37,12 @@ on:
         type: string
         description: "The 'darwin*' SDK name for the 'osx-version' specified."
         required: false
-        default: "darwin23"
+        default: "darwin23.5"
       xcode-version:
         type: string
         description: "The 'Xcode' version to build 'macOS'-related SDKs with."
         required: false
-        default: "15.2"
+        default: "15.4"
 
       # Web-specific inputs.
       emscripten-version:
@@ -133,8 +133,6 @@ jobs:
     secrets: "inherit"
     with:
       version: ${{ inputs.moltenvk-version }}
-      osx-version-min: ${{ inputs.osx-version-min }}
-      xcode-version: ${{ inputs.xcode-version }}
 
   build-and-publish:
     if: |

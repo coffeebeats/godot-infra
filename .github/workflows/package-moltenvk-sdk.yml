@@ -7,14 +7,6 @@ on:
         type: string
         description: "The 'MoltenVK' version to package."
         required: true
-      xcode-version:
-        type: string
-        description: "The 'Xcode' version to use for building/extracting."
-        required: true
-      osx-version-min:
-        type: string
-        description: "The minimum supported 'macOS' version."
-        required: true
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."
@@ -24,7 +16,7 @@ on:
         type: string
         description: "The runner's operating system."
         required: false
-        default: macos-13
+        default: macos-14
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -40,14 +32,6 @@ on:
         type: string
         description: "The 'MoltenVK' version to package."
         required: true
-      xcode-version:
-        type: string
-        description: "The 'Xcode' version to use for building/extracting."
-        required: true
-      osx-version-min:
-        type: string
-        description: "The minimum supported 'macOS' version."
-        required: true
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."
@@ -57,7 +41,7 @@ on:
         type: string
         description: "The runner's operating system."
         required: false
-        default: macos-13
+        default: macos-14
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -66,7 +50,7 @@ on:
 
 env:
   GH_TOKEN: ${{ github.token }}
-  key: "moltenvk-${{ inputs.version }}-osx-min-${{ inputs.osx-version-min }}-xcode-${{ inputs.xcode-version }}"
+  key: "moltenvk-${{ inputs.version }}"
   path: "moltenvk-sdk-${{ inputs.version }}.tar.gz"
 
 jobs:
@@ -122,8 +106,6 @@ jobs:
         with:
           out: ${{ env.path }}
           version: ${{ inputs.version }}
-          osx-version-min: ${{ inputs.osx-version-min }}
-          xcode-version: ${{ inputs.xcode-version }}
 
       # Publish the artifact
       - uses: actions/upload-artifact@v4
