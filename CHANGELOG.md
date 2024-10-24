@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2 (2024-10-24)
+
+## What's Changed
+* fix(ci): use updated `ccflags`/`linkerflags` arguments; specify compilers by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/240
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.0.1...v1.0.2
+
 ## 1.0.1 (2024-10-24)
 
 ## What's Changed
