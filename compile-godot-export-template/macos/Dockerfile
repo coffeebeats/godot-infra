@@ -206,6 +206,6 @@ ENV SCONSFLAGS="platform=macos osxcross_sdk=$OSXCROSS_SDK"
 ENV SCONSFLAGS="use_volk=no vulkan_sdk_path=$VULKAN_SDK_ROOT/macOS/lib/MoltenVK.xcframework $SCONSFLAGS"
 
 # NOTE: As of Godot 4.0.3, the 'SCons' configuration does not correctly
-# detect clang usage via 'OSXCross'. Add in the missing "common
-# warnings" here (see https://github.com/godotengine/godot/blob/2267646bf4c29acf1342951d8726626817c742bd/SConstruct#L727-L730).
-ENV SCONSFLAGS="CCFLAGS='-Wno-ordered-compare-function-pointers' $SCONSFLAGS"
+# detect clang usage via 'OSXCross'. Add in the missing compiler flags and
+# "common warnings" here (see https://github.com/godotengine/godot/blob/2267646bf4c29acf1342951d8726626817c742bd/SConstruct#L727-L730).
+ENV SCONSFLAGS="CC=clang CXX=clang ccflags='-Wno-ordered-compare-function-pointers' $SCONSFLAGS"
