@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 (2024-10-24)
+
+## What's Changed
+* fix(ci): correct `vulkan_sdk_path` for `v4.3`; set correct minimum macOS version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/237
+* fix(ci): use valid macOS version (`14.5` instead of `15.4`) by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/239
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.0.0...v1.0.1
+
 ## 1.0.0 (2024-10-23)
 
 ## What's Changed
