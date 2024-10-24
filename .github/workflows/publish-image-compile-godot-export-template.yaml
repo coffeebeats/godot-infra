@@ -27,7 +27,7 @@ on:
         type: string
         description: "The 'MacOS' SDK version to install in the image."
         required: false
-        default: "15.4"
+        default: "14.5"
       osx-version-min:
         type: string
         description: "The minimum 'MacOS' SDK version to support."
