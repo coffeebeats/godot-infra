@@ -125,4 +125,4 @@ ENV SCONSFLAGS="platform=web"
 # NOTE: Recent versions of 'emscripten' often run into errors when LTO is
 # enabled. Add the following linker flags to bypass the issue. See
 # https://github.com/emscripten-core/emscripten/issues/16836.
-ENV SCONSFLAGS="LINKFLAGS='-Wl,-u,htonl' $SCONSFLAGS"
+ENV SCONSFLAGS="linkflags='-Wl,-u,htonl' $SCONSFLAGS"
