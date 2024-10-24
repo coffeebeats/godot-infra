@@ -203,7 +203,7 @@ RUN python3.12 -m pip install \
 # related settings.
 
 ENV SCONSFLAGS="platform=macos osxcross_sdk=$OSXCROSS_SDK"
-ENV SCONSFLAGS="use_volk=no vulkan_sdk_path=$VULKAN_SDK_ROOT/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64 $SCONSFLAGS"
+ENV SCONSFLAGS="use_volk=no vulkan_sdk_path=$VULKAN_SDK_ROOT/macOS/lib/MoltenVK.xcframework $SCONSFLAGS"
 
 # NOTE: As of Godot 4.0.3, the 'SCons' configuration does not correctly
 # detect clang usage via 'OSXCross'. Add in the missing "common
