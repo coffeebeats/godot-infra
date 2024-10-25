@@ -24,6 +24,10 @@ inputs:
     description: "Whether to enable support for GDExtensions (degrades performance/compatibility)."
     required: false
     default: false
+  enable-threads:
+    description: "Whether to enable support for WebWorker threads (requires browser support)."
+    required: false
+    default: true
   godot-src-path:
     description: "A path, relative to 'github.workspace', where the Godot source code is located."
     required: false
@@ -55,6 +59,7 @@ runs:
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
       $([[ "${{ inputs.enable-javascript-eval }}" != 'true' ]] && echo "javascript_eval=no")
       $([[ "${{ inputs.enable-gdextension }}" == 'true' ]] && echo "dlink_enabled=yes")
+      $([[ "${{ inputs.enable-threads }}" == 'true' ]] && echo "threads=yes" || echo "threads=no")
       $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug debug_symbols=yes optimize=debug)
       $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
       $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes optimize=speed)
