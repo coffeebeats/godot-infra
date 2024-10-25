@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 (2024-10-25)
+
+## What's Changed
+* feat(compile-godot-export-template): add argument for threads on `web`, enable GDExtension support by default by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/242
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.0.2...v1.1.0
+
 ## 1.0.2 (2024-10-24)
 
 ## What's Changed
