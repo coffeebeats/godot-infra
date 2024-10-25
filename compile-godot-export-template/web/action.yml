@@ -23,7 +23,7 @@ inputs:
   enable-gdextension:
     description: "Whether to enable support for GDExtensions (degrades performance/compatibility)."
     required: false
-    default: false
+    default: true
   enable-threads:
     description: "Whether to enable support for WebWorker threads (requires browser support)."
     required: false
