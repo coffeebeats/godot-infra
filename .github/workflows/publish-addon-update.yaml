@@ -146,7 +146,7 @@ jobs:
           echo "Target addon workspace (before):"
           ls -lsa .
 
-          cp -r ${{ runner.temp }}/addon/* .
+          cp -r ${{ runner.temp }}/addon/* ${{ runner.temp }}/addon/.gitignore .
 
           echo "Target addon workspace (after):"
           ls -lsa .
