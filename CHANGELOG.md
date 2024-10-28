@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1 (2024-10-28)
+
+## What's Changed
+* fix(ci): add `.gitignore` to addon branches by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/244
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.0...v1.1.1
+
 ## 1.1.0 (2024-10-25)
 
 ## What's Changed
