@@ -135,6 +135,9 @@ jobs:
           echo "Addon files to publish:"
           ls -lsa ${{ runner.temp }}/addon
 
+          # Reset the working tree since we don't need to keep edits.
+          git restore .
+
       - name: Push the latest changes to the target branch
         if: steps.update.outputs.current != 'true' || inputs.force == true
         working-directory: thirdparty/${{ inputs.name }}
