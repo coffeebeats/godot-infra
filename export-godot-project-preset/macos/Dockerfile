@@ -27,7 +27,7 @@ RUN \
 #                       Image: Setup - rcodesign (MacOS)                       #
 # ---------------------------------------------------------------------------- #
 
-FROM img-setup-base as img-setup-rcodesign
+FROM img-setup-base AS img-setup-rcodesign
 
 # ------------------------ Install: Rust dependencies ------------------------ #
 
