@@ -107,3 +107,18 @@ jobs:
 
       - name: Display 'push' outputs
         run: echo "${{ toJSON(steps.build-and-push.outputs.metadata) }}"
+
+  remove_stale_packages:
+    needs: ["build-and-publish"]
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    steps:
+      - uses: actions/delete-package-versions@v5
+        with:
+          owner: "coffeebeats"
+          package-name: "export-godot-project-preset"
+          package-type: "container"
+          delete-only-untagged-versions: true
+          min-versions-to-keep: 25 # NOTE: This is an arbitrary value.
