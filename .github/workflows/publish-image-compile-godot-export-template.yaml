@@ -270,7 +270,7 @@ jobs:
         if: inputs.platform == 'windows'
         run: echo "${{ toJSON(steps.build-and-push-windows.outputs.metadata) }}"
 
-  remove_stale_packages:
+  remove-stale-images:
     needs: ["build-and-publish"]
 
     runs-on: ubuntu-latest

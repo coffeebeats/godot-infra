@@ -108,7 +108,7 @@ jobs:
       - name: Display 'push' outputs
         run: echo "${{ toJSON(steps.build-and-push.outputs.metadata) }}"
 
-  remove_stale_packages:
+  remove-stale-images:
     needs: ["build-and-publish"]
 
     runs-on: ubuntu-latest
