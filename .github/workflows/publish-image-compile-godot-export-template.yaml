@@ -63,8 +63,8 @@ on:
         required: true
         options:
           - "macos"
-          - "windows"
           - "web"
+          - "windows"
       godot-major-minor-version:
         type: string
         description: "The Godot major-minor version supported by the image."
