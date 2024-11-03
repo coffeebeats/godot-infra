@@ -225,7 +225,8 @@ jobs:
           context: compile-godot-export-template/macos
           push: true
           tags: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ inputs.godot-major-minor-version }}-macos
-          cache-from: ${{ inputs.force && '' || 'type=gha' }}
+          no-cache: ${{ inputs.force }}
+          cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
           build-args: |
@@ -251,7 +252,8 @@ jobs:
           context: compile-godot-export-template/web
           push: true
           tags: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ inputs.godot-major-minor-version }}-web
-          cache-from: ${{ inputs.force && '' || 'type=gha' }}
+          no-cache: ${{ inputs.force }}
+          cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
           build-args: |
@@ -267,7 +269,8 @@ jobs:
           context: compile-godot-export-template/windows
           push: true
           tags: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ inputs.godot-major-minor-version }}-windows
-          cache-from: ${{ inputs.force && '' || 'type=gha' }}
+          no-cache: ${{ inputs.force }}
+          cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
