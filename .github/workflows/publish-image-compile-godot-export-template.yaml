@@ -17,44 +17,38 @@ on:
         type: string
         description: "The 'LLVM' version to install in the image."
         required: false
-        default: "19"
       moltenvk-version:
         type: string
         description: "The 'MoltenVK' SDK version to install in the image."
         required: false
-        default: "1.2.11" # IF/ELSE: Update the minimum macOS version if needed.
       osx-version:
         type: string
         description: "The 'MacOS' SDK version to install in the image."
         required: false
-        default: "14.5"
       osx-version-min:
         type: string
         description: "The minimum 'MacOS' SDK version to support."
         required: false
-        # NOTE: MoltenVK requires at least macOS 10.15; see
-        # https://github.com/KhronosGroup/MoltenVK/blob/v1.2.11/Docs/MoltenVK_Runtime_UserGuide.md#build-and-runtime-requirements.
-        default: "10.15"
       osxcross-sdk:
         type: string
         description: "The 'darwin*' SDK name for the 'osx-version' specified."
         required: false
-        default: "darwin23.5"
       xcode-version:
         type: string
         description: "The 'Xcode' version to build 'macOS'-related SDKs with."
         required: false
-        default: "15.4"
 
       # Web-specific inputs.
       emscripten-version:
         type: string
         description: "The 'Emscripten' SDK version to install in the image."
         required: false
-        # NOTE: This should match official build images:
-        # https://github.com/godotengine/build-containers/blob/main/Dockerfile.web#L4.
-        default: "3.1.64"
 
+      force:
+        type: boolean
+        description: "Whether to rebuild the image without using cached layers."
+        required: false
+        default: false
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -69,45 +63,18 @@ on:
         required: true
         options:
           - "macos"
-          - "windows"
           - "web"
+          - "windows"
       godot-major-minor-version:
         type: string
         description: "The Godot major-minor version supported by the image."
         required: true
 
-      # MacOS-specific inputs.
-      llvm-version:
-        type: string
-        description: "The 'LLVM' version to install in the image."
+      force:
+        type: boolean
+        description: "Whether to rebuild the image without using cached layers."
         required: false
-      moltenvk-version:
-        type: string
-        description: "The 'MoltenVK' SDK version to install in the image."
-        required: false
-      osx-version:
-        type: string
-        description: "The 'MacOS' SDK version to install in the image."
-        required: false
-      osx-version-min:
-        type: string
-        description: "The minimum 'MacOS' SDK version to support."
-        required: false
-      osxcross-sdk:
-        type: string
-        description: "The 'darwin*' SDK name for the 'osx-version' specified."
-        required: false
-      xcode-version:
-        type: string
-        description: "The 'Xcode' version to build 'macOS'-related SDKs with."
-        required: false
-
-      # Web-specific inputs.
-      emscripten-version:
-        type: string
-        description: "The 'Emscripten' SDK version to install in the image."
-        required: false
-
+        default: false
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -119,22 +86,54 @@ permissions:
   packages: write
 
 jobs:
+  # NOTE: This job exists just to allow defining default input values *once*,
+  # regardless of whether an input is set for the workflow's event type.
+  inputs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+
+    outputs:
+      # MacOS-specific inputs.
+
+      llvm-version: ${{ inputs.llvm-version || '17' }}
+      # IF/ELSE: Update the minimum macOS version if needed.
+      moltenvk-version: ${{inputs.moltenvk-version || '1.2.11' }}
+      osx-version: ${{ inputs.osx-version || '14.5' }}
+      # NOTE: MoltenVK requires at least macOS 10.15; see
+      # https://github.com/KhronosGroup/MoltenVK/blob/v1.2.11/Docs/MoltenVK_Runtime_UserGuide.md#build-and-runtime-requirements.
+      osx-version-min: ${{ inputs.osx-version-min || '10.15' }}
+      osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin23.5' }}
+      xcode-version: ${{ inputs.xcode-version || '15.4' }}
+
+      # Web-specific inputs.
+
+      # NOTE: This should match official build images; see
+      # https://github.com/godotengine/build-containers/blob/main/Dockerfile.web#L4.
+      emscripten-version: ${{ inputs.emscripten-version || '3.1.64' }}
+
+    steps:
+      - name: Placeholder step
+        shell: bash
+        run: exit 0
+
   package-macos-sdk:
+    needs: ["inputs"]
     if: inputs.platform == 'macos'
 
     uses: "./.github/workflows/package-macos-sdk.yml"
     secrets: "inherit"
     with:
-      version: ${{ inputs.osx-version }}
-      xcode-version: ${{ inputs.xcode-version }}
+      version: ${{ needs.inputs.outputs.osx-version }}
+      xcode-version: ${{ needs.inputs.outputs.xcode-version }}
 
   package-moltenvk-sdk:
+    needs: ["inputs"]
     if: inputs.platform == 'macos'
 
     uses: "./.github/workflows/package-moltenvk-sdk.yml"
     secrets: "inherit"
     with:
-      version: ${{ inputs.moltenvk-version }}
+      version: ${{ needs.inputs.outputs.moltenvk-version }}
 
   build-and-publish:
     if: |
@@ -148,10 +147,12 @@ jobs:
         (inputs.platform != 'macos' && needs.package-moltenvk-sdk.result == 'skipped')
       )
 
-    needs: ["package-macos-sdk", "package-moltenvk-sdk"]
+    needs: ["inputs", "package-macos-sdk", "package-moltenvk-sdk"]
 
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+    # NOTE: There is a limit of 10 inputs for workflow dispatch, so just set
+    # this to a reasonable limit.
+    timeout-minutes: ${{ github.event_name == 'workflow_dispatch' && 60 || fromJson(inputs.timeout) }}
 
     defaults:
       run:
@@ -177,9 +178,7 @@ jobs:
           path: ${{ needs.package-macos-sdk.outputs.cache-path }}
 
       - name: Relocate 'macOS' SDK artifact
-        if: |
-          inputs.platform == 'macos' &&
-          ${{ needs.package-macos-sdk.outputs.cache-path }} != 'thirdparty/osxcross/tarballs'
+        if: inputs.platform == 'macos'
         run: >
           mv
           ${{ needs.package-macos-sdk.outputs.cache-path }}
@@ -218,14 +217,15 @@ jobs:
           context: compile-godot-export-template/macos
           push: true
           tags: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ inputs.godot-major-minor-version }}-macos
+          no-cache: ${{ inputs.force }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
           build-args: |
-            LLVM_VERSION=${{ inputs.llvm-version }}
-            MACOS_VERSION=${{ inputs.osx-version }}
-            MACOS_VERSION_MINIMUM=${{ inputs.osx-version-min }}
-            OSXCROSS_SDK=${{ inputs.osxcross-sdk }}
+            LLVM_VERSION=${{ needs.inputs.outputs.llvm-version }}
+            MACOS_VERSION=${{ needs.inputs.outputs.osx-version }}
+            MACOS_VERSION_MINIMUM=${{ needs.inputs.outputs.osx-version-min }}
+            OSXCROSS_SDK=${{ needs.inputs.outputs.osxcross-sdk }}
           build-contexts: |
             osxcross=thirdparty/osxcross
             vulkan=thirdparty/moltenvk
@@ -244,11 +244,12 @@ jobs:
           context: compile-godot-export-template/web
           push: true
           tags: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ inputs.godot-major-minor-version }}-web
+          no-cache: ${{ inputs.force }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
           build-args: |
-            EMSCRIPTEN_SDK_VERSION=${{ inputs.emscripten-version }}
+            EMSCRIPTEN_SDK_VERSION=${{ needs.inputs.outputs.emscripten-version }}
 
       # Windows
 
@@ -260,6 +261,7 @@ jobs:
           context: compile-godot-export-template/windows
           push: true
           tags: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ inputs.godot-major-minor-version }}-windows
+          no-cache: ${{ inputs.force }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
