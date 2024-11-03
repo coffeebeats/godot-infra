@@ -177,7 +177,9 @@ jobs:
           path: ${{ needs.package-macos-sdk.outputs.cache-path }}
 
       - name: Relocate 'macOS' SDK artifact
-        if: inputs.platform == 'macos'
+        if: |
+          inputs.platform == 'macos' &&
+          ${{ needs.package-macos-sdk.outputs.cache-path }} != 'thirdparty/osxcross/tarballs'
         run: >
           mv
           ${{ needs.package-macos-sdk.outputs.cache-path }}
