@@ -111,6 +111,11 @@ jobs:
       # https://github.com/godotengine/build-containers/blob/main/Dockerfile.web#L4.
       emscripten-version: ${{ inputs.emscripten-version || '3.1.64' }}
 
+    steps:
+      - name: Placeholder step
+        shell: bash
+        run: exit 0
+
   package-macos-sdk:
     needs: ["inputs"]
     if: inputs.platform == 'macos'
