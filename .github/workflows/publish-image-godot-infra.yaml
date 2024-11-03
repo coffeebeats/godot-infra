@@ -123,6 +123,7 @@ jobs:
     with:
       platform: "macos"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
+      force: ${{ github.event_name == 'schedule' }}
 
   compile-godot-export-template-windows:
     needs: ["build-required"]
@@ -135,6 +136,7 @@ jobs:
     with:
       platform: "windows"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
+      force: ${{ github.event_name == 'schedule' }}
 
   compile-godot-export-template-web:
     needs: ["build-required"]
@@ -147,6 +149,7 @@ jobs:
     with:
       platform: "web"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
+      force: ${{ github.event_name == 'schedule' }}
 
   export-godot-project-preset-macos:
     needs: ["build-required"]
@@ -159,6 +162,7 @@ jobs:
     with:
       platform: "macos"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
+      force: ${{ github.event_name == 'schedule' }}
 
   export-godot-project-preset-windows:
     needs: ["build-required"]
@@ -171,6 +175,7 @@ jobs:
     with:
       platform: "windows"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
+      force: ${{ github.event_name == 'schedule' }}
 
   export-godot-project-preset-web:
     needs: ["build-required"]
@@ -183,3 +188,4 @@ jobs:
     with:
       platform: "web"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
+      force: ${{ github.event_name == 'schedule' }}
