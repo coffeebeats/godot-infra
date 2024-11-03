@@ -18,6 +18,11 @@ on:
         description: "Whether to package the SDK, even if cached."
         required: false
         default: false
+      upload:
+        type: boolean
+        description: "Whether to upload the SDK artifact."
+        required: false
+        default: false
       os:
         type: string
         description: "The runner's operating system."
@@ -48,6 +53,11 @@ on:
       force:
         type: boolean
         description: "Whether to package the SDK, even if cached."
+        required: false
+        default: false
+      upload:
+        type: boolean
+        description: "Whether to upload the SDK artifact."
         required: false
         default: false
       os:
@@ -89,6 +99,7 @@ jobs:
     needs: [package-cached-sdk]
     if: |
       inputs.force == true ||
+      inputs.upload == true ||
       needs.package-cached-sdk.outputs.cache-hit != 'true'
 
     runs-on: ${{ inputs.os }}
@@ -111,3 +122,12 @@ jobs:
         with:
           key: ${{ env.key }}
           path: ${{ env.dir }}/${{ env.name }}
+
+      # Publish the artifact
+      - uses: actions/upload-artifact@v4
+        if: inputs.upload == true
+        with:
+          name: ${{ env.name }}
+          path: ${{ env.dir }}/${{ env.name }}
+          retention-days: 7
+          if-no-files-found: error
