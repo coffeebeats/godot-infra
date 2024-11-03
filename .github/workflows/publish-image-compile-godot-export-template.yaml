@@ -274,7 +274,7 @@ jobs:
     needs: ["build-and-publish"]
 
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 5
 
     steps:
       - uses: actions/delete-package-versions@v5
