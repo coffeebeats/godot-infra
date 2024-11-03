@@ -118,11 +118,6 @@ on:
         description: "Whether to rebuild the image without using cached layers."
         required: false
         default: false
-      timeout:
-        type: number
-        description: "The workflow's maximum allowed run duration (in minutes)."
-        required: false
-        default: 60
 
 permissions:
   contents: write
@@ -161,7 +156,9 @@ jobs:
     needs: ["package-macos-sdk", "package-moltenvk-sdk"]
 
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+    # NOTE: There is a limit of 10 inputs for workflow dispatch, so just set
+    # this to a reasonable limit.
+    timeout-minutes: ${{ github.event_name == 'workflow_dispatch' && 60 || fromJson(inputs.timeout) }}
 
     defaults:
       run:
