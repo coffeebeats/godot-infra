@@ -12,6 +12,11 @@ on:
         description: "The Godot major-minor version supported by the image."
         required: true
 
+      force:
+        type: boolean
+        description: "Whether to rebuild the image without using cached layers."
+        required: false
+        default: false
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -32,6 +37,11 @@ on:
         description: "The Godot major-minor version supported by the image."
         required: true
 
+      force:
+        type: boolean
+        description: "Whether to rebuild the image without using cached layers."
+        required: false
+        default: false
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -77,7 +87,7 @@ jobs:
           context: export-godot-project-preset/${{ inputs.platform }}
           push: true
           tags: ghcr.io/coffeebeats/export-godot-project-preset:godot-v${{ inputs.godot-major-minor-version }}-${{ inputs.platform }}
-          cache-from: type=gha
+          cache-from: ${{ inputs.force && '' || 'type=gha' }}
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
