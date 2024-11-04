@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.2 (2024-11-04)
+
+## What's Changed
+* fix(ci): use `actions/cache` instead of artifacts to transfer macOS SDK, saving storage costs by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/246
+* fix(ci): allow for forcibly rebuilding images by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/248
+* fix(ci): update to latest rust, fixing compile error by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/249
+* fix(ci): use consistent casing in Dockerfile by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/250
+* fix(ci): delete stale images from container registry by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/251
+* fix(ci): ensure job to clean up images always run on successful build by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/252
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.1...v1.1.2
+
 ## 1.1.1 (2024-10-28)
 
 ## What's Changed
