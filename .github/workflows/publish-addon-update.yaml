@@ -74,7 +74,7 @@ jobs:
 
           echo "rev=$(git rev-parse --short ${{ inputs.commit }})" >> $GITHUB_OUTPUT
 
-      - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v0
+      - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v1
         with:
           version: v4.3-stable
 
