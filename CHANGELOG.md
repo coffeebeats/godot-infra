@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.3 (2024-11-05)
+
+## What's Changed
+* chore(deps): bump coffeebeats/godot-infra from 0 to 1 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/253
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.2...v1.1.3
+
 ## 1.1.2 (2024-11-04)
 
 ## What's Changed
