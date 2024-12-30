@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.4 (2024-12-30)
+
+## What's Changed
+* chore(thirdparty): update `gut` and `phantom-camera` to latest by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/255
+* chore(thirdparty): update `GodotSteam` to `4.12` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/257
+* chore(thirdparty): update `phantom-camera` to `v0.8.2` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/258
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.3...v1.1.4
+
 ## 1.1.3 (2024-11-05)
 
 ## What's Changed
