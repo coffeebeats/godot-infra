@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.5 (2025-01-27)
+
+## What's Changed
+* chore(ci): add more diagnostic logging to `commit-changes` action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/259
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.4...v1.1.5
+
 ## 1.1.4 (2024-12-30)
 
 ## What's Changed
