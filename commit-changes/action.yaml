@@ -33,8 +33,11 @@ runs:
         TARGET_BRANCH=$([[ ! -z "${{ inputs.target-branch }}" ]] && echo "${{ inputs.target-branch }}" || git branch --show-current)
         REMOTE_BRANCHES="$(git ls-remote --heads origin $TARGET_BRANCH)"
 
+        TARGET_BRANCH_EXISTS="$([[ ! -z "$REMOTE_BRANCHES" ]] && echo true || echo false)"
+        echo "Evaluated target branch: $TARGET_BRANCH (exists=$TARGET_BRANCH_EXISTS)"
+
         echo "name=$TARGET_BRANCH" >> $GITHUB_OUTPUT
-        echo "exists=$([[ ! -z "$REMOTE_BRANCHES" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+        echo "exists=$TARGET_BRANCH_EXISTS" >> $GITHUB_OUTPUT
 
     - name: Evaluate change set
       id: changeset
@@ -47,14 +50,15 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |-
-        git status 
-
         # See https://github.com/orgs/community/discussions/26560#discussioncomment-3531273
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config user.name "github-actions[bot]"
 
         git add --all ${{ inputs.path-expression }}
+        git status 
+
         git commit -m "chore: ${{ inputs.description }} (on behalf of '${{ github.triggering_actor }}')"
+        git --no-pager log --oneline -n1
 
     - name: Push changes
       if: |
