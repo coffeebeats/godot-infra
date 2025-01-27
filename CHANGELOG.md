@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.6 (2025-01-27)
+
+## What's Changed
+* fix(ci): block commits in `commit-changes` when target branch is missing by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/261
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.5...v1.1.6
+
 ## 1.1.5 (2025-01-27)
 
 ## What's Changed
