@@ -160,7 +160,7 @@ runs:
           #
           # [1] https://github.com/actions/runner-images/issues/10772
           sudo apt-get update -y
-          sudo apt-get install --no-install-recommends -y imagemagick
+          sudo apt-get install -y imagemagick
           convert -version
 
           ICON_PATH=${{ runner.temp }}/godot.ico
