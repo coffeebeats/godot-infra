@@ -155,6 +155,14 @@ runs:
       run: |
         ICON_PATH="${{ inputs.icon-path }}"
         if [[ "${{ endsWith(inputs.icon-path, '.ico') }}" != "true" ]]; then
+          # NOTE: As of ubuntu-22.04, GitHub runner images don't contain ImageMagick
+          # by default [1]. Install that prior to creating the icon.
+          #
+          # [1] https://github.com/actions/runner-images/issues/10772
+          sudo apt-get update -y
+          sudo apt-get install --no-install-recommends -y imagemagick
+          convert -version
+
           ICON_PATH=${{ runner.temp }}/godot.ico
           convert -background transparent ${{ inputs.icon-path }} -define icon:auto-resize=256,128,64,48,32,16 $ICON_PATH
         fi
