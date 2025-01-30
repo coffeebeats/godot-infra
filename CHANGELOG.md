@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.8 (2025-01-30)
+
+## What's Changed
+* fix(ci): install recommended packages alongside `imagemagick` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/265
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.7...v1.1.8
+
 ## 1.1.7 (2025-01-30)
 
 ## What's Changed
