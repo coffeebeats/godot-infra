@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.7 (2025-01-30)
+
+## What's Changed
+* fix(ci): install `ImageMagick` now that it's no longer included in `ubuntu-24.04` runners by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/263
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.6...v1.1.7
+
 ## 1.1.6 (2025-01-27)
 
 ## What's Changed
