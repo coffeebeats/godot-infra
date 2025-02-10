@@ -28,19 +28,6 @@ RUN \
     pkg-config \
     python3.12
 
-# ---------------------- Install: 'mingw-w64' toolchain ---------------------- #
-
-RUN \
-    # Install toolchain
-    apt-get install -y --no-install-recommends \
-    mingw-w64 && \
-    # Switch to *-posix toolchains (64-bit)
-    update-alternatives --set 'x86_64-w64-mingw32-gcc' "/usr/bin/x86_64-w64-mingw32-gcc-posix" && \
-    update-alternatives --set 'x86_64-w64-mingw32-g++' "/usr/bin/x86_64-w64-mingw32-g++-posix" && \
-    # Switch to *-posix toolchains (32-bit)
-    update-alternatives --set 'i686-w64-mingw32-gcc' "/usr/bin/i686-w64-mingw32-gcc-posix" && \
-    update-alternatives --set 'i686-w64-mingw32-g++' "/usr/bin/i686-w64-mingw32-g++-posix"
-
 # ---------------------------------------------------------------------------- #
 #                             Image: Setup - Python                            #
 # ---------------------------------------------------------------------------- #
@@ -54,6 +41,30 @@ RUN apt-get install -y --no-install-recommends \
     python3.12-venv && \
     # Set up the virtual environment
     python3.12 -m venv "/venv"
+
+# ---------------------------------------------------------------------------- #
+#                           Image: Setup - MinGW-LLVM                          #
+# ---------------------------------------------------------------------------- #
+
+FROM img-setup-base AS img-setup-mingw-llvm
+
+# ----------------------- Install: MinGW-LLVM compiler ----------------------- #
+
+ARG MINGW_LLVM_VERSION
+RUN test -n "$MINGW_LLVM_VERSION" || (echo "Missing build argument: 'MINGW_LLVM_VERSION'" && exit 1)
+
+ENV MINGW_LLVM_PKG_NAME="llvm-mingw-$MINGW_LLVM_VERSION-ucrt-ubuntu-20.04-x86_64.tar.xz"
+
+RUN \
+    # Install dependencies required for compiler installation.
+    apt-get install -y --no-install-recommends \
+    curl \
+    xz-utils && \
+    # Install the prebuilt MinGW-LLVM compiler
+    mkdir "/mingw-llvm" && \
+    curl -LO "https://github.com/mstorsjo/llvm-mingw/releases/download/$MINGW_LLVM_VERSION/$MINGW_LLVM_PKG_NAME" && \
+    ls && \
+    tar -C "/mingw-llvm" -xf "$MINGW_LLVM_PKG_NAME" --strip-components=1
 
 # ---------------------------------------------------------------------------- #
 #                             Image: Setup - Final                             #
@@ -73,6 +84,12 @@ ENV \
     PATH="/opt/python3/bin:$PATH" \
     VIRTUAL_ENV="/opt/python3"
 
+# ---------------------------- Install: MinGW-LLVM --------------------------- #
+
+COPY --from=img-setup-mingw-llvm "/mingw-llvm" "/opt/mingw-llvm"
+
+ENV PATH="/opt/mingw-llvm/bin:$PATH"
+
 # ------------------------------ Install: SCons ------------------------------ #
 
 RUN python3.12 -m pip install \
@@ -83,4 +100,4 @@ RUN python3.12 -m pip install \
 # Update 'SCONSFLAGS' so that consumers don't need to know the details of
 # Windows-related settings.
 
-ENV SCONSFLAGS="platform=windows use_mingw=yes"
+ENV SCONSFLAGS="platform=windows use_mingw=yes use_llvm=yes"

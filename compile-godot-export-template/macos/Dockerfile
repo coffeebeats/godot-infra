@@ -84,13 +84,13 @@ RUN apt-get install -y --no-install-recommends \
 
 # Verify build arguments were set.
 ARG MACOS_VERSION
-RUN test -n $MACOS_VERSION || (echo "Missing build argument: 'MACOS_VERSION'" && exit 1)
+RUN test -n "$MACOS_VERSION" || (echo "Missing build argument: 'MACOS_VERSION'" && exit 1)
 
 ARG MACOS_VERSION_MINIMUM
-RUN test -n $MACOS_VERSION_MINIMUM || (echo "Missing build argument: 'MACOS_VERSION_MINIMUM'" && exit 1)
+RUN test -n "$MACOS_VERSION_MINIMUM" || (echo "Missing build argument: 'MACOS_VERSION_MINIMUM'" && exit 1)
 
 ARG OSXCROSS_SDK
-RUN test -n $OSXCROSS_SDK || (echo "Missing build argument: 'OSXCROSS_SDK'" && exit 1)
+RUN test -n "$OSXCROSS_SDK" || (echo "Missing build argument: 'OSXCROSS_SDK'" && exit 1)
 
 # Add osxcross repository into container
 # NOTE: This step requires that the macOS SDK is already packaged in the
