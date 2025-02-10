@@ -44,6 +44,12 @@ on:
         description: "The 'Emscripten' SDK version to install in the image."
         required: false
 
+      # Windows-specific inputs.
+      mingw-llvm-version:
+        type: string
+        description: "The 'MinGW-LLVM' compiler version to install in the image."
+        required: false
+
       force:
         type: boolean
         description: "Whether to rebuild the image without using cached layers."
@@ -110,6 +116,12 @@ jobs:
       # NOTE: This should match official build images; see
       # https://github.com/godotengine/build-containers/blob/main/Dockerfile.web#L4.
       emscripten-version: ${{ inputs.emscripten-version || '3.1.64' }}
+
+      # Windows-specific inputs.
+
+      # NOTE: This should match official build images; see
+      # https://github.com/godotengine/build-containers/blob/4.3/Dockerfile.windows.
+      mingw-llvm-version: ${{ inputs.mingw-llvm-version || '20240619' }}
 
     steps:
       - name: Placeholder step
@@ -265,6 +277,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          build-args: |
+            MINGW_LLVM_VERSION=${{ needs.inputs.outputs.mingw-llvm-version }}
 
       - name: Display 'push' outputs
         if: inputs.platform == 'windows'
