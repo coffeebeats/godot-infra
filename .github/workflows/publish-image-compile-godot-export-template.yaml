@@ -61,6 +61,10 @@ on:
         type: string
         description: "The Agility SDK version to install in the image."
         required: false
+      godot-angle-static-version:
+        type: string
+        description: "The 'godot-angle-static' release version to install in the image."
+        required: false
 
       force:
         type: boolean
@@ -137,6 +141,7 @@ jobs:
       godot-nir-static-version: ${{ inputs.godot-nir-static-version || '23.1.9-1' }}
       pix-version: ${{ inputs.pix-version || '1.0.240308001' }}
       agility-version: ${{ inputs.agility-version || '1.615.0' }}
+      godot-angle-static-version: ${{ inputs.godot-angle-static-version || 'chromium/6601.2' }}
 
     steps:
       - name: Placeholder step
@@ -297,6 +302,7 @@ jobs:
             GODOT_NIR_STATIC_VERSION=${{ needs.inputs.outputs.godot-nir-static-version }}
             PIX_VERSION=${{ needs.inputs.outputs.pix-version }}
             AGILITY_VERSION=${{ needs.inputs.outputs.agility-version }}
+            GODOT_ANGLE_STATIC_VERSION=${{ needs.inputs.outputs.godot-angle-static-version }}
 
       - name: Display 'push' outputs
         if: inputs.platform == 'windows'

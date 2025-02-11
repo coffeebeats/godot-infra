@@ -179,7 +179,7 @@ RUN \
     # Install installation dependencies
     apt-get install -y --no-install-recommends \
     git && \
-    # Clone the 'godot-nir-static' repository
+    # Clone the 'godot-angle-static' repository
     git clone \
     --no-tags \
     --depth=1 \
