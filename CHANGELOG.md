@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.9 (2025-02-11)
+
+## What's Changed
+* fix(compile): migrate `Windows` builds to the `MinGW-LLVM` compiler by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/273
+* fix(compile): add `Direct3D 12` support for `Windows` builds by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/275
+* fix(compile): add `ANGLE` support to `Windows` builds by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/276
+* fix(ci): pass `GODOT_ANGLE_STATIC_VERSION` build argument when building for Windows by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/277
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.8...v1.1.9
+
 ## 1.1.8 (2025-01-30)
 
 ## What's Changed
