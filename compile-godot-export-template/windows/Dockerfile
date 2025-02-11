@@ -165,6 +165,38 @@ RUN \
     unzip agility.zip -d /agility
 
 # ---------------------------------------------------------------------------- #
+#                         Image: Setup - ANGLE support                         #
+# ---------------------------------------------------------------------------- #
+
+FROM img-setup-compilers AS img-setup-angle
+
+# -------------------------- Install: ANGLE library -------------------------- #
+
+ARG GODOT_ANGLE_STATIC_VERSION
+RUN test -n "$GODOT_ANGLE_STATIC_VERSION" || (echo "Missing build argument: 'GODOT_ANGLE_STATIC_VERSION'" && exit 1)
+
+RUN \
+    # Install installation dependencies
+    apt-get install -y --no-install-recommends \
+    git && \
+    # Clone the 'godot-nir-static' repository
+    git clone \
+    --no-tags \
+    --depth=1 \
+    -b $GODOT_ANGLE_STATIC_VERSION \
+    https://github.com/godotengine/godot-angle-static.git \
+    /godot-angle-static && \
+    # Initialize submodules and dependencies
+    cd /godot-angle-static && \
+    git submodule update --init && \
+    ./update_angle.sh && \
+    # Build the static library for supported platforms
+    scons platform=windows arch=arm64 use_mingw=yes use_llvm=yes optimize=speed && \
+    scons platform=windows arch=x86_64 use_mingw=yes use_llvm=yes optimize=speed && \
+    mkdir /angle && \
+    mv bin/* /angle
+
+# ---------------------------------------------------------------------------- #
 #                             Image: Setup - Final                             #
 # ---------------------------------------------------------------------------- #
 
@@ -180,6 +212,10 @@ COPY --from=img-setup-dx12 "/mesa" "/opt/mesa"
 COPY --from=img-setup-dx12 "/agility" "/opt/agility"
 COPY --from=img-setup-dx12 "/pix" "/opt/pix"
 
+# -------------------------- Install: ANGLE support -------------------------- #
+
+COPY --from=img-setup-angle "/angle" "/opt/angle"
+
 # ------------------------------ Set: SCONSFLAGS ----------------------------- #
 
 # Update 'SCONSFLAGS' so that consumers don't need to know the details of
@@ -187,3 +223,4 @@ COPY --from=img-setup-dx12 "/pix" "/opt/pix"
 
 ENV SCONSFLAGS="platform=windows use_mingw=yes use_llvm=yes"
 ENV SCONSFLAGS="$SCONSFLAGS d3d12=yes mesa_libs=/opt/mesa agility_sdk_path=/opt/agility pix_path=/opt/pix"
+ENV SCONSFLAGS="$SCONSFLAGS angle_libs=/opt/angle"
