@@ -49,6 +49,18 @@ on:
         type: string
         description: "The 'MinGW-LLVM' compiler version to install in the image."
         required: false
+      godot-nir-static-version:
+        type: string
+        description: "The 'godot-nir-static' release version to install in the image."
+        required: false
+      pix-version:
+        type: string
+        description: "The PIX on Windows version to install in the image."
+        required: false
+      agility-version:
+        type: string
+        description: "The Agility SDK version to install in the image."
+        required: false
 
       force:
         type: boolean
@@ -122,6 +134,9 @@ jobs:
       # NOTE: This should match official build images; see
       # https://github.com/godotengine/build-containers/blob/4.3/Dockerfile.windows.
       mingw-llvm-version: ${{ inputs.mingw-llvm-version || '20240619' }}
+      godot-nir-static-version: ${{ inputs.godot-nir-static-version || '23.1.9-1' }}
+      pix-version: ${{ inputs.pix-version || '1.0.240308001' }}
+      agility-version: ${{ inputs.agility-version || '1.615.0' }}
 
     steps:
       - name: Placeholder step
@@ -279,6 +294,9 @@ jobs:
           platforms: linux/amd64
           build-args: |
             MINGW_LLVM_VERSION=${{ needs.inputs.outputs.mingw-llvm-version }}
+            GODOT_NIR_STATIC_VERSION=${{ needs.inputs.outputs.godot-nir-static-version }}
+            PIX_VERSION=${{ needs.inputs.outputs.pix-version }}
+            AGILITY_VERSION=${{ needs.inputs.outputs.agility-version }}
 
       - name: Display 'push' outputs
         if: inputs.platform == 'windows'
