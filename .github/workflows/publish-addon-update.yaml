@@ -92,13 +92,18 @@ jobs:
           cd thirdparty/${{ inputs.name }}
 
           # Reimport assets so *.import files are updated.
-          if [[ -f "project.godot" ]]; then
-            # NOTE: It's okay if this fails, probably. For example, coffeebeats/gut
-            # at '24f97b756fcc6a82375ef24b44c84bb1ee781786' fails with Godot
-            # 'v4.3-stable', but after the relevant imports occur.
 
-            godot --editor --headless --import --quit || :
+          if [[ ! -f "project.godot" ]]; then
+            CREATED_PROJECT_MANIFEST=1
+            touch project.godot
           fi
+
+          # NOTE: It's okay if this fails, probably. For example, coffeebeats/gut
+          # at '24f97b756fcc6a82375ef24b44c84bb1ee781786' fails with Godot
+          # 'v4.3-stable', but after the relevant imports occur.
+          godot --editor --headless --import --quit || :
+
+          if [[ $CREATED_PROJECT_MANIFEST -eq 1 ]]; then rm project.godot; fi
 
           if [[ ! -d "addons/$NAME" ]]; then
             echo "Addon not found under 'addons/'; assuming addon is root-level."
