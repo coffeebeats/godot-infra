@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): allow manually specifying excluded files by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/290
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.0...v1.2.1
+
 ## 1.2.0 (2025-02-15)
 
 ## What's Changed
