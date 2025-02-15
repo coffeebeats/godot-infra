@@ -1,0 +1,236 @@
+name: "🏗️ Compile: Godot extension"
+description: "Compiles a Godot extension for the specified platform."
+
+inputs:
+  extension-path:
+    type: string
+    description: "The path to the extension source code."
+    required: true
+
+  arch:
+    description: "The target architecture of the extension."
+    required: true
+  platform:
+    description: "The target platform of the extension."
+    required: true
+
+  custompy-path:
+    description: "A path to a 'custom.py' file containing template build options."
+    required: false
+  use-double-precision:
+    description: "Whether to enable double precision for the extension."
+    required: false
+    default: false
+  profile:
+    description: "The optimization profile of the compiled extension."
+    required: false
+    default: release
+
+  # MacOS-specific inputs.
+  # ...
+
+  # Web-specific inputs.
+  enable-javascript-eval:
+    description: "Whether to expose the JavaScript singleton to the engine."
+    required: false
+    default: false
+  enable-gdextension:
+    description: "Whether to enable support for GDExtensions (degrades performance/compatibility)."
+    required: false
+    default: false
+
+  # Windows-specific inputs.
+  # ...
+
+  publish:
+    description: "Whether to publish an artifact to the workflow."
+    required: false
+    default: false
+  artifact-name:
+    description: "The uploaded artifact's name (only used if 'publish' is 'true')."
+    required: false
+
+outputs:
+  path:
+    description: "The path to the compiled extension artifact."
+    value: ${{ steps.artifact.outputs.path }}
+
+runs:
+  using: composite
+
+  steps:
+    # -------------- Restore the extension + SCons caches -------------- #
+
+    - name: Determine Godot extension cache ID
+      id: extension-cache-id
+      shell: bash
+      run: |
+        INPUT="${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.extension-path)) }}"
+        INPUT="$INPUT-${{ inputs.profile }}-${{ inputs.use-double-precision }}"
+        INPUT="$INPUT-${{ hashFiles(inputs.custompy-path) }}"
+
+        echo "value=$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+
+    - name: Validate build directories don't exist
+      shell: bash
+      run: |
+        if [[ -d "${{ github.workspace }}/build" ]]; then
+          echo "Unexpectedly found build directory."
+          exit 1
+        fi
+
+        if [[ -d "${{ github.workspace }}/.scons" ]]; then
+          echo "Unexpectedly found SCons cache directory."
+          exit 1
+        fi
+
+    - name: Cache the Godot extension
+      id: extension
+      uses: actions/cache@v4
+      with:
+        # NOTE: This path must match the one expected by the container action.
+        # IF/ELSE: Update the 'save' step below if this changes.
+        path: ${{ github.workspace }}/build
+        key: extension-${{ runner.os }}-${{ steps.extension-cache-id.outputs.value }}
+
+    - name: Cache the 'SCons' build directory
+      if: steps.extension.outputs.cache-hit != 'true'
+      uses: actions/cache@v4
+      with:
+        # NOTE: This path must match the one expected by the container action.
+        path: ${{ github.workspace }}/.scons
+        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.extension-path) }}-${{ hashFiles(inputs.custompy-path) }}
+        restore-keys: |
+          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.extension-path) }}-
+
+    # ------------------------ Set up build workspace ------------------------ #
+
+    - name: Copy extension source code into extension directory
+      if: steps.extension.outputs.cache-hit != 'true'
+      shell: bash
+      run: cp -r ${{ inputs.extension-path }} $GITHUB_WORKSPACE/extension
+
+    - name: Clear output directory
+      if: steps.extension.outputs.cache-hit != 'true'
+      shell: bash
+      run: rm -rf $GITHUB_WORKSPACE/extension/bin
+
+    - name: Copy 'custom.py' into extension source code directory
+      if: |
+        inputs.custompy-path != '' &&
+        steps.extension.outputs.cache-hit != 'true'
+      shell: bash
+      run: cp ${{ inputs.custompy-path }} $GITHUB_WORKSPACE/extension/custom.py
+
+    # ------------------------- Compile the extension ------------------------ #
+
+    # MacOS
+
+    - name: Compile the extension (MacOS)
+      if: |
+        inputs.platform == 'macos' &&
+        steps.extension.outputs.cache-hit != 'true'
+      uses: "coffeebeats/godot-infra/compile-godot-extension/macos@feat/compile/extension"
+      with:
+        arch: ${{ inputs.arch }}
+        extension-path: ${{ github.workspace }}/extension
+        profile: ${{ inputs.profile }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+
+    # Web
+
+    - name: Compile the extension (Web)
+      if: |
+        inputs.platform == 'web' &&
+        steps.extension.outputs.cache-hit != 'true'
+      uses: "coffeebeats/godot-infra/compile-godot-extension/web@feat/compile/extension"
+      with:
+        arch: ${{ inputs.arch }}
+        enable-gdextension: ${{ inputs.enable-gdextension }}
+        enable-javascript-eval: ${{ inputs.enable-javascript-eval }}
+        extension-path: ${{ github.workspace }}/extension
+        profile: ${{ inputs.profile }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+
+    # Windows
+
+    - name: Compile the extension (Windows)
+      if: |
+        inputs.platform == 'windows' &&
+        steps.extension.outputs.cache-hit != 'true'
+      uses: "coffeebeats/godot-infra/compile-godot-extension/windows@feat/compile/extension"
+      with:
+        arch: ${{ inputs.arch }}
+        extension-path: ${{ github.workspace }}/extension
+        profile: ${{ inputs.profile }}
+        use-double-precision: ${{ inputs.use-double-precision }}
+
+    # ---------------------- Inspect compiled artifacts ---------------------- #
+
+    - name: Move compiled artifacts
+      if: steps.extension.outputs.cache-hit != 'true'
+      shell: bash
+      run: |-
+        if [[ -d "$GITHUB_WORKSPACE/build" ]]; then
+          echo "Unexpectedly found output directory: $GITHUB_WORKSPACE/build"
+          exit 1
+        fi
+
+        sudo mv $GITHUB_WORKSPACE/extension/bin $GITHUB_WORKSPACE/build
+
+    - name: Inspect compiled artifacts
+      shell: bash
+      run: ls -ls $GITHUB_WORKSPACE/build
+
+    - name: Clean up working directory
+      shell: bash
+      run: sudo rm -rf $GITHUB_WORKSPACE/extension
+
+    - name: Determine extension file name
+      id: artifact
+      shell: bash
+      run: |
+        case "${{ inputs.platform }}" in
+          macos) TEMPLATE_NAME=macos.zip ;;
+          web)
+            PROFILE=$([[ "${{ inputs.profile }}" == release ]] && echo release || echo debug)
+            DLINK=$([[ "${{ inputs.enable-gdextension }}" == true ]] && echo _dlink || :)
+
+            TEMPLATE_NAME="web${DLINK}_${PROFILE}.zip"
+            ;;
+          windows)
+            TARGET=$([[ "${{ inputs.profile }}" == release ]] && echo template_release || echo template_debug)
+            DOUBLE=$([[ "${{ inputs.use-double-precision }}" == true ]] && echo ".double" || :)
+
+            TEMPLATE_NAME="godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}"
+
+            if [[ "${{ inputs.platform }}" == windows ]]; then
+              TEMPLATE_NAME="${TEMPLATE_NAME}.exe"
+            fi
+
+            ;;
+          *)
+            echo "Unknown/unsupported platform: ${{ inputs.platform }}"
+            exit 1
+        esac
+
+        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $TEMPLATE_NAME || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
+        echo "path=$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
+
+    # ---------------------- Publish generated artifacts --------------------- #
+
+    # Save the extension cache (ahead of post- step)
+    - uses: actions/cache/save@v3
+      if: steps.extension.outputs.cache-hit != 'true'
+      with:
+        # IF/ELSE: Update the 'cache' step above if this changes.
+        path: ${{ github.workspace }}/build
+        key: extension-${{ runner.os }}-${{ steps.extension-cache-id.outputs.value }}
+
+    # Compiled extension
+    - uses: actions/upload-artifact@v4
+      if: inputs.publish == 'true'
+      with:
+        name: ${{ steps.artifact.outputs.name }}
+        path: ${{ steps.artifact.outputs.path }}
+        if-no-files-found: error
