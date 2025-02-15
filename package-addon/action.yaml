@@ -36,7 +36,12 @@ runs:
       id: addon
       shell: bash
       run: |
-        mkdir ${{ runner.temp }}/addon
+        echo "Current directory: $PWD"
+
+        PACKAGE_DIR="${{ runner.temp }}/addon"
+        echo "Constructing addon directory: $PACKAGE_DIR"
+
+        mkdir "$PACKAGE_DIR"
 
         # Set options to enable more extensive globbing.
         shopt -s extglob
@@ -44,20 +49,22 @@ runs:
 
         if [[ ! -d "addons/${{ inputs.subfolder }}" ]]; then
           echo "Addon not found under 'addons/'; assuming addon is root-level."
-          cp -r * ${{ runner.temp }}/addon
+          cp -r * "$PACKAGE_DIR"
         else
           echo "Addon found under 'addons/'; moving addon files."
 
           # Move nested files into the repository root.
-          cp +(LICENSE|license)* ${{ runner.temp }}/addon 2>/dev/null || :
-          cp +(README|readme)* ${{ runner.temp }}/addon 2>/dev/null || :
-          cp -r addons/${{ inputs.subfolder }}/* ${{ runner.temp }}/addon 2>/dev/null || :
+          cp +(LICENSE|license)* "$PACKAGE_DIR" 2>/dev/null || :
+          cp +(README|readme)* "$PACKAGE_DIR" 2>/dev/null || :
+          cp -r addons/${{ inputs.subfolder }}/* "$PACKAGE_DIR" 2>/dev/null || :
         fi
 
     - name: Prune addon source
       working-directory: ${{ runner.temp }}/addon
       shell: bash
       run: |
+        echo "Pruning files from addon directory: ${{ runner.temp }}/addon"
+
         # Set options to enable more extensive globbing.
         shopt -s extglob
         shopt -s globstar
@@ -119,6 +126,11 @@ runs:
     - name: Reimport assets
       shell: bash
       run: |
+        echo "Current directory: $PWD"
+
+        PACKAGE_DIR="${{ runner.temp }}/addon"
+        echo "Reimporting assets in addon directory: $PACKAGE_DIR"
+
         if [[ ! -f "project.godot" ]]; then
           CREATED_PROJECT_MANIFEST=1
           touch project.godot
@@ -126,7 +138,7 @@ runs:
 
         # Add packaged directory into project as an addon. This ensures paths
         # within '*.import' files match what a project would require.
-        mv "${{ runner.temp }}/addon" "addons/${{ inputs.subfolder }}"
+        mv "$PACKAGE_DIR" "addons/${{ inputs.subfolder }}"
 
         # NOTE: It's okay if this fails, probably. For example, coffeebeats/gut
         # at '24f97b756fcc6a82375ef24b44c84bb1ee781786' fails with Godot
@@ -134,7 +146,7 @@ runs:
         godot --editor --headless --import --quit || :
 
         # Move the updated addon folder to the target path.
-        mv "addons/${{ inputs.subfolder }}" "${{ runner.temp }}/addon"
+        mv "addons/${{ inputs.subfolder }}" "$PACKAGE_DIR"
 
         if [[ $CREATED_PROJECT_MANIFEST -eq 1 ]]; then
           rm project.godot
