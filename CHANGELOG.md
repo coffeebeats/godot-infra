@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.0 (2025-02-15)
+
+## What's Changed
+* fix(ci): import files even without `project.godot` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/282
+* feat(package-addon): create an action to package an addon by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/284
+* fix(package-addon):  ensure extended globbing options are set in each step by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/285
+* fix(package-addon): ensure missing files don't cause error by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/286
+* fix(package-addon): remove incorrect input by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/287
+* fix(package-addon): ensure `godot` editor is installed by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/288
+* chore(thirdparty): remove now-unused system for updating dependency forks by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/289
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.1.9...v1.2.0
+
 ## 1.1.9 (2025-02-11)
 
 ## What's Changed
