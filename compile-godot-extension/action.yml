@@ -183,10 +183,6 @@ runs:
       shell: bash
       run: ls -ls $GITHUB_WORKSPACE/build
 
-    - name: Clean up working directory
-      shell: bash
-      run: sudo rm -rf ${{ inputs.extension-path }}
-
     - name: Determine extension file name
       id: artifact
       shell: bash
