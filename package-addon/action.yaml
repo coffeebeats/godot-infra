@@ -82,7 +82,7 @@ runs:
         rm -rf addons
 
         # Remove testing-related files.
-        rm **/*_test.gd
+        rm -f **/*_test.gd
 
     - name: Add a '.gitignore' file
       working-directory: ${{ runner.temp }}/addon
