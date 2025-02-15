@@ -9,6 +9,10 @@ inputs:
   subfolder:
     description: "The subfolder under 'addons' that the plugin should be placed."
     required: true
+  godot-version:
+    description: "The godot editor version to use for reimporting."
+    required: false
+    default: "v4.3-stable"
   target-branch:
     description: "The name of the branch to push the packaged addon to."
     required: true
@@ -16,6 +20,10 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v1
+      with:
+        version: v4.3-stable
+
     # Reimport assets so '*.import' files are updated.
     - name: Reimport assets
       shell: bash
@@ -133,7 +141,7 @@ runs:
         echo "Target addon workspace (after):"
         ls -lsa .
 
-    - uses: coffeebeats/godot-infra/commit-changes@main
+    - uses: coffeebeats/godot-infra/commit-changes@v1
       with:
         description: "updating `${{ inputs.subfolder }}` to `${{ steps.update.outputs.rev }}`"
         target-branch: ${{ inputs.target-branch }}
