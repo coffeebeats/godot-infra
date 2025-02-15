@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.4 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): correctly expand/process multiple exclude globs by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/297
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.3...v1.2.4
+
 ## 1.2.3 (2025-02-15)
 
 ## What's Changed
