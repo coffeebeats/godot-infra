@@ -68,6 +68,10 @@ runs:
       working-directory: ${{ runner.temp }}/addon
       shell: bash
       run: |
+        # Set options to enable more extensive globbing.
+        shopt -s extglob
+        shopt -s globstar
+
         # Remove development/project-related files.
         rm -f project.godot
         rm -f icon.*
@@ -83,7 +87,6 @@ runs:
       working-directory: ${{ runner.temp }}/addon
       shell: bash
       run: |
-
         if [[ ! -f ".gitignore" ]]; then
             touch ".gitignore"
         else
