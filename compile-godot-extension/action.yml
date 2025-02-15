@@ -105,52 +105,53 @@ runs:
 
     # ------------------------ Set up build workspace ------------------------ #
 
-    - name: Copy extension source code into extension directory
-      if: steps.extension.outputs.cache-hit != 'true'
-      shell: bash
-      run: cp -r ${{ inputs.extension-path }} $GITHUB_WORKSPACE/extension
-
     - name: Clear output directory
       if: steps.extension.outputs.cache-hit != 'true'
       shell: bash
-      run: rm -rf $GITHUB_WORKSPACE/extension/bin
+      run: rm -rf ${{ inputs.extension-path }}/bin
 
     - name: Copy 'custom.py' into extension source code directory
       if: |
         inputs.custompy-path != '' &&
         steps.extension.outputs.cache-hit != 'true'
       shell: bash
-      run: cp ${{ inputs.custompy-path }} $GITHUB_WORKSPACE/extension/custom.py
+      run: |
+        SRC=${{ inputs.custompy-path }}
+        DEST=${{ inputs.extension-path }}/custom.py
+
+        if [[ "$SRC" -ef "$DEST" ]]; then
+          cp "$SRC" "$DEST"
+        fi
 
     # ------------------------- Compile the extension ------------------------ #
 
     # MacOS
 
-    - name: Compile the extension (MacOS)
-      if: |
-        inputs.platform == 'macos' &&
-        steps.extension.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-extension/macos@feat/compile/extension"
-      with:
-        arch: ${{ inputs.arch }}
-        extension-path: ${{ github.workspace }}/extension
-        profile: ${{ inputs.profile }}
-        use-double-precision: ${{ inputs.use-double-precision }}
+    # - name: Compile the extension (MacOS)
+    #   if: |
+    #     inputs.platform == 'macos' &&
+    #     steps.extension.outputs.cache-hit != 'true'
+    #   uses: "coffeebeats/godot-infra/compile-godot-extension/macos@feat/compile/extension"
+    #   with:
+    #     arch: ${{ inputs.arch }}
+    #     extension-path: ${{ inputs.extension-path }}
+    #     profile: ${{ inputs.profile }}
+    #     use-double-precision: ${{ inputs.use-double-precision }}
 
     # Web
 
-    - name: Compile the extension (Web)
-      if: |
-        inputs.platform == 'web' &&
-        steps.extension.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-extension/web@feat/compile/extension"
-      with:
-        arch: ${{ inputs.arch }}
-        enable-gdextension: ${{ inputs.enable-gdextension }}
-        enable-javascript-eval: ${{ inputs.enable-javascript-eval }}
-        extension-path: ${{ github.workspace }}/extension
-        profile: ${{ inputs.profile }}
-        use-double-precision: ${{ inputs.use-double-precision }}
+    # - name: Compile the extension (Web)
+    #   if: |
+    #     inputs.platform == 'web' &&
+    #     steps.extension.outputs.cache-hit != 'true'
+    #   uses: "coffeebeats/godot-infra/compile-godot-extension/web@feat/compile/extension"
+    #   with:
+    #     arch: ${{ inputs.arch }}
+    #     enable-gdextension: ${{ inputs.enable-gdextension }}
+    #     enable-javascript-eval: ${{ inputs.enable-javascript-eval }}
+    #     extension-path: ${{ inputs.extension-path }}
+    #     profile: ${{ inputs.profile }}
+    #     use-double-precision: ${{ inputs.use-double-precision }}
 
     # Windows
 
@@ -161,7 +162,7 @@ runs:
       uses: "coffeebeats/godot-infra/compile-godot-extension/windows@feat/compile/extension"
       with:
         arch: ${{ inputs.arch }}
-        extension-path: ${{ github.workspace }}/extension
+        extension-path: ${{ inputs.extension-path }}
         profile: ${{ inputs.profile }}
         use-double-precision: ${{ inputs.use-double-precision }}
 
@@ -176,7 +177,7 @@ runs:
           exit 1
         fi
 
-        sudo mv $GITHUB_WORKSPACE/extension/bin $GITHUB_WORKSPACE/build
+        sudo mv ${{ inputs.extension-path }}/bin $GITHUB_WORKSPACE/build
 
     - name: Inspect compiled artifacts
       shell: bash
@@ -184,7 +185,7 @@ runs:
 
     - name: Clean up working directory
       shell: bash
-      run: sudo rm -rf $GITHUB_WORKSPACE/extension
+      run: sudo rm -rf ${{ inputs.extension-path }}
 
     # - name: Determine extension file name
     #   id: artifact
