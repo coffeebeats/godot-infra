@@ -2,20 +2,23 @@ name: "📦🔧 Package: Addon"
 description: "Packages a plugin or compiled gdextension directory and pushes it to a branch."
 
 inputs:
+  subfolder:
+    description: "The subfolder under 'addons' that the plugin should be placed."
+    required: true
+  target-branch:
+    description: "The name of the branch to push the packaged addon to."
+    required: true
   path:
     description: "The path to the addon's root directory."
     required: false
     default: .
-  subfolder:
-    description: "The subfolder under 'addons' that the plugin should be placed."
-    required: true
   godot-editor-version:
     description: "The godot editor version to use for reimporting."
     required: false
     default: "v4.3-stable"
-  target-branch:
-    description: "The name of the branch to push the packaged addon to."
-    required: true
+  file-excludes:
+    description: "A comma or newline-delimited list of glob patterns to exclude addon files."
+    required: false
 
 runs:
   using: "composite"
@@ -80,8 +83,16 @@ runs:
         # Remove all nested addon dependencies.
         rm -rf addons
 
-        # Remove testing-related files.
-        rm -f **/*_test.gd
+        # Remove manually specified
+        for pattern in $(echo "${{ inputs.files-excludes }}" | tr "," "\n"); do
+          if [[ "$(realpath "$pattern")" != "$PWD"* ]]; then
+            echo "Refusing to execute insecure pattern: $pattern"
+            exit 1
+          fi
+
+          echo "Removing files that match pattern: $pattern"
+          eval rm -rf $pattern
+        done
 
     - name: Add a '.gitignore' file
       working-directory: ${{ runner.temp }}/addon
