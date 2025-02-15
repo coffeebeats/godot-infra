@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.10 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): correctly handle repositories with content under `addons/` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/311
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.9...v1.2.10
+
 ## 1.2.9 (2025-02-15)
 
 ## What's Changed
