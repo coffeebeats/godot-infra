@@ -12,9 +12,6 @@ inputs:
   target-branch:
     description: "The name of the branch to push the packaged addon to."
     required: true
-  extra-project-settings:
-    description: "Extra newline-separated settings to add to the 'project.godot' file."
-    required: false
 
 runs:
   using: "composite"
@@ -28,10 +25,6 @@ runs:
           touch project.godot
         fi
 
-        if [[ ! -z "${{ inputs.extra-project-settings }}" ]]; then
-          echo "${{ inputs.extra-project-settings }}" >> project.godot
-        fi
-
         # NOTE: It's okay if this fails, probably. For example, coffeebeats/gut
         # at '24f97b756fcc6a82375ef24b44c84bb1ee781786' fails with Godot
         # 'v4.3-stable', but after the relevant imports occur.
@@ -39,8 +32,6 @@ runs:
 
         if [[ $CREATED_PROJECT_MANIFEST -eq 1 ]]; then
           rm project.godot
-        elif [[ ! -z "${{ inputs.extra-project-settings }}" && -f "project.godot" ]]; then
-          git restore project.godot
         fi
 
     - name: Construct addon directory
