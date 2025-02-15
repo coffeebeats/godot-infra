@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.3 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): improve inspection of package contents by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/294
+* fix(package-addon): use correct input variable name by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/296
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.2...v1.2.3
+
 ## 1.2.2 (2025-02-15)
 
 ## What's Changed
