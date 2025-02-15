@@ -1,13 +1,3 @@
 [submodule "thirdparty/osxcross"]
 	path = thirdparty/osxcross
 	url = https://github.com/tpoechtrager/osxcross
-[submodule "thirdparty/gut"]
-	path = thirdparty/gut
-	url = git@github.com:coffeebeats/gut.git
-[submodule "thirdparty/godot-steam"]
-	path = thirdparty/godot-steam
-	url = https://github.com/coffeebeats/GodotSteam
-	branch = gdextension-plugin
-[submodule "thirdparty/phantom-camera"]
-	path = thirdparty/phantom-camera
-	url = git@github.com:coffeebeats/phantom-camera.git
