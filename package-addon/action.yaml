@@ -84,15 +84,28 @@ runs:
         rm -rf addons
 
         # Remove manually specified
-        for pattern in $(echo "${{ inputs.file-excludes }}" | tr "," "\n"); do
-          if [[ "$(realpath -m "${pattern/#\~/$HOME}")" != "$PWD"* ]]; then
-            echo "Refusing to execute insecure pattern: $pattern"
-            exit 1
-          fi
+        set -f
 
-          echo "Removing files that match pattern: $pattern"
-          eval rm -rf $pattern
+        for pattern in $(
+            set -f
+            echo "${{ inputs.file-excludes }}" | tr ',' '\n' | sed -E 's/\\n/ /'
+        ); do
+            if [[ "$(
+                set +f
+                realpath -m "${pattern/\~/$HOME}"
+            )" != "$PWD"* ]]; then
+                echo "Refusing to execute insecure pattern: $pattern"
+                exit 1
+            fi
+
+            echo "Removing files that match pattern: $pattern"
+            (
+                set +f
+                rm -rf $pattern
+            )
         done
+
+        set +f
 
     - name: Add a '.gitignore' file
       working-directory: ${{ runner.temp }}/addon
