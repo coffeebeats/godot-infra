@@ -181,5 +181,5 @@ runs:
 
     - uses: coffeebeats/godot-infra/commit-changes@v1
       with:
-        description: "updating \\`${{ inputs.subfolder }}\\` to \\`${{ steps.commit.outputs.sha_short }}\\`"
+        description: "updating \\`${{ inputs.subfolder }}\\` to ${{ steps.commit.outputs.sha_short }}"
         target-branch: ${{ inputs.target-branch }}
