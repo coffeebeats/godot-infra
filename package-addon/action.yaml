@@ -9,7 +9,7 @@ inputs:
   subfolder:
     description: "The subfolder under 'addons' that the plugin should be placed."
     required: true
-  godot-version:
+  godot-editor-version:
     description: "The godot editor version to use for reimporting."
     required: false
     default: "v4.3-stable"
@@ -22,7 +22,7 @@ runs:
   steps:
     - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v1
       with:
-        version: v4.3-stable
+        version: ${{ inputs.godot-editor-version }}
 
     # Reimport assets so '*.import' files are updated.
     - name: Reimport assets
