@@ -118,7 +118,9 @@ runs:
     - name: Inspect packaged addon
       working-directory: ${{ runner.temp }}/addon
       shell: bash
-      run: "ls -lsa"
+      run: |
+        sudo apt-get install -y --no-install-recommends tree
+        tree -lha
 
       # Reset the working tree since we don't need to keep edits.
     - name: Restore worktree
