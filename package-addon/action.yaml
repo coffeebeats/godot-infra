@@ -160,12 +160,12 @@ runs:
         rm -rf * .@(!(.||git))
 
         echo "Target addon workspace (before):"
-        ls -lsa .
+        tree -lha
 
         cp -r ${{ runner.temp }}/addon/* ${{ runner.temp }}/addon/.gitignore .
 
         echo "Target addon workspace (after):"
-        ls -lsa .
+        tree -lha
 
     - uses: coffeebeats/godot-infra/commit-changes@v1
       with:
