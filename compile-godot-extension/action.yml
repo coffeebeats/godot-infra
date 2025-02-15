@@ -65,7 +65,7 @@ runs:
       id: extension-cache-id
       shell: bash
       run: |
-        INPUT="${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.extension-path)) }}"
+        INPUT="${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.extension-path) }}"
         INPUT="$INPUT-${{ inputs.profile }}-${{ inputs.use-double-precision }}"
         INPUT="$INPUT-${{ hashFiles(inputs.custompy-path) }}"
 
