@@ -131,6 +131,9 @@ runs:
         PACKAGE_DIR="${{ runner.temp }}/addon"
         echo "Reimporting assets in addon directory: $PACKAGE_DIR"
 
+        PROJECT_DIR="addons/${{ inputs.subfolder }}"
+        echo "Installing into project directory: $PROJECT_DIR"
+
         if [[ ! -f "project.godot" ]]; then
           CREATED_PROJECT_MANIFEST=1
           touch project.godot
@@ -138,7 +141,8 @@ runs:
 
         # Add packaged directory into project as an addon. This ensures paths
         # within '*.import' files match what a project would require.
-        mv "$PACKAGE_DIR" "addons/${{ inputs.subfolder }}"
+        rm -rf "$PROJECT_DIR"
+        mv "$PACKAGE_DIR" "$PROJECT_DIR"
 
         # NOTE: It's okay if this fails, probably. For example, coffeebeats/gut
         # at '24f97b756fcc6a82375ef24b44c84bb1ee781786' fails with Godot
@@ -146,7 +150,7 @@ runs:
         godot --editor --headless --import --quit || :
 
         # Move the updated addon folder to the target path.
-        mv "addons/${{ inputs.subfolder }}" "$PACKAGE_DIR"
+        mv "$PROJECT_DIR" "$PACKAGE_DIR"
 
         if [[ $CREATED_PROJECT_MANIFEST -eq 1 ]]; then
           rm project.godot
@@ -155,9 +159,7 @@ runs:
     - name: Inspect packaged addon
       working-directory: ${{ runner.temp }}/addon
       shell: bash
-      run: |
-        sudo apt-get install -y --no-install-recommends tree
-        tree -lha
+      run: "tree -lha"
 
       # Reset the working tree since we don't need to keep edits.
     - name: Restore worktree
