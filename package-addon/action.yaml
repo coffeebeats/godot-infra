@@ -159,7 +159,7 @@ runs:
     - name: Inspect packaged addon
       working-directory: ${{ runner.temp }}/addon
       shell: bash
-      run: "tree -lha -I .git"
+      run: "tree -lha --dirsfirst -I .git"
 
       # Reset the working tree since we don't need to keep edits.
     - name: Restore worktree
@@ -186,12 +186,12 @@ runs:
         rm -rf * .@(!(.||git))
 
         echo "Target addon workspace (before):"
-        tree -lha -I .git
+        tree -lha --dirsfirst -I .git
 
         cp -r ${{ runner.temp }}/addon/* ${{ runner.temp }}/addon/.gitignore .
 
         echo "Target addon workspace (after):"
-        tree -lha -I .git
+        tree -lha --dirsfirst -I .git
 
     - uses: coffeebeats/godot-infra/commit-changes@v1
       with:
