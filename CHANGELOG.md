@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.6 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): set correct commit SHA in message by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/301
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.5...v1.2.6
+
 ## 1.2.5 (2025-02-15)
 
 ## What's Changed
