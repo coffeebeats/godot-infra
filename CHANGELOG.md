@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.7 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): ensure resources have absolute paths within `*.import` files by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/303
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.6...v1.2.7
+
 ## 1.2.6 (2025-02-15)
 
 ## What's Changed
