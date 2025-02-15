@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.5 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): use `tree` to deeply inspect final packaged addon by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/299
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.4...v1.2.5
+
 ## 1.2.4 (2025-02-15)
 
 ## What's Changed
