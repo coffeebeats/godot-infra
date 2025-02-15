@@ -84,7 +84,7 @@ runs:
         rm -rf addons
 
         # Remove manually specified
-        for pattern in $(echo "${{ inputs.files-excludes }}" | tr "," "\n"); do
+        for pattern in $(echo "${{ inputs.file-excludes }}" | tr "," "\n"); do
           if [[ "$(realpath -m "${pattern/#\~/$HOME}")" != "$PWD"* ]]; then
             echo "Refusing to execute insecure pattern: $pattern"
             exit 1
