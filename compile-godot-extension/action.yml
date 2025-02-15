@@ -186,51 +186,45 @@ runs:
       shell: bash
       run: sudo rm -rf $GITHUB_WORKSPACE/extension
 
-    - name: Determine extension file name
-      id: artifact
-      shell: bash
-      run: |
-        case "${{ inputs.platform }}" in
-          macos) TEMPLATE_NAME=macos.zip ;;
-          web)
-            PROFILE=$([[ "${{ inputs.profile }}" == release ]] && echo release || echo debug)
-            DLINK=$([[ "${{ inputs.enable-gdextension }}" == true ]] && echo _dlink || :)
+    # - name: Determine extension file name
+    #   id: artifact
+    #   shell: bash
+    #   run: |
+    #     case "${{ inputs.platform }}" in
+    #       macos) TEMPLATE_NAME=macos.zip ;;
+    #       windows)
+    #         TARGET=$([[ "${{ inputs.profile }}" == release ]] && echo template_release || echo template_debug)
+    #         DOUBLE=$([[ "${{ inputs.use-double-precision }}" == true ]] && echo ".double" || :)
 
-            TEMPLATE_NAME="web${DLINK}_${PROFILE}.zip"
-            ;;
-          windows)
-            TARGET=$([[ "${{ inputs.profile }}" == release ]] && echo template_release || echo template_debug)
-            DOUBLE=$([[ "${{ inputs.use-double-precision }}" == true ]] && echo ".double" || :)
+    #         TEMPLATE_NAME="godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}"
 
-            TEMPLATE_NAME="godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}"
+    #         if [[ "${{ inputs.platform }}" == windows ]]; then
+    #           TEMPLATE_NAME="${TEMPLATE_NAME}.exe"
+    #         fi
 
-            if [[ "${{ inputs.platform }}" == windows ]]; then
-              TEMPLATE_NAME="${TEMPLATE_NAME}.exe"
-            fi
+    #         ;;
+    #       *)
+    #         echo "Unknown/unsupported platform: ${{ inputs.platform }}"
+    #         exit 1
+    #     esac
 
-            ;;
-          *)
-            echo "Unknown/unsupported platform: ${{ inputs.platform }}"
-            exit 1
-        esac
-
-        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $TEMPLATE_NAME || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
-        echo "path=$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
+    #     echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $TEMPLATE_NAME || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
+    #     echo "path=$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
 
     # ---------------------- Publish generated artifacts --------------------- #
 
-    # Save the extension cache (ahead of post- step)
-    - uses: actions/cache/save@v3
-      if: steps.extension.outputs.cache-hit != 'true'
-      with:
-        # IF/ELSE: Update the 'cache' step above if this changes.
-        path: ${{ github.workspace }}/build
-        key: extension-${{ runner.os }}-${{ steps.extension-cache-id.outputs.value }}
+    # # Save the extension cache (ahead of post- step)
+    # - uses: actions/cache/save@v3
+    #   if: steps.extension.outputs.cache-hit != 'true'
+    #   with:
+    #     # IF/ELSE: Update the 'cache' step above if this changes.
+    #     path: ${{ github.workspace }}/build
+    #     key: extension-${{ runner.os }}-${{ steps.extension-cache-id.outputs.value }}
 
-    # Compiled extension
-    - uses: actions/upload-artifact@v4
-      if: inputs.publish == 'true'
-      with:
-        name: ${{ steps.artifact.outputs.name }}
-        path: ${{ steps.artifact.outputs.path }}
-        if-no-files-found: error
+    # # Compiled extension
+    # - uses: actions/upload-artifact@v4
+    #   if: inputs.publish == 'true'
+    #   with:
+    #     name: ${{ steps.artifact.outputs.name }}
+    #     path: ${{ steps.artifact.outputs.path }}
+    #     if-no-files-found: error
