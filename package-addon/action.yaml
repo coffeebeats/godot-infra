@@ -4,7 +4,8 @@ description: "Packages a plugin or compiled gdextension directory and pushes it 
 inputs:
   path:
     description: "The path to the addon's root directory."
-    required: true
+    required: false
+    default: .
   subfolder:
     description: "The subfolder under 'addons' that the plugin should be placed."
     required: true
