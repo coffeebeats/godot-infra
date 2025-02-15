@@ -23,6 +23,11 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Identify commit
+      id: commit
+      shell: bash
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
     - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v1
       with:
         version: ${{ inputs.godot-editor-version }}
@@ -169,5 +174,5 @@ runs:
 
     - uses: coffeebeats/godot-infra/commit-changes@v1
       with:
-        description: "updating `${{ inputs.subfolder }}` to `${{ steps.update.outputs.rev }}`"
+        description: "updating `${{ inputs.subfolder }}` to `${{ steps.commit.outputs.sha_short }}`"
         target-branch: ${{ inputs.target-branch }}
