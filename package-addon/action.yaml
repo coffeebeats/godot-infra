@@ -32,24 +32,6 @@ runs:
       with:
         version: ${{ inputs.godot-editor-version }}
 
-    # Reimport assets so '*.import' files are updated.
-    - name: Reimport assets
-      shell: bash
-      run: |
-        if [[ ! -f "project.godot" ]]; then
-          CREATED_PROJECT_MANIFEST=1
-          touch project.godot
-        fi
-
-        # NOTE: It's okay if this fails, probably. For example, coffeebeats/gut
-        # at '24f97b756fcc6a82375ef24b44c84bb1ee781786' fails with Godot
-        # 'v4.3-stable', but after the relevant imports occur.
-        godot --editor --headless --import --quit || :
-
-        if [[ $CREATED_PROJECT_MANIFEST -eq 1 ]]; then
-          rm project.godot
-        fi
-
     - name: Construct addon directory
       id: addon
       shell: bash
@@ -132,6 +114,31 @@ runs:
         ~*
         *.TMP
         EOM
+
+    # Reimport assets so '*.import' files are updated.
+    - name: Reimport assets
+      shell: bash
+      run: |
+        if [[ ! -f "project.godot" ]]; then
+          CREATED_PROJECT_MANIFEST=1
+          touch project.godot
+        fi
+
+        # Add packaged directory into project as an addon. This ensures paths
+        # within '*.import' files match what a project would require.
+        mv "${{ runner.temp }}/addon" "addons/${{ inputs.subfolder }}"
+
+        # NOTE: It's okay if this fails, probably. For example, coffeebeats/gut
+        # at '24f97b756fcc6a82375ef24b44c84bb1ee781786' fails with Godot
+        # 'v4.3-stable', but after the relevant imports occur.
+        godot --editor --headless --import --quit || :
+
+        # Move the updated addon folder to the target path.
+        mv "addons/${{ inputs.subfolder }}" "${{ runner.temp }}/addon"
+
+        if [[ $CREATED_PROJECT_MANIFEST -eq 1 ]]; then
+          rm project.godot
+        fi
 
     - name: Inspect packaged addon
       working-directory: ${{ runner.temp }}/addon
