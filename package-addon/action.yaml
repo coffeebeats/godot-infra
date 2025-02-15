@@ -85,7 +85,7 @@ runs:
 
         # Remove manually specified
         for pattern in $(echo "${{ inputs.files-excludes }}" | tr "," "\n"); do
-          if [[ "$(realpath "$pattern")" != "$PWD"* ]]; then
+          if [[ "$(realpath -m "${pattern/#\~/$HOME}")" != "$PWD"* ]]; then
             echo "Refusing to execute insecure pattern: $pattern"
             exit 1
           fi
