@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.9 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): correctly escape characters in string passed to action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/308
+* chore(package-addon): remove code fence around link by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/310
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.8...v1.2.9
+
 ## 1.2.8 (2025-02-15)
 
 ## What's Changed
