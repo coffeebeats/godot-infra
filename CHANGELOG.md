@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): correctly validate input of `file-excludes` pattern by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/292
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.1...v1.2.2
+
 ## 1.2.1 (2025-02-15)
 
 ## What's Changed
