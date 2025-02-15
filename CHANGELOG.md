@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.8 (2025-02-15)
+
+## What's Changed
+* fix(package-addon): escape backtick character within commit message by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/305
+* fix(commit-changes): link author within commit message by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/307
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.7...v1.2.8
+
 ## 1.2.7 (2025-02-15)
 
 ## What's Changed
