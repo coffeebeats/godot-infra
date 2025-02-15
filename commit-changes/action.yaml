@@ -62,7 +62,7 @@ runs:
         git add --all ${{ inputs.path-expression }}
         git status 
 
-        git commit -m "chore: ${{ inputs.description }} (on behalf of '${{ github.triggering_actor }}')"
+        git commit -m "chore: ${{ inputs.description }} (on behalf of @${{ github.triggering_actor }})"
         git --no-pager log --oneline -n1
 
     - name: Push changes
