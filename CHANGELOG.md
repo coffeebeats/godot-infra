@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.11 (2025-02-18)
+
+## What's Changed
+* fix(compile,export): improve inspection of artifacts via `tree` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/313
+* fix(compile): inspect artifacts restored from cache by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/315
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.10...v1.2.11
+
 ## 1.2.10 (2025-02-15)
 
 ## What's Changed
