@@ -122,6 +122,10 @@ runs:
         path: ${{ github.workspace }}/build
         key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
 
+    - name: Inspect restored artifacts
+      shell: bash
+      run: tree -lha --dirsfirst $GITHUB_WORKSPACE/build
+
     - name: Cache the 'SCons' build directory
       if: steps.export-template.outputs.cache-hit != 'true'
       uses: actions/cache@v4
