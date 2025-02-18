@@ -288,7 +288,7 @@ runs:
 
     - name: Inspect exported artifacts
       shell: bash
-      run: ls -ls $GITHUB_WORKSPACE/dist
+      run: tree -lha --dirsfirst $GITHUB_WORKSPACE/dist
 
     # ---------------------- Publish generated artifacts --------------------- #
 

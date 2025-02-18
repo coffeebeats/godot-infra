@@ -251,7 +251,7 @@ runs:
 
     - name: Inspect compiled artifacts
       shell: bash
-      run: ls -ls $GITHUB_WORKSPACE/build
+      run: tree -lha --dirsfirst $GITHUB_WORKSPACE/build
 
     - name: Clean up Godot source code
       shell: bash
