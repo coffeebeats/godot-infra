@@ -242,6 +242,15 @@ runs:
 
     # ---------------------- Inspect compiled artifacts ---------------------- #
 
+    # NOTE: Run this step even if there's a cache hit.
+    - name: Check for artifacts
+      shell: bash
+      run: |-
+        if [[ ! -d "$GITHUB_WORKSPACE/build" || -z "$(ls -A "$GITHUB_WORKSPACE/build")" ]]; then
+          echo "No compilation artifacts found in directory: $GITHUB_WORKSPACE/build"
+          exit 1
+        fi
+
     - name: Move compiled artifacts
       if: steps.export-template.outputs.cache-hit != 'true'
       shell: bash
