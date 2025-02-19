@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.12 (2025-02-19)
+
+## What's Changed
+* fix(compile): fail workflow if no compilation artifacts found by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/316
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.11...v1.2.12
+
 ## 1.2.11 (2025-02-18)
 
 ## What's Changed
