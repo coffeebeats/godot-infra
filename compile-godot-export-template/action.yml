@@ -61,8 +61,11 @@ inputs:
     required: false
 
 outputs:
-  path:
-    description: "The path to the compiled export template artifact."
+  export-template-filename:
+    description: "The filename of the export template, relative to 'path-artifact-dir'."
+    value: ${{ steps.artifact.outputs.template }}
+  path-artifact-dir:
+    description: "The path to the directory containing compiled export template artifacts."
     value: ${{ steps.artifact.outputs.path }}
 
 runs:
@@ -287,11 +290,7 @@ runs:
             TARGET=$([[ "${{ inputs.profile }}" == release ]] && echo template_release || echo template_debug)
             DOUBLE=$([[ "${{ inputs.use-double-precision }}" == true ]] && echo ".double" || :)
 
-            TEMPLATE_NAME="godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}.llvm"
-
-            if [[ "${{ inputs.platform }}" == windows ]]; then
-              TEMPLATE_NAME="${TEMPLATE_NAME}.exe"
-            fi
+            TEMPLATE_NAME="godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}.llvm.exe"
 
             ;;
           *)
@@ -299,8 +298,14 @@ runs:
             exit 1
         esac
 
+        if [[ ! -f "$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" ]]; then
+          echo "Invalid export template filename; no file found."
+          exit 1
+        fi
+
         echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $TEMPLATE_NAME || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
-        echo "path=$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" >> $GITHUB_OUTPUT
+        echo "path=$GITHUB_WORKSPACE/build" >> $GITHUB_OUTPUT
+        echo "template=$TEMPLATE_NAME" >> $GITHUB_OUTPUT
 
     # ---------------------- Publish generated artifacts --------------------- #
 
