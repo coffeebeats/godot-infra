@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.13 (2025-02-20)
+
+## What's Changed
+* fix(compile): only inspect restored artifacts on cache hit by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/318
+* fix(compile): check correct directory for compilation artifacts by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/320
+* fix(compile): add missing `.llvm` suffix to compiled Windows export template name by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/321
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.12...v1.2.13
+
 ## 1.2.12 (2025-02-19)
 
 ## What's Changed
