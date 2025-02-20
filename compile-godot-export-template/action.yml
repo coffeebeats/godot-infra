@@ -123,6 +123,7 @@ runs:
         key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
 
     - name: Inspect restored artifacts
+      if: steps.export-template.outputs.cache-hit == 'true'
       shell: bash
       run: tree -lha --dirsfirst $GITHUB_WORKSPACE/build
 
