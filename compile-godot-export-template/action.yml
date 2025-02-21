@@ -67,6 +67,9 @@ outputs:
   path-artifact-dir:
     description: "The path to the directory containing compiled export template artifacts."
     value: ${{ steps.artifact.outputs.path }}
+  extra-bundled-files:
+    description: "A newline-delimited list of file patterns, relative to 'path-artifact-dir', to include alongside the final game artifact."
+    value: ${{ steps.bundle.outputs.paths }}
 
 runs:
   using: composite
@@ -309,6 +312,27 @@ runs:
 
     # ---------------------- Publish generated artifacts --------------------- #
 
+    - name: Set 'extra-bundled-files' output
+      id: bundle
+      shell: bash
+      run: |
+        case "${{ inputs.platform }}" in
+          macos) ;;
+          web) ;;
+          windows)
+            BUNDLED_FILES=$(
+            cat <<- EOM
+            $GITHUB_WORKSPACE/build/D3D12Core.dll
+            $GITHUB_WORKSPACE/build/d3d12SDKLayers.dll
+            EOM
+            )
+            echo paths="$BUNDLED_FILES" >> $GITHUB_OUTPUT
+            ;;
+          *)
+            echo "Unknown/unsupported platform: ${{ inputs.platform }}"
+            exit 1
+        esac
+
     # Save the export template cache (ahead of post- step)
     - uses: actions/cache/save@v3
       if: steps.export-template.outputs.cache-hit != 'true'
@@ -322,5 +346,5 @@ runs:
       if: inputs.publish == 'true'
       with:
         name: ${{ steps.artifact.outputs.name }}
-        path: "${{ steps.artifact.outputs.path }}/*"
+        path: ${{ github.workspace }}/build
         if-no-files-found: error

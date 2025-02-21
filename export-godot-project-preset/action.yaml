@@ -17,6 +17,9 @@ inputs:
   export-template-path:
     description: "The path to the Godot export template."
     required: true
+  extra-bundled-files:
+    description: "A comma or newline-delimited list of file patterns to include alongside the final game artifact."
+    required: false
 
   pck-only:
     description: "Whether to export a PCK file instead of an executable."
@@ -284,7 +287,26 @@ runs:
         codesign-identity: ${{ inputs.codesign-identity }}
         codesign-password: ${{ inputs.codesign-password }}
 
-    # ---------------------- Inspect exported artifacts ---------------------- #
+    # ----------------------- Collect export artifacts ----------------------- #
+
+    - name: Move extra bundled files
+      shell: bash
+      run: |
+        # Remove manually specified
+        set -f
+
+        for pattern in $(
+            set -f
+            echo "${{ inputs.extra-bundled-files }}" | tr ',' '\n' | sed -E 's/\\n/ /'
+        ); do
+            echo "Moving files that match pattern: $pattern"
+            (
+                set +f
+                mv $pattern $GITHUB_WORKSPACE/dist
+            )
+        done
+
+        set +f
 
     - name: Inspect exported artifacts
       shell: bash
