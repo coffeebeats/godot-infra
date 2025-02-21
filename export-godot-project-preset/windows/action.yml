@@ -8,6 +8,10 @@ inputs:
   preset-output-path:
     description: "A path, relative to 'github.workspace', where the exported Godot preset will be output."
     required: true
+  verbose:
+    description: "Whether to enable verbose logging when exporting the preset."
+    required: false
+    default: false
 
   project-path:
     description: "A path, relative to 'github.workspace', where the Godot project is located."
@@ -51,7 +55,7 @@ runs:
       $GITHUB_WORKSPACE/${{ inputs.godot-editor-path }}
       --path $GITHUB_WORKSPACE/${{ inputs.project-path }}
       --headless
-      $([[ ${{ runner.debug }} -eq 1 ]] && echo --verbose)
+      $([[ ${{ inputs.verbose }} == true ]] && echo --verbose)
       $([[ ${{ inputs.profile }} == debug && ${{ inputs.pck-only }} != true ]] && echo --export-debug)
       $([[ ${{ inputs.profile }} == release_debug && ${{ inputs.pck-only }} != true ]] && echo --export-debug)
       $([[ ${{ inputs.profile }} == release && ${{ inputs.pck-only }} != true ]] && echo --export-release)

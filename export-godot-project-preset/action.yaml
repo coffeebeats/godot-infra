@@ -215,6 +215,9 @@ runs:
         echo "value=$EXPORT_PATH" >> $GITHUB_OUTPUT
         echo "Determined output path for preset '${{ inputs.preset-name }}': ./$EXPORT_PATH"
 
+    - id: verbose
+      run: echo "enabled=$([[ ${{ runner.debug }} -eq 1 ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
     # ----------------------- Export the project preset ---------------------- #
 
     - name: Create output directory
@@ -234,6 +237,7 @@ runs:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
         profile: ${{ inputs.profile }}
+        verbose: ${{ steps.verbose.outputs.enabled }}
 
         godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
         preset-output-path: dist/${{ steps.export-path.outputs.value }}
@@ -259,6 +263,7 @@ runs:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
         profile: ${{ inputs.profile }}
+        verbose: ${{ steps.verbose.outputs.enabled }}
 
         godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
         preset-output-path: dist/${{ steps.export-path.outputs.value }}
@@ -274,6 +279,7 @@ runs:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
         profile: ${{ inputs.profile }}
+        verbose: ${{ steps.verbose.outputs.enabled }}
 
         godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
         preset-output-path: dist/${{ steps.export-path.outputs.value }}
