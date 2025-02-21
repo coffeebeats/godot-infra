@@ -320,7 +320,7 @@ runs:
           macos) ;;
           web) ;;
           windows)
-            echo "D3D12Core.dll d3d12SDKLayers.dll" >> "$GITHUB_OUTPUT"
+            echo paths="D3D12Core.dll d3d12SDKLayers.dll" >> "$GITHUB_OUTPUT"
             ;;
           *)
             echo "Unknown/unsupported platform: ${{ inputs.platform }}"
