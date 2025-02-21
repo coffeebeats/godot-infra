@@ -320,14 +320,12 @@ runs:
           macos) ;;
           web) ;;
           windows)
-            BUNDLED_FILES=$(
-              cat <<- EOM
-        $GITHUB_WORKSPACE/build/D3D12Core.dll
-        $GITHUB_WORKSPACE/build/d3d12SDKLayers.dll
-        EOM
-            )
-
-            echo paths="$BUNDLED_FILES" >> $GITHUB_OUTPUT
+            {
+              echo 'paths<<EOM'
+              echo $GITHUB_WORKSPACE/build/D3D12Core.dll
+              echo $GITHUB_WORKSPACE/build/d3d12SDKLayers.dll
+              echo EOM
+            } >> "$GITHUB_OUTPUT"
             ;;
           *)
             echo "Unknown/unsupported platform: ${{ inputs.platform }}"
