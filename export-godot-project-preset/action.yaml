@@ -292,7 +292,6 @@ runs:
     - name: Move extra bundled files
       shell: bash
       run: |
-        # Remove manually specified
         set -f
 
         for pattern in $(
