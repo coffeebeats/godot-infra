@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.14 (2025-02-21)
+
+## What's Changed
+* fix(compile): upload entire build output directory as artifact by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/322
+* fix(compile): use file pattern to remove extra directory nesting in uploaded artifact by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/324
+* fix(compile): only include PIX on Windows in debug builds; use Godot's recommended Agility SDK version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/325
+* fix(compile,export): add support for bundling files with exported game by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/326
+* fix(compile): correct syntax for heredoc by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/327
+* fix(compile): correctly set multiline output by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/328
+* chore(export): only set `--verbose` if workflow is running with debug logging by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/329
+* fix(compile): make `extra-bundled-files` relative filepaths as expected by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/330
+* fix(export): correctly wire up verbosity for exports by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/331
+* fix(export): add missing `shell` property by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/332
+* fix(export): quote string within comparison in case its empty by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/333
+* fix(compile): space delimit `extra-bundled-files` output for easier usage by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/334
+* fix(compile): correct syntax by adding missing output key by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/335
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.13...v1.2.14
+
 ## 1.2.13 (2025-02-20)
 
 ## What's Changed
