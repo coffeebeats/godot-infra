@@ -221,6 +221,8 @@ COPY --from=img-setup-angle "/angle" "/opt/angle"
 # Update 'SCONSFLAGS' so that consumers don't need to know the details of
 # Windows-related settings.
 
+# NOTE: PIX on Windows is not included by default as it should only be used for
+# debug builds. Set `pix_path=/opt/pix` when building to enable support.
+
 ENV SCONSFLAGS="platform=windows use_mingw=yes use_llvm=yes"
-ENV SCONSFLAGS="$SCONSFLAGS d3d12=yes mesa_libs=/opt/mesa agility_sdk_path=/opt/agility pix_path=/opt/pix"
-ENV SCONSFLAGS="$SCONSFLAGS angle_libs=/opt/angle"
+ENV SCONSFLAGS="$SCONSFLAGS d3d12=yes mesa_libs=/opt/mesa agility_sdk_path=/opt/agility angle_libs=/opt/angle"

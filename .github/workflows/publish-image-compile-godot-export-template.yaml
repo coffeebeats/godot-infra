@@ -140,7 +140,7 @@ jobs:
       mingw-llvm-version: ${{ inputs.mingw-llvm-version || '20240619' }}
       godot-nir-static-version: ${{ inputs.godot-nir-static-version || '23.1.9-1' }}
       pix-version: ${{ inputs.pix-version || '1.0.240308001' }}
-      agility-version: ${{ inputs.agility-version || '1.615.0' }}
+      agility-version: ${{ inputs.agility-version || '1.613.3' }} # https://github.com/godotengine/godot/blob/99d66b4b22b505e5a9fd95bf3e4c7aa932680684/misc/scripts/install_d3d12_sdk_windows.py#L43
       godot-angle-static-version: ${{ inputs.godot-angle-static-version || 'chromium/6601.2' }}
 
     steps:
