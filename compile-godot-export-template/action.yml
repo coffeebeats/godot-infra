@@ -321,11 +321,12 @@ runs:
           web) ;;
           windows)
             BUNDLED_FILES=$(
-            cat <<- EOM
-            $GITHUB_WORKSPACE/build/D3D12Core.dll
-            $GITHUB_WORKSPACE/build/d3d12SDKLayers.dll
-            EOM
+              cat <<- EOM
+        $GITHUB_WORKSPACE/build/D3D12Core.dll
+        $GITHUB_WORKSPACE/build/d3d12SDKLayers.dll
+        EOM
             )
+
             echo paths="$BUNDLED_FILES" >> $GITHUB_OUTPUT
             ;;
           *)
