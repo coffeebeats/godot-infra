@@ -216,6 +216,7 @@ runs:
         echo "Determined output path for preset '${{ inputs.preset-name }}': ./$EXPORT_PATH"
 
     - id: verbose
+      shell: bash
       run: echo "enabled=$([[ ${{ runner.debug }} -eq 1 ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
     # ----------------------- Export the project preset ---------------------- #
