@@ -322,5 +322,5 @@ runs:
       if: inputs.publish == 'true'
       with:
         name: ${{ steps.artifact.outputs.name }}
-        path: ${{ steps.artifact.outputs.path }}
+        path: "${{ steps.artifact.outputs.path }}/*"
         if-no-files-found: error
