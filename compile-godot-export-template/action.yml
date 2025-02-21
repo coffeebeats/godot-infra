@@ -68,7 +68,7 @@ outputs:
     description: "The path to the directory containing compiled export template artifacts."
     value: ${{ steps.artifact.outputs.path }}
   extra-bundled-files:
-    description: "A newline-delimited list of file patterns, relative to 'path-artifact-dir', to include alongside the final game artifact."
+    description: "A space-delimited list of file patterns, relative to 'path-artifact-dir', to include alongside the final game artifact."
     value: ${{ steps.bundle.outputs.paths }}
 
 runs:
@@ -320,12 +320,7 @@ runs:
           macos) ;;
           web) ;;
           windows)
-            {
-              echo 'paths<<EOM'
-              echo D3D12Core.dll
-              echo d3d12SDKLayers.dll
-              echo EOM
-            } >> "$GITHUB_OUTPUT"
+            echo "D3D12Core.dll d3d12SDKLayers.dll" >> "$GITHUB_OUTPUT"
             ;;
           *)
             echo "Unknown/unsupported platform: ${{ inputs.platform }}"
