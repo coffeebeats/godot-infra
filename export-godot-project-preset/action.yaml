@@ -217,7 +217,7 @@ runs:
 
     - id: verbose
       shell: bash
-      run: echo "enabled=$([[ ${{ runner.debug }} -eq 1 ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      run: echo "enabled=$([[ "${{ runner.debug }}" -eq 1 ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
     # ----------------------- Export the project preset ---------------------- #
 
