@@ -18,7 +18,7 @@ inputs:
     description: "The path to the Godot export template."
     required: true
   extra-bundled-files:
-    description: "A comma or newline-delimited list of file patterns to include alongside the final game artifact."
+    description: "A comma, space, or newline-delimited list of filepath patterns (must be absolute) to include alongside the final game artifact."
     required: false
 
   pck-only:
