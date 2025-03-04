@@ -120,12 +120,12 @@ jobs:
       llvm-version: ${{ inputs.llvm-version || '17' }}
       # IF/ELSE: Update the minimum macOS version if needed.
       moltenvk-version: ${{inputs.moltenvk-version || '1.2.11' }}
-      osx-version: ${{ inputs.osx-version || '14.5' }}
+      osx-version: ${{ inputs.osx-version || '15.2' }}
       # NOTE: MoltenVK requires at least macOS 10.15; see
       # https://github.com/KhronosGroup/MoltenVK/blob/v1.2.11/Docs/MoltenVK_Runtime_UserGuide.md#build-and-runtime-requirements.
       osx-version-min: ${{ inputs.osx-version-min || '10.15' }}
-      osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin23.5' }}
-      xcode-version: ${{ inputs.xcode-version || '15.4' }}
+      osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin24.2' }}
+      xcode-version: ${{ inputs.xcode-version || '16.2' }}
 
       # Web-specific inputs.
 
@@ -226,6 +226,14 @@ jobs:
       - name: Copy 'MoltenVK' SDK into context
         if: inputs.platform == 'macos'
         run: tar -C thirdparty/moltenvk -xf ${{ needs.package-moltenvk-sdk.outputs.name }}
+
+      # Patch 'osxcross'
+      - name: Patch 'osxcross'
+        if: inputs.platform == 'macos'
+        working-directory: thirdparty/osxcross
+        run: |
+          curl -LO https://github.com/tpoechtrager/osxcross/pull/441.patch
+          git apply 441.patch
 
       # ------------------------------ Build the image ----------------------------- #
 
