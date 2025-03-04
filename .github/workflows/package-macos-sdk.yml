@@ -27,7 +27,7 @@ on:
         type: string
         description: "The runner's operating system."
         required: false
-        default: macos-14
+        default: macos-15
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
@@ -64,7 +64,7 @@ on:
         type: string
         description: "The runner's operating system."
         required: false
-        default: macos-14
+        default: macos-15
       timeout:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
