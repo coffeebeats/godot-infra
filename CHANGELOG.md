@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.0 (2025-03-04)
+
+## What's Changed
+* chore!: update to `v2` (Godot v4.4) by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/338
+* fix(compile): update `macos` platform dependency versions by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/340
+* fix(compile): bump `godot-nir-static` version back to `23.1.9-1` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/341
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.15...v2.0.0
+
 ## 1.2.15 (2025-03-04)
 
 ## What's Changed
