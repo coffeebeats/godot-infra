@@ -39,7 +39,7 @@ inputs:
 
 runs:
   using: docker
-  image: docker://ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.3-web
+  image: docker://ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.4-web
   env:
     SCONS_CACHE: /github/workspace/${{ inputs.scons-cache-path }}
     SCONS_CACHE_LIMIT: 1500
