@@ -52,7 +52,7 @@ runs:
         mkdir -p "$OUT_DIR"
 
         # Extract the only required library; see
-        # https://github.com/godotengine/godot/blob/4.3/platform_methods.py#L121-L144.
+        # https://github.com/godotengine/godot/blob/4.4/platform_methods.py#L139-L162.
         mv MoltenVK/static/MoltenVK.xcframework/macos-arm64_x86_64/* "$OUT_DIR"
 
         find dist \

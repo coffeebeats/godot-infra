@@ -15,7 +15,7 @@ inputs:
   godot-editor-version:
     description: "The godot editor version to use for reimporting."
     required: false
-    default: "v4.3-stable"
+    default: "v4.4-stable"
   file-excludes:
     description: "A comma or newline-delimited list of glob patterns to exclude addon files."
     required: false
@@ -28,7 +28,7 @@ runs:
       shell: bash
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-    - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v1
+    - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v2
       with:
         version: ${{ inputs.godot-editor-version }}
 
@@ -193,7 +193,7 @@ runs:
         echo "Target addon workspace (after):"
         tree -lha --dirsfirst -I .git
 
-    - uses: coffeebeats/godot-infra/commit-changes@v1
+    - uses: coffeebeats/godot-infra/commit-changes@v2
       with:
         description: "updating \\`${{ inputs.subfolder }}\\` to ${{ steps.commit.outputs.sha_short }}"
         target-branch: ${{ inputs.target-branch }}
