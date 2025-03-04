@@ -135,12 +135,12 @@ jobs:
 
       # Windows-specific inputs.
 
-      # NOTE: This should match official build images; see
-      # https://github.com/godotengine/build-containers/blob/4.3/Dockerfile.windows.
-      mingw-llvm-version: ${{ inputs.mingw-llvm-version || '20240619' }}
-      godot-nir-static-version: ${{ inputs.godot-nir-static-version || '23.1.9-1' }}
+      # NOTE: These should match official build images; see
+      # https://github.com/godotengine/godot/blob/4.4/misc/scripts/install_d3d12_sdk_windows.py.
+      mingw-llvm-version: ${{ inputs.mingw-llvm-version || '20241203' }} # https://github.com/godotengine/build-containers/blob/6a0b8d51c3ddaf6e6c7e04d8851ac029459106be/Dockerfile.windows
+      godot-nir-static-version: ${{ inputs.godot-nir-static-version || '23.1.9' }}
       pix-version: ${{ inputs.pix-version || '1.0.240308001' }}
-      agility-version: ${{ inputs.agility-version || '1.613.3' }} # https://github.com/godotengine/godot/blob/99d66b4b22b505e5a9fd95bf3e4c7aa932680684/misc/scripts/install_d3d12_sdk_windows.py#L43
+      agility-version: ${{ inputs.agility-version || '1.613.3' }}
       godot-angle-static-version: ${{ inputs.godot-angle-static-version || 'chromium/6601.2' }}
 
     steps:
