@@ -2,9 +2,6 @@
 
 A repository for Godot build and release infrastructure using [@coffeebeats](https://github.com/coffeebeats?tab=repositories)' tools.
 
-> [!WARNING]
-> This project is in a very early stage. API instability, missing features, and bugs are to be expected for now.
-
 ## **How it works**
 
 This repository contains a number of GitHub actions useful for compiling and exporting Godot projects. See [Example usage](#example-usage) below for demonstrations of how to use the repository.
