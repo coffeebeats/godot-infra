@@ -26,7 +26,7 @@ runs:
       shell: bash
       run: pip install "gdtoolkit==4.*"
 
-    - uses: "coffeebeats/godot-infra/.github/actions/check-code-formatting@main"
+    - uses: "coffeebeats/godot-infra/.github/actions/check-code-formatting@v1"
       with:
         check-command: "gdformat -l ${{ inputs.line-length-max }} --check ${{ inputs.path }}/**/*.gd"
         fix-command: "gdformat -l ${{ inputs.line-length-max }} ${{ inputs.path }}/**/*.gd"
