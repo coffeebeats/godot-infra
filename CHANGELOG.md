@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.15 (2025-03-04)
+
+## What's Changed
+* fix: pin all `godot-infra` actions to latest major version `v1` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/336
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v1.2.14...v1.2.15
+
 ## 1.2.14 (2025-02-21)
 
 ## What's Changed
