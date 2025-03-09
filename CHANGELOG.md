@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.1 (2025-03-09)
+
+## What's Changed
+* fix(compile): pin to previous `llvm-mingw` version to support compiling `godot-static-angle` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/343
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.0...v2.0.1
+
 ## 2.0.0 (2025-03-04)
 
 ## What's Changed
