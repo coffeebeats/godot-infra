@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.2 (2025-03-10)
+
+## What's Changed
+* fix(compile): add `ANGLE` support on `macos` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/345
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.1...v2.0.2
+
 ## 2.0.1 (2025-03-09)
 
 ## What's Changed
