@@ -225,4 +225,5 @@ COPY --from=img-setup-angle "/angle" "/opt/angle"
 # debug builds. Set `pix_path=/opt/pix` when building to enable support.
 
 ENV SCONSFLAGS="platform=windows use_mingw=yes use_llvm=yes"
-ENV SCONSFLAGS="$SCONSFLAGS d3d12=yes mesa_libs=/opt/mesa agility_sdk_path=/opt/agility angle_libs=/opt/angle"
+ENV SCONSFLAGS="$SCONSFLAGS d3d12=yes mesa_libs=/opt/mesa agility_sdk_path=/opt/agility"
+ENV SCONSFLAGS="$SCONSFLAGS angle_libs=/opt/angle"
