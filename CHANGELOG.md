@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.4 (2025-03-15)
+
+## What's Changed
+* chore(ci): use version tag for `changed-files` action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/350
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.3...v2.0.4
+
 ## 2.0.3 (2025-03-15)
 
 ## What's Changed
