@@ -71,6 +71,9 @@ on:
         required: false
         default: 60
 
+permissions:
+  contents: read
+
 env:
   dir: .
   name: MacOSX${{ inputs.version }}.sdk.tar.gz
