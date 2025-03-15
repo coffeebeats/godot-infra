@@ -81,15 +81,15 @@ jobs:
         with:
           files: export-godot-project-preset/macos
 
-      - id: export-godot-project-preset-windows
-        uses: ./changed-files
-        with:
-          files: export-godot-project-preset/windows
-
       - id: export-godot-project-preset-web
         uses: ./changed-files
         with:
           files: export-godot-project-preset/web
+
+      - id: export-godot-project-preset-windows
+        uses: ./changed-files
+        with:
+          files: export-godot-project-preset/windows
 
       # Check for images
 
