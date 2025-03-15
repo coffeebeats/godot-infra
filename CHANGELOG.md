@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.3 (2025-03-15)
+
+## What's Changed
+* fix(changed-files): replace compromised `tj-actions/changed-files` with `git diff-tree` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/352
+* fix(ci): specify workflow permissions for all workflows by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/354
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.2...v2.0.3
+
 ## 2.0.2 (2025-03-10)
 
 ## What's Changed
