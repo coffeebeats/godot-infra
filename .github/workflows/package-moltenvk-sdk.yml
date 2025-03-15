@@ -48,8 +48,10 @@ on:
         required: false
         default: 60
 
+permissions:
+  contents: read
+
 env:
-  GH_TOKEN: ${{ github.token }}
   key: "moltenvk-${{ inputs.version }}"
   path: "moltenvk-sdk-${{ inputs.version }}.tar.gz"
 

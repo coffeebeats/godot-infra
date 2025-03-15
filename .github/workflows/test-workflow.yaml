@@ -1,5 +1,8 @@
 name: "🧪 Test: Placeholder workflow for testing"
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
