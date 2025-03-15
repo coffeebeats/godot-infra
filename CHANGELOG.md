@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.4 (2025-03-15)
+
+## What's Changed
+* refactor(ci): use tag versions for referencing `coffeebeats/godot-infra/changed-files` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/355
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.3...v2.0.4
+
 ## 2.0.3 (2025-03-15)
 
 ## What's Changed
