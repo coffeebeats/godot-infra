@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.3 (2025-03-15)
+
+## What's Changed
+* fix(ci): migrate off of compromised `tj-actions/changed-files` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/347
+* fix(ci): explicitly declare workflow permissions by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/349
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.2...v2.0.3
+
 ## 2.0.2 (2025-03-10)
 
 ## What's Changed
