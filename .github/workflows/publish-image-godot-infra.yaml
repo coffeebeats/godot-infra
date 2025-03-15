@@ -60,34 +60,34 @@ jobs:
       # compile-godot-export-template
 
       - id: compile-godot-export-template-macos
-        uses: ./changed-files
+        uses: coffeebeats/godot-infra/changed-files@v2
         with:
           files: compile-godot-export-template/macos
 
       - id: compile-godot-export-template-web
-        uses: ./changed-files
+        uses: coffeebeats/godot-infra/changed-files@v2
         with:
           files: compile-godot-export-template/web
 
       - id: compile-godot-export-template-windows
-        uses: ./changed-files
+        uses: coffeebeats/godot-infra/changed-files@v2
         with:
           files: compile-godot-export-template/windows
 
       # export-godot-project-preset
 
       - id: export-godot-project-preset-macos
-        uses: ./changed-files
+        uses: coffeebeats/godot-infra/changed-files@v2
         with:
           files: export-godot-project-preset/macos
 
       - id: export-godot-project-preset-web
-        uses: ./changed-files
+        uses: coffeebeats/godot-infra/changed-files@v2
         with:
           files: export-godot-project-preset/web
 
       - id: export-godot-project-preset-windows
-        uses: ./changed-files
+        uses: coffeebeats/godot-infra/changed-files@v2
         with:
           files: export-godot-project-preset/windows
 
