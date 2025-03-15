@@ -29,12 +29,12 @@ jobs:
 
     outputs:
       version: ${{ steps.target.outputs.version }}
-      compile-godot-export-template-macos: ${{ steps.compile-godot-export-template-macos.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-macos == 'true' }}
-      compile-godot-export-template-windows: ${{ steps.compile-godot-export-template-windows.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-windows == 'true' }}
-      compile-godot-export-template-web: ${{ steps.compile-godot-export-template-web.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-web == 'true' }}
-      export-godot-project-preset-macos: ${{ steps.export-godot-project-preset-macos.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-macos == 'true' }}
-      export-godot-project-preset-windows: ${{ steps.export-godot-project-preset-windows.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-windows == 'true' }}
-      export-godot-project-preset-web: ${{ steps.export-godot-project-preset-web.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-web == 'true' }}
+      compile-godot-export-template-macos: ${{ steps.compile-godot-export-template-macos.outputs.changed == 'true' || steps.missing.outputs.compile-godot-export-template-macos == 'true' }}
+      compile-godot-export-template-windows: ${{ steps.compile-godot-export-template-windows.outputs.changed == 'true' || steps.missing.outputs.compile-godot-export-template-windows == 'true' }}
+      compile-godot-export-template-web: ${{ steps.compile-godot-export-template-web.outputs.changed == 'true' || steps.missing.outputs.compile-godot-export-template-web == 'true' }}
+      export-godot-project-preset-macos: ${{ steps.export-godot-project-preset-macos.outputs.changed == 'true' || steps.missing.outputs.export-godot-project-preset-macos == 'true' }}
+      export-godot-project-preset-windows: ${{ steps.export-godot-project-preset-windows.outputs.changed == 'true' || steps.missing.outputs.export-godot-project-preset-windows == 'true' }}
+      export-godot-project-preset-web: ${{ steps.export-godot-project-preset-web.outputs.changed == 'true' || steps.missing.outputs.export-godot-project-preset-web == 'true' }}
 
     steps:
       - name: Determine the target major-minor version
@@ -60,36 +60,36 @@ jobs:
       # compile-godot-export-template
 
       - id: compile-godot-export-template-macos
-        uses: tj-actions/changed-files@v45
+        uses: ./changed-files
         with:
-          files: compile-godot-export-template/macos/Dockerfile
-
-      - id: compile-godot-export-template-windows
-        uses: tj-actions/changed-files@v45
-        with:
-          files: compile-godot-export-template/windows/Dockerfile
+          files: compile-godot-export-template/macos
 
       - id: compile-godot-export-template-web
-        uses: tj-actions/changed-files@v45
+        uses: ./changed-files
         with:
-          files: compile-godot-export-template/web/Dockerfile
+          files: compile-godot-export-template/web
+
+      - id: compile-godot-export-template-windows
+        uses: ./changed-files
+        with:
+          files: compile-godot-export-template/windows
 
       # export-godot-project-preset
 
       - id: export-godot-project-preset-macos
-        uses: tj-actions/changed-files@v45
+        uses: ./changed-files
         with:
-          files: export-godot-project-preset/macos/Dockerfile
+          files: export-godot-project-preset/macos
 
       - id: export-godot-project-preset-windows
-        uses: tj-actions/changed-files@v45
+        uses: ./changed-files
         with:
-          files: export-godot-project-preset/windows/Dockerfile
+          files: export-godot-project-preset/windows
 
       - id: export-godot-project-preset-web
-        uses: tj-actions/changed-files@v45
+        uses: ./changed-files
         with:
-          files: export-godot-project-preset/web/Dockerfile
+          files: export-godot-project-preset/web
 
       # Check for images
 

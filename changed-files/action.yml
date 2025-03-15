@@ -1,0 +1,31 @@
+name: "🐙 Check: Source code changes"
+description: "Checks for source code changes between commits."
+
+inputs:
+  head-ref:
+    description: "The tree-like git object which will be compared against 'base-ref'."
+    required: false
+    default: "${{ github.ref }}"
+  base-ref:
+    description: "The tree-like git object which 'head-ref' will be compared against."
+    required: false
+    default: "${{ github.event_name == 'pull_request' && github.base_ref || format('{0}~1', github.ref) }}"
+  files:
+    description: "A file or directory to restrict changed files to (may be a glob expression)."
+    required: false
+    default: "."
+
+outputs:
+  changed:
+    description: "Whether any files changed."
+    value: ${{ steps.diff-tree.outputs.changed }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Evaluate changed files
+      id: diff-tree
+      shell: bash
+      run: |-
+        CHANGED=$(git diff-tree ${{ inputs.head-ref }} ${{ inputs.base-ref }} ${{ inputs.files }})
+        echo "changed=$([[ ! -z "$CHANGED" ]] && echo true)" >> "$GITHUB_OUTPUT"
