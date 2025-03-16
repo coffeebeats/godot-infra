@@ -25,12 +25,3 @@ jobs:
     steps:
       - shell: bash
         run: exit 0
-
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: ./changed-files
-        with:
-          include: "**/*.gd"
-          exclude: "addons/**/*.gd"
