@@ -10,10 +10,13 @@ inputs:
     description: "The tree-like git object which 'head-ref' will be compared against."
     required: false
     default: "${{ github.event_name == 'pull_request' && github.base_ref || format('{0}~1', github.ref) }}"
-  files:
+  include:
     description: "A file or directory to restrict changed files to (may be a glob expression)."
     required: false
-    default: "."
+    default: "*"
+  exclude:
+    description: "A file or directory to exclude from results (may be a glob expression)."
+    required: false
 
 outputs:
   changed:
@@ -27,5 +30,13 @@ runs:
       id: diff-tree
       shell: bash
       run: |-
-        CHANGED=$(git diff-tree ${{ inputs.head-ref }} ${{ inputs.base-ref }} ${{ inputs.files }})
+        PY_SCRIPT_FILES=$(cat <<-EOM
+          from glob import glob
+          included=set(glob("${{ inputs.include }}",recursive=True,include_hidden=True))
+          excluded=set(glob("${{ inputs.exclude }}",recursive=True,include_hidden=True))
+          print(" ".join(sorted(included-excluded)))
+        EOM
+        )
+
+        CHANGED=$(git diff-tree ${{ inputs.head-ref }} ${{ inputs.base-ref }} $(python3 -c "$PY_SCRIPT_FILES"))
         echo "changed=$([[ ! -z "$CHANGED" ]] && echo true)" >> "$GITHUB_OUTPUT"
