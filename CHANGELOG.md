@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.5 (2025-03-16)
+
+## What's Changed
+* fix(changed-files): support `exclude` files argument by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/357
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.4...v2.0.5
+
 ## 2.0.4 (2025-03-15)
 
 ## What's Changed
