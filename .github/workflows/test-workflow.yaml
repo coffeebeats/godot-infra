@@ -26,6 +26,8 @@ jobs:
       - shell: bash
         run: exit 0
 
+      - uses: actions/checkout@v4
+
       - uses: ./changed-files
         with:
           include: "**/*.gd"
