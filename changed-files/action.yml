@@ -35,7 +35,8 @@ runs:
         from glob import glob
         included=set(glob("${{ inputs.include }}",recursive=True,include_hidden=True))
         excluded=set(glob("${{ inputs.exclude }}",recursive=True,include_hidden=True))
-        print(" ".join(sorted(included-excluded)))
+        git=set(glob(".git/",recursive=True,include_hidden=True))
+        print(" ".join(sorted(included-excluded-git)))
         EOM
         )
 
