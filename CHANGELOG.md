@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.6 (2025-03-16)
+
+## What's Changed
+* fix(changed-files): exclude `.git` directory from changed files by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/359
+* fix(changed-files): simplify how file changes are detected by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/361
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.5...v2.0.6
+
 ## 2.0.5 (2025-03-16)
 
 ## What's Changed
