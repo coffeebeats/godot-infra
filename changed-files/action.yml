@@ -30,11 +30,12 @@ runs:
       id: files
       shell: bash
       run: |-
-        PY_SCRIPT=$(cat <<-EOM
-          from glob import glob
-          included=set(glob("${{ inputs.include }}",recursive=True,include_hidden=True))
-          excluded=set(glob("${{ inputs.exclude }}",recursive=True,include_hidden=True))
-          print(" ".join(sorted(included-excluded)))
+        PY_SCRIPT=$(
+        cat <<-EOM
+        from glob import glob
+        included=set(glob("${{ inputs.include }}",recursive=True,include_hidden=True))
+        excluded=set(glob("${{ inputs.exclude }}",recursive=True,include_hidden=True))
+        print(" ".join(sorted(included-excluded)))
         EOM
         )
 
