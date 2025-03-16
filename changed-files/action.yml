@@ -13,7 +13,7 @@ inputs:
   include:
     description: "A file or directory to restrict changed files to (may be a glob expression)."
     required: false
-    default: "*"
+    default: "**"
   exclude:
     description: "A file or directory to exclude from results (may be a glob expression)."
     required: false
