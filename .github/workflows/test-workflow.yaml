@@ -25,3 +25,8 @@ jobs:
     steps:
       - shell: bash
         run: exit 0
+
+      - uses: ./changed-files
+        with:
+          include: "**/*.gd"
+          exclude: "addons/**/*.gd"
