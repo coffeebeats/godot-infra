@@ -34,7 +34,7 @@ runs:
 
     - name: Cache the Godot executable
       id: cache-godot
-      uses: actions/cache@v4
+      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf
       with:
         path: ${{ env.GODOT_HOME }}
         key: godot-${{ runner.os }}-${{ steps.version.outputs.value }}

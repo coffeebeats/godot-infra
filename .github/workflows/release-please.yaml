@@ -20,7 +20,7 @@ jobs:
       release-tag: ${{ steps.release.outputs.tag_name }}
 
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@a02a34c4d625f9be7cb89156071d8567266a2445
         id: release
         with:
           config-file: .release-please/config.json
@@ -30,7 +30,7 @@ jobs:
           # simply change the "branches" filter in the workflow's on-"push" trigger.
           target-branch: ${{ github.ref_name }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         if: steps.release.outputs.releases_created == 'true'
 
       - name: Publish major tag
