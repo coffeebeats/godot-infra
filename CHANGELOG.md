@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.7 (2025-03-17)
+
+## What's Changed
+* fix(changed-files): revert back to `tj-actions/changed-files`, but pin version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/362
+* chore(ci): pin all external GHA dependencies to specific commits by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/364
+* chore(ci): lower Dependabot frequency to "monthly" by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/365
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.6...v2.0.7
+
 ## 2.0.6 (2025-03-16)
 
 ## What's Changed
