@@ -159,7 +159,7 @@ jobs:
     needs: ["inputs"]
     if: inputs.platform == 'macos'
 
-    uses: "./.github/workflows/package-macos-sdk.yml"
+    uses: ./.github/workflows/package-macos-sdk.yml
     secrets: "inherit"
     with:
       version: ${{ needs.inputs.outputs.osx-version }}
@@ -169,7 +169,7 @@ jobs:
     needs: ["inputs"]
     if: inputs.platform == 'macos'
 
-    uses: "./.github/workflows/package-moltenvk-sdk.yml"
+    uses: ./.github/workflows/package-moltenvk-sdk.yml
     secrets: "inherit"
     with:
       version: ${{ needs.inputs.outputs.moltenvk-version }}
@@ -196,7 +196,7 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           submodules: ${{ inputs.platform == 'macos' }}
 
@@ -209,7 +209,7 @@ jobs:
       # Extract macOS SDK
       - name: Download 'macOS' SDK artifact
         if: inputs.platform == 'macos'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf
         with:
           key: ${{ needs.package-macos-sdk.outputs.cache-key }}
           path: ${{ needs.package-macos-sdk.outputs.cache-path }}
@@ -224,7 +224,7 @@ jobs:
       # Extract MoltenVK SDK
       - name: Download 'MoltenVK' SDK artifact
         if: inputs.platform == 'macos'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806
         with:
           name: ${{ needs.package-moltenvk-sdk.outputs.name }}
 
@@ -243,10 +243,10 @@ jobs:
       # ------------------------------ Build the image ----------------------------- #
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -257,7 +257,7 @@ jobs:
       - name: Build and push
         id: build-and-push-macos
         if: inputs.platform == 'macos'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
         with:
           context: compile-godot-export-template/macos
           push: true
@@ -285,7 +285,7 @@ jobs:
       - name: Build and push
         id: build-and-push-web
         if: inputs.platform == 'web'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
         with:
           context: compile-godot-export-template/web
           push: true
@@ -302,7 +302,7 @@ jobs:
       - name: Build and push
         id: build-and-push-windows
         if: inputs.platform == 'windows'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
         with:
           context: compile-godot-export-template/windows
           push: true
@@ -332,7 +332,7 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - uses: actions/delete-package-versions@v5
+      - uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55
         with:
           owner: "coffeebeats"
           package-name: "compile-godot-export-template"
