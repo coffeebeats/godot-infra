@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.8 (2025-03-19)
+
+## What's Changed
+* fix(export): use correct container image name for `macos` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/366
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.7...v2.0.8
+
 ## 2.0.7 (2025-03-17)
 
 ## What's Changed
