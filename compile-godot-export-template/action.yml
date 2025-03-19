@@ -93,6 +93,10 @@ runs:
         minimum-minor-version: 3
         minimum-patch-version: 0
 
+    - name: Remove editor-related source code
+      shell: bash
+      run: "rm -rf ${{ github.workspace }}/godot/editor"
+
     # -------------- Restore the export template + SCons caches -------------- #
 
     # NOTE: This is required so as to avoid leaking the encryption key.
