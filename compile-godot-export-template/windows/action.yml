@@ -29,9 +29,6 @@ inputs:
 runs:
   using: docker
   image: docker://ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.4-windows
-  env:
-    SCONS_CACHE: /github/workspace/${{ inputs.scons-cache-path }}
-    SCONS_CACHE_LIMIT: 1500
   args:
     - /bin/bash
     - -c
@@ -43,6 +40,7 @@ runs:
       scons
       -j$(nproc)
       -C ${{ inputs.godot-src-path }}
+      cache_path=/github/workspace/${{ inputs.scons-cache-path }}
       arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
