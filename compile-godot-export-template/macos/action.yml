@@ -36,6 +36,12 @@ inputs:
 runs:
   using: docker
   image: docker://ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.4-macos
+  env:
+    # NOTE: It's unclear why 'arm64' builds fail using this toolchain setup (is Godot
+    # not cross-compiled regularly?). Disabling the 'c99-designator' warning unblocks
+    # builds for now. Note that multiple 'ccflags' cannot be passed in via 'SCONSFLAGS',
+    # so pass it in via a command line argument.
+    CCFLAGS: "-Wno-ordered-compare-function-pointers -Wno-c99-designator"
   args:
     - /bin/bash
     - -c
@@ -55,6 +61,7 @@ runs:
       cache_path=/github/workspace/${{ inputs.scons-cache-path }}
       arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
+      ccflags="$CCFLAGS"
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
       $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug debug_symbols=yes optimize=debug)
       $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
