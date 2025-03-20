@@ -242,11 +242,4 @@ ENV SCONSFLAGS="$SCONSFLAGS angle_libs=/opt/angle"
 # NOTE: As of Godot 4.0.3, the 'SCons' configuration does not correctly
 # detect clang usage via 'OSXCross'. Add in the missing compiler flags and
 # "common warnings" here (see https://github.com/godotengine/godot/blob/2267646bf4c29acf1342951d8726626817c742bd/SConstruct#L727-L730).
-ENV CCFLAGS="-Wno-ordered-compare-function-pointers"
-
-# NOTE: It's unclear why 'arm64' builds fail using this toolchain setup. Disabling
-# the 'c99-designator' thus unblocks builds. Perhaps this is because we don't
-# use Apple clang? Consider building Apple clang to prevent inconsistencies. 
-ENV CCFLAGS="$CCFLAGS -Wno-c99-designator"
-
-ENV SCONSFLAGS="$SCONSFLAGS CC=clang CXX=clang++ ccflags=\"$CCFLAGS\""
+ENV SCONSFLAGS="$SCONSFLAGS CC=clang CXX=clang++ ccflags=-Wno-ordered-compare-function-pointers"
