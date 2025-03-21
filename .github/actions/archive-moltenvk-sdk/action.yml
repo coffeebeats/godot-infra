@@ -98,7 +98,7 @@ runs:
           -o -type l \
           -o -type d | \
           tail -n +2 | \
-          sed s,^dist/,, | \
+          sed 's,^dist/,,' | \
           tar \
             -czf ${{ steps.archive.outputs.path }} \
             --no-recursion \
@@ -106,4 +106,4 @@ runs:
             -T -
 
         echo "Inspecting upload artifact, post-archive ('dist/'):"
-        ls dist/
+        ls ${{ steps.archive.outputs.path }}
