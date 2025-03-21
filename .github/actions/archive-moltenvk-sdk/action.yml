@@ -59,6 +59,10 @@ runs:
         ref: "v${{ inputs.version }}"
         path: "MoltenVK"
 
+    - name: Install 'tree' for inspection
+      shell: bash
+      run: "brew install tree"
+
     # See https://github.com/KhronosGroup/MoltenVK#building-moltenvk
     - name: Package SDK
       shell: bash
@@ -72,6 +76,9 @@ runs:
         OTHER_CFLAGS='-fno-objc-msgsend-selector-stubs' \
         make macos
 
+        echo "Inspecting compiled artifacts ('Package/Release/'):"
+        tree Package/Release/
+
         # Extract the only required library; see
         # https://github.com/godotengine/godot/blob/4.4/platform_methods.py#L139-L162.
 
@@ -82,6 +89,9 @@ runs:
         mv \
           Package/Release/MoltenVK/static/MoltenVK.xcframework/macos-arm64_x86_64/* \
           "$OUT_DIR"
+
+        echo "Inspecting upload artifact, pre-archive ('dist/'):"
+        tree dist/
 
         find dist \
           -type f \
@@ -94,3 +104,6 @@ runs:
             --no-recursion \
             -C dist \
             -T -
+
+        echo "Inspecting upload artifact, post-archive ('dist/'):"
+        ls dist/
