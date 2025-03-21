@@ -121,7 +121,7 @@ jobs:
 
       llvm-version: ${{ inputs.llvm-version || '17' }}
       # IF/ELSE: Update the minimum macOS version if needed.
-      moltenvk-version: ${{inputs.moltenvk-version || '1.2.11' }}
+      moltenvk-version: ${{ inputs.moltenvk-version || '1.2.11' }}
       osx-version: ${{ inputs.osx-version || '15.2' }}
       # NOTE: MoltenVK requires at least macOS 10.15; see
       # https://github.com/KhronosGroup/MoltenVK/blob/v1.2.11/Docs/MoltenVK_Runtime_UserGuide.md#build-and-runtime-requirements.
@@ -173,6 +173,8 @@ jobs:
     secrets: "inherit"
     with:
       version: ${{ needs.inputs.outputs.moltenvk-version }}
+      osx-version-min: ${{ needs.inputs.outputs.osx-version-min }}
+      xcode-version: ${{ needs.inputs.outputs.xcode-version }}
 
   build-and-publish:
     if: |
@@ -232,7 +234,7 @@ jobs:
         if: inputs.platform == 'macos'
         run: tar -C thirdparty/moltenvk -xf ${{ needs.package-moltenvk-sdk.outputs.name }}
 
-      # Patch 'osxcross'
+      # Patch 'osxcross' to enable support for latest macos version.
       - name: Patch 'osxcross'
         if: inputs.platform == 'macos'
         working-directory: thirdparty/osxcross
