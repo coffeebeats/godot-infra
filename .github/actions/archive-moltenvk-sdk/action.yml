@@ -1,8 +1,17 @@
 name: "📁 Archive: MoltenVK SDK"
 
+# NOTE: This action compiles 'MoltenVK' from source using specific compilation
+# flags that restore compatibility with 'osxcross'.
+
 inputs:
   version:
     description: "The 'MoltenVK' version to archive."
+    required: true
+  xcode-version:
+    description: "The 'Xcode' version to use for building/extracting."
+    required:
+  osx-version-min:
+    description: "The minimum supported 'macOS' version."
     required: true
   out:
     description: "The filename to write the archive to."
@@ -37,26 +46,44 @@ runs:
         echo "name=$(basename $OUT)" >> "$GITHUB_OUTPUT"
         echo "path=$OUT" >> "$GITHUB_OUTPUT"
 
+    - name: Switch 'Xcode' versions
+      if: inputs.xcode-version != ''
+      shell: bash
+      run: |
+        sudo xcode-select -s /Applications/Xcode_${{ inputs.xcode-version }}.app
+        xcodebuild -version
+
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      with:
+        repository: "KhronosGroup/MoltenVK"
+        ref: "v${{ inputs.version }}"
+        path: "MoltenVK"
+
+    # See https://github.com/KhronosGroup/MoltenVK#building-moltenvk
     - name: Package SDK
       shell: bash
-      env:
-        # This is required to use the 'gh' CLI in actions.
-        GH_TOKEN: "${{ github.token }}"
       run: |
-        gh release download \
-          v${{ inputs.version }}-artifacts \
-          --repo KhronosGroup/MoltenVK \
-          --pattern "MoltenVK-macos.tar" \
-          --output moltenvk.tar
+        cd MoltenVK
 
-        tar --strip-components=1 -xf moltenvk.tar
+        ./fetchDependencies --macos
 
-        OUT_DIR=dist/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64
-        mkdir -p "$OUT_DIR"
+        # FIXME: https://github.com/godotengine/godot/issues/68512
+        MACOSX_DEPLOYMENT_TARGET=${{ inputs.osx-version-min }} \
+        OTHER_CFLAGS='-fno-objc-msgsend-selector-stubs' \
+        make || :  # here, 'make' always returns non-zero exit code
+
+        make macos
+
+        cd ..
 
         # Extract the only required library; see
         # https://github.com/godotengine/godot/blob/4.4/platform_methods.py#L139-L162.
-        mv MoltenVK/static/MoltenVK.xcframework/macos-arm64_x86_64/* "$OUT_DIR"
+
+        OUT_DIR=dist/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64
+
+        mkdir -p "$OUT_DIR"
+
+        mv MoltenVK/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/* "$OUT_DIR"
 
         find dist \
           -type f \

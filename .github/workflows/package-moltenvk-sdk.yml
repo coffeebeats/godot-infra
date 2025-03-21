@@ -7,6 +7,14 @@ on:
         type: string
         description: "The 'MoltenVK' version to package."
         required: true
+      xcode-version:
+        type: string
+        description: "The 'Xcode' version to use for building/extracting."
+        required: true
+      osx-version-min:
+        type: string
+        description: "The minimum supported 'macOS' version."
+        required: true
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."
@@ -32,6 +40,14 @@ on:
         type: string
         description: "The 'MoltenVK' version to package."
         required: true
+      xcode-version:
+        type: string
+        description: "The 'Xcode' version to use for building/extracting."
+        required: true
+      osx-version-min:
+        type: string
+        description: "The minimum supported 'macOS' version."
+        required: true
       retention:
         type: number
         description: "The number of days to retain the packaged SDK for."
@@ -52,7 +68,7 @@ permissions:
   contents: read
 
 env:
-  key: "moltenvk-${{ inputs.version }}"
+  key: "moltenvk-${{ inputs.version }}-osx-min-${{ inputs.osx-version-min }}-xcode-${{ inputs.xcode-version }}"
   path: "moltenvk-sdk-${{ inputs.version }}.tar.gz"
 
 jobs:
@@ -108,6 +124,8 @@ jobs:
         with:
           out: ${{ env.path }}
           version: ${{ inputs.version }}
+          osx-version-min: ${{ inputs.osx-version-min }}
+          xcode-version: ${{ inputs.xcode-version }}
 
       # Publish the artifact
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
