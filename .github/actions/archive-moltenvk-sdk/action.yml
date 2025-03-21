@@ -59,12 +59,15 @@ runs:
         ref: "v${{ inputs.version }}"
         path: "MoltenVK"
 
-    # See https://github.com/KhronosGroup/MoltenVK#building-moltenvk
-    - name: Package SDK
+    - name: Install 'tree' for inspection
       shell: bash
-      run: |
-        cd MoltenVK
+      run: "brew install tree"
 
+    # See https://github.com/KhronosGroup/MoltenVK#building-moltenvk
+    - name: Compile static 'MoltenVK' library
+      shell: bash
+      working-directory: MoltenVK
+      run: |
         ./fetchDependencies --macos
 
         # FIXME: https://github.com/godotengine/godot/issues/68512
@@ -72,25 +75,38 @@ runs:
         OTHER_CFLAGS='-fno-objc-msgsend-selector-stubs' \
         make macos
 
+        echo "Inspecting compiled artifacts ('Package/Release/'):"
+        tree Package/Release/
+
+    - name: Package library artifact
+      shell: bash
+      env:
         # Extract the only required library; see
         # https://github.com/godotengine/godot/blob/4.4/platform_methods.py#L139-L162.
+        TARGET_DIR: macOS/lib/MoltenVK.xcframework
+      run: |
+        PACKAGE_DIR="${{ runner.temp }}/dist"
 
-        OUT_DIR=dist/macOS/lib/MoltenVK.xcframework/macos-arm64_x86_64
-
-        mkdir -p "$OUT_DIR"
+        mkdir -p "$PACKAGE_DIR/$TARGET_DIR"
 
         mv \
-          Package/Release/MoltenVK/static/MoltenVK.xcframework/macos-arm64_x86_64/* \
-          "$OUT_DIR"
+          MoltenVK/Package/Release/MoltenVK/static/MoltenVK.xcframework/macos-* \
+          "$PACKAGE_DIR/$TARGET_DIR"
 
-        find dist \
-          -type f \
-          -o -type l \
-          -o -type d | \
-          tail -n +2 | \
-          sed s,^dist/,, | \
-          tar \
-            -czf ${{ steps.archive.outputs.path }} \
-            --no-recursion \
-            -C dist \
-            -T -
+        echo "Inspecting upload artifact, pre-archive:"
+        tree "$PACKAGE_DIR"
+
+        find "$PACKAGE_DIR" \
+        -type f \
+        -o -type l \
+        -o -type d | \
+        tail -n +2 | \
+        sed "s,^$PACKAGE_DIR/,," | \
+        tar \
+        -czf ${{ steps.archive.outputs.path }} \
+        --no-recursion \
+        -C $PACKAGE_DIR/ \
+        -T -
+
+        echo "Inspecting upload artifact, post-archive:"
+        ls ${{ steps.archive.outputs.path }}
