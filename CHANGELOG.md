@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.9 (2025-03-21)
+
+## What's Changed
+* fix(compile): migrate to new `cache_path` build argument by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/368
+* fix(compile): disable failing warning on `arm64` builds for `macos` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/370
+* fix(compile): specify `-Wno-c99-designator` to ignore warning seen during cross-compilation for `macos` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/371
+* fix(ci,compile): revert back to compiling `MoltenVK` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/372
+* fix(ci): only build `MoltenVK` for `macos`, use correct build directory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/373
+* fix(ci): use correct working directory when packaging archive by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/374
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.8...v2.0.9
+
 ## 2.0.8 (2025-03-19)
 
 ## What's Changed
