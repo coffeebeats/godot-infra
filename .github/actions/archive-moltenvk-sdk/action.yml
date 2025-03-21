@@ -70,11 +70,7 @@ runs:
         # FIXME: https://github.com/godotengine/godot/issues/68512
         MACOSX_DEPLOYMENT_TARGET=${{ inputs.osx-version-min }} \
         OTHER_CFLAGS='-fno-objc-msgsend-selector-stubs' \
-        make || :  # here, 'make' always returns non-zero exit code
-
         make macos
-
-        cd ..
 
         # Extract the only required library; see
         # https://github.com/godotengine/godot/blob/4.4/platform_methods.py#L139-L162.
@@ -83,7 +79,9 @@ runs:
 
         mkdir -p "$OUT_DIR"
 
-        mv MoltenVK/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/* "$OUT_DIR"
+        mv \
+          Package/Release/MoltenVK/static/MoltenVK.xcframework/macos-arm64_x86_64/* \
+          "$OUT_DIR"
 
         find dist \
           -type f \
