@@ -234,14 +234,6 @@ jobs:
         if: inputs.platform == 'macos'
         run: tar -C thirdparty/moltenvk -xf ${{ needs.package-moltenvk-sdk.outputs.name }}
 
-      # Patch 'osxcross' to enable support for latest macos version.
-      - name: Patch 'osxcross'
-        if: inputs.platform == 'macos'
-        working-directory: thirdparty/osxcross
-        run: |
-          curl -LO https://github.com/tpoechtrager/osxcross/pull/441.patch
-          git apply 441.patch
-
       # ------------------------------ Build the image ----------------------------- #
 
       - name: Set up Docker Buildx
