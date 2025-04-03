@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.11 (2025-04-03)
+
+## What's Changed
+* chore(deps): bump actions/cache from 4.2.2 to 4.2.3 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/380
+* chore(deps): bump tj-actions/changed-files from 46.0.1 to 46.0.3 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/379
+* chore(deps): bump actions/download-artifact from 4.1.9 to 4.2.1 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/378
+* chore(deps): bump actions/upload-artifact from 4.6.1 to 4.6.2 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/377
+* chore(thirdparty): update `osxcross` to `0ce4ef1` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/382
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.10...v2.0.11
+
 ## 2.0.10 (2025-03-27)
 
 ## What's Changed
