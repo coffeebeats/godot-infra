@@ -49,6 +49,24 @@ The `godot-infra` repository does not need to be installed. Simply add the actio
     # See the action implementation for available inputs.
 ```
 
+## **Template repositories**
+
+The [@coffeebeats](https://github.com/coffeebeats) user has a few template repositories useful for various types of Godot projects. These include:
+
+- [godot-project-template](https://github.com/coffeebeats/godot-project-template)
+- [godot-plugin-template](https://github.com/coffeebeats/godot-plugin-template)
+- [godot-prototype-template](https://github.com/coffeebeats/godot-prototype-template)
+
+These can be instantiated with recommended repository settings using the [instantiate-template-repository](./scripts/instantiate-template-repository.sh) script. Run the following command (requires a Unix shell):
+
+```sh
+curl https://raw.githubusercontent.com/coffeebeats/godot-infra/main/scripts/instantiate-template-repository.sh | sh -s -- \
+  --name <NEW REPO NAME> \
+  --template <TEMPLATE REPO NAME> \
+  --branch main \
+  --description "A new Godot 4+ project."
+```
+
 ## **Contributing**
 
 All contributions are welcome! Feel free to file [bugs](https://github.com/coffeebeats/godot-infra/issues/new?assignees=&labels=bug&projects=&template=bug-report.md&title=) and [feature requests](https://github.com/coffeebeats/godot-infra/issues/new?assignees=&labels=enhancement&projects=&template=feature-request.md&title=) and/or open pull requests.
