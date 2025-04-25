@@ -36,7 +36,7 @@ The `godot-infra` repository does not need to be installed. Simply add the actio
 #### **`compile-godot-export-template`**
 
 ```yaml
-- uses: "coffeebeats/godot-infra/compile-godot-export-template@v0" # x-release-please-major
+- uses: "coffeebeats/godot-infra/compile-godot-export-template@v2" # x-release-please-major
   with:
     # See the action implementation for available inputs.
 ```
@@ -44,7 +44,7 @@ The `godot-infra` repository does not need to be installed. Simply add the actio
 #### **`export-godot-project-preset`**
 
 ```yaml
-- uses: "coffeebeats/godot-infra/export-godot-project-preset@v0" # x-release-please-major
+- uses: "coffeebeats/godot-infra/export-godot-project-preset@v2" # x-release-please-major
   with:
     # See the action implementation for available inputs.
 ```
