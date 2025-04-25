@@ -247,7 +247,19 @@ done
 
 # --------------------------- Run: Update contents --------------------------- #
 
-# TODO: Update repository contents (e.g. README.md)
+# Update CHANGELOG
+echo "# Changelog" >CHANGELOG.md
+
+# Update README
+cat <<EOM >README.md
+# $REPO_NAME
+
+$REPO_DESCRIPTION
+$(tail -n+4 README.md)
+EOM
+
+git add CHANGELOG.md README.md
+git commit --amend --no-edit
 
 # --------------------- Run: Initialize 'release-please' --------------------- #
 
