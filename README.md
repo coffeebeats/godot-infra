@@ -60,7 +60,7 @@ The [@coffeebeats](https://github.com/coffeebeats) user has a few template repos
 These can be instantiated with recommended repository settings using the [instantiate-template-repository](./scripts/instantiate-template-repository.sh) script. Run the following command (requires a Unix shell):
 
 ```sh
-curl https://raw.githubusercontent.com/coffeebeats/godot-infra/main/scripts/instantiate-template-repository.sh | sh -s -- \
+./scripts/instantiate-template-repository.sh \
   --name <NEW REPO NAME> \
   --template <TEMPLATE REPO NAME> \
   --branch main \
