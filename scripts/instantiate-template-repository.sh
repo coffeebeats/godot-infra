@@ -156,7 +156,7 @@ fi
 
 # ---------------------------- Define: Repository ---------------------------- #
 
-SRC_REPOSITORY="coffeebeats/$TEMPLATE_NAME"
+SRC_REPOSITORY="coffeebeats/${TEMPLATE_NAME#coffeebeats/}"
 DST_REPOSITORY="$GH_USER/$REPO_NAME"
 
 info "Executing command with the following parameters:"

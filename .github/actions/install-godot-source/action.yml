@@ -11,6 +11,9 @@ inputs:
     description: "The name of a GitHub repository containing the Godot source code."
     required: false
     default: godotengine/godot
+  godot-patches:
+    description: "A comma or newline-delimited list of glob patterns to patch files."
+    required: false
 
   dst-path:
     type: string
@@ -47,18 +50,60 @@ runs:
   using: "composite"
   steps:
     - name: Clone the Godot source code
+      id: clone
       shell: bash
       run: >-
+        PATH_REPO="${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}"
+
+        echo "directory=$PATH_REPO" >> "$GITHUB_OUTPUT"
+
         GH_TOKEN=${{ github.token }}
         gh repo clone
         ${{ inputs.godot-src-repository }}
-        ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
+        "$PATH_REPO"
         --
         -b ${{ inputs.godot-src-rev }}
         --depth 1
         --no-tags
 
-        rm -rf ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}/.git
+        rm -rf "$PATH_REPO/.git"
+
+    - name: Patch the Godot source code
+      if: inputs.godot-patches != ''
+      shell: bash
+      run: |-
+        set -f
+
+        for pattern in $(
+            set -f
+            echo "${{ inputs.godot-patches }}" | tr ',' '\n' | sed -E 's/\\n/ /'
+        ); do
+            if [[ "$(
+                set +f
+                realpath -m "${pattern/\~/$HOME}"
+            )" != "$PWD"* ]]; then
+                echo "Refusing to use insecure pattern: $pattern"
+                exit 1
+            fi
+
+            echo "Applying patches that match pattern: $pattern"
+            (
+                set +f
+
+                for file in $pattern; do
+                  echo "Applying patch: $file"
+
+                  file=$(realpath --relative-to ${{ steps.clone.outputs.directory }} $file)
+
+                  (
+                    cd ${{ steps.clone.outputs.directory }}
+                    git apply "$file"
+                  )
+                done
+            )
+        done
+
+        set +f
 
     - name: Determine the Godot version
       id: godot
