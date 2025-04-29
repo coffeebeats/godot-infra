@@ -11,6 +11,9 @@ inputs:
     description: "The name of a repository containing the Godot source code."
     required: false
     default: godotengine/godot
+  godot-patches:
+    description: "A comma or newline-delimited list of glob patterns to patch files."
+    required: false
 
   arch:
     description: "The target architecture of the export template."
@@ -83,6 +86,7 @@ runs:
         dst-path: ${{ github.workspace }}/godot
         godot-src-rev: ${{ inputs.godot-src-rev }}
         godot-src-repository: ${{ inputs.godot-src-repository }}
+        godot-patches: ${{ inputs.godot-patches }}
 
     - name: Parse Godot source code version
       uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v2"
