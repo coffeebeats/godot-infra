@@ -4,7 +4,7 @@
 #                              Image: Setup - Base                             #
 # ---------------------------------------------------------------------------- #
 
-FROM ubuntu:25.04 AS img-setup-base
+FROM ubuntu:24.04 AS img-setup-base
 
 # ------------------------- Update: Package registry ------------------------- #
 
@@ -89,6 +89,11 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- \
     -y \
     --profile minimal \
     $([ ! -z "${RUST_VERSION}" ] && echo "--default-toolchain=${RUST_VERSION}")
+
+# ---------------------------- Install: rcodesign ---------------------------- #
+
+# See https://github.com/indygreg/apple-platform-rs/tree/main/apple-codesign#rcodesign-cli
+RUN cargo install --locked --bin rcodesign apple-codesign
 
 # ---------------------------------------------------------------------------- #
 #                      Image: Setup - OSXCross SDK (MacOS)                     #
