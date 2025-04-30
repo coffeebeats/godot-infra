@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.1.0 (2025-04-30)
+
+## What's Changed
+* feat(scripts): create template repo instantiation script by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/383
+* fix: update `README.md` with latest version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/385
+* fix(docs): simplify script source path by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/386
+* fix(scripts): reset `CHANGELOG.md` and rename repository in `README.md` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/387
+* feat(install-source): add `godot-patches` input to enable patching Godot source code by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/388
+* fix(ci): require patch files to use `.patch` or `.diff` file extension by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/389
+* feat(compile): add support for compiling editor builds by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/390
+* fix(compile): simplify platform actions by passing in `target` input by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/391
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.0.11...v2.1.0
+
 ## 2.0.11 (2025-04-03)
 
 ## What's Changed
