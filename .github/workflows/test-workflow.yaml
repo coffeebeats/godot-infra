@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
     steps:
-      - uses: coffeebeats/godot-infra/compile-godot-export-template@feat/compile/editor
+      - uses: coffeebeats/godot-infra/compile-godot-export-template@v2
         id: compile
         with:
           compile-editor: true
