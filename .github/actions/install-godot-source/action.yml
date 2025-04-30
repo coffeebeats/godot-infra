@@ -91,6 +91,11 @@ runs:
                 set +f
 
                 for file in $pattern; do
+                  if [[ "$file" != *".patch" && "$file" != *".diff" ]]; then
+                    echo "Skipping unrecognized patch file: $file"
+                    continue
+                  fi
+
                   echo "Applying patch: $file"
 
                   file=$(realpath --relative-to ${{ steps.clone.outputs.directory }} $file)
