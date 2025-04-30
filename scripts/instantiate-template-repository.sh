@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -euxo pipefail
 
 # This script instantiates one of @coffeebeats' template repositories. The list
 # of supported repositories includes:
@@ -178,6 +178,8 @@ DST_REPOSITORY="${REPO_NAME}"
 echo "  user (target): ${GH_USER}"
 echo "  repository (target): ${DST_REPOSITORY}"
 echo "  description (target): ${REPO_DESCRIPTION}"
+
+exit 0
 
 # --------------------------- Validate: Repository --------------------------- #
 
