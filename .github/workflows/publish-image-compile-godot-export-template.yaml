@@ -48,6 +48,10 @@ on:
         type: string
         description: "The 'darwin*' SDK name for the 'osx-version' specified."
         required: false
+      rust-version:
+        type: string
+        description: "The 'rust' version to install in the image."
+        required: false
       xcode-version:
         type: string
         description: "The 'Xcode' version to build 'macOS'-related SDKs with."
@@ -127,6 +131,7 @@ jobs:
       # https://github.com/KhronosGroup/MoltenVK/blob/v1.2.11/Docs/MoltenVK_Runtime_UserGuide.md#build-and-runtime-requirements.
       osx-version-min: ${{ inputs.osx-version-min || '10.15' }}
       osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin24.2' }}
+      rust-version: ${{ inputs.rust-version || '1.86.0' }}
       xcode-version: ${{ inputs.xcode-version || '16.2' }}
 
       # Web-specific inputs.
