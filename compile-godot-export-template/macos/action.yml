@@ -72,3 +72,4 @@ runs:
       $([[ "${{ inputs.profile }}" == "release_debug" && "${{ inputs.compile-editor }}" != "true" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
       $([[ "${{ inputs.profile }}" == "release" && "${{ inputs.compile-editor }}" != "true" ]] && echo target=template_release production=yes optimize=speed)
       $([[ "${{ inputs.app-bundle }}" == "true" ]] && echo generate_bundle=yes)
+      $([[ "${{ inputs.compile-editor }}" == "true" ]] && echo bundle_sign_identity=)
