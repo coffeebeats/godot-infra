@@ -4,7 +4,7 @@
 #                               Image: Setup - OS                              #
 # ---------------------------------------------------------------------------- #
 
-FROM ubuntu:25.04 AS img-setup-os
+FROM ubuntu:24.04 AS img-setup-os
 
 # ------------------------- Update: Package registry ------------------------- #
 
