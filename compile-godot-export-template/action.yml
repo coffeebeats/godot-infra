@@ -136,7 +136,7 @@ runs:
         INPUT="$INPUT-${{ inputs.profile }}-${{ inputs.encryption-key }}-${{ inputs.use-double-precision }}"
         INPUT="$INPUT-${{ hashFiles(inputs.custompy-path) }}-${{ hashFiles(inputs.icon-path) }}"
 
-        VALUE="compile-godot-export-template-godot-${{ runner.os }}-$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)""
+        VALUE="compile-godot-export-template-godot-${{ runner.os }}-$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)"
 
         echo "value=$VALUE" >> $GITHUB_OUTPUT
 
