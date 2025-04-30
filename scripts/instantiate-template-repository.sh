@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eux
+set -eu
 
 # This script instantiates one of @coffeebeats' template repositories. The list
 # of supported repositories includes:
@@ -98,7 +98,6 @@ parse_params() {
         -d | --description)
             shift
             REPO_DESCRIPTION="$1"
-            echo "  description (target): $REPO_DESCRIPTION"
             ;;
         -n | --name)
             shift
@@ -107,7 +106,6 @@ parse_params() {
         -t | --template)
             shift
             TEMPLATE_NAME="${1#coffeebeats/}"
-            echo "  template name: $TEMPLATE_NAME"
             ;;
 
         -?*) fatal "Unknown option: $1" ;;
@@ -126,182 +124,173 @@ parse_params() {
 
 parse_params "$@"
 
-info "Parsed params"
+main() {
+    # -------------------------------- Define: gh -------------------------------- #
 
-# -------------------------------- Define: gh -------------------------------- #
+    GH="gh"
+    if ! check_cmd gh && check_cmd gh.exe; then
+        GH="gh.exe"
+    fi
 
-GH="gh"
-if ! check_cmd gh && check_cmd gh.exe; then
-    GH="gh.exe"
-fi
+    # ------------------------------- Define: User ------------------------------- #
 
-# ------------------------------- Define: User ------------------------------- #
+    need_cmd $GH
 
-need_cmd $GH
+    if ! $GH auth status; then
+        fatal "Failed to identify current GitHub user; please authenticate via 'gh'"
+    fi
 
-info "Defining user variables"
+    GH_USER="$($GH api user -q ".login")"
+    if [ -z "$GH_USER" ]; then
+        fatal "Failed to identify current GitHub user"
+    fi
 
-if ! $GH auth status; then
-    fatal "Failed to identify current GitHub user; please authenticate via 'gh'"
-fi
+    GIT_USER_NAME=$(git config user.name)
+    if [ -z "$GIT_USER_NAME" ]; then
+        fatal "Failed to identify current Git user's name"
+    fi
 
-info "Checking user"
-GH_USER="$($GH api user -q ".login")"
-if [ -z "$GH_USER" ]; then
-    fatal "Failed to identify current GitHub user"
-fi
-info "Got user: ${GH_USER}"
+    GIT_USER_EMAIL=$(git config user.email)
+    if [ -z "$GIT_USER_EMAIL" ]; then
+        fatal "Failed to identify current Git user's email address"
+    fi
 
-info "Checking user.name"
-GIT_USER_NAME=$(git config user.name)
-if [ -z "$GIT_USER_NAME" ]; then
-    fatal "Failed to identify current Git user's name"
-fi
-info "Got user.name: ${GIT_USER_NAME}"
+    # ---------------------------- Define: Repository ---------------------------- #
 
-info "Checking user.email"
-GIT_USER_EMAIL=$(git config user.email)
-if [ -z "$GIT_USER_EMAIL" ]; then
-    fatal "Failed to identify current Git user's email address"
-fi
-info "Got user.email: ${GIT_USER_EMAIL}"
+    info "Executing command with the following parameters:"
 
-# ---------------------------- Define: Repository ---------------------------- #
+    SRC_REPOSITORY="coffeebeats/${TEMPLATE_NAME}"
+    echo "  template (source): ${SRC_REPOSITORY}"
+    echo "  branch (source): ${BRANCH_NAME}"
 
-info "Executing command with the following parameters:"
+    DST_REPOSITORY="${REPO_NAME}"
+    echo "  user (target): ${GH_USER}"
+    echo "  repository (target): ${DST_REPOSITORY}"
+    echo "  description (target): ${REPO_DESCRIPTION}"
 
-SRC_REPOSITORY="coffeebeats/${TEMPLATE_NAME}"
-echo "  template (source): ${SRC_REPOSITORY}"
-echo "  branch (source): ${BRANCH_NAME}"
+    exit 0
 
-DST_REPOSITORY="${REPO_NAME}"
-echo "  user (target): ${GH_USER}"
-echo "  repository (target): ${DST_REPOSITORY}"
-echo "  description (target): ${REPO_DESCRIPTION}"
+    # --------------------------- Validate: Repository --------------------------- #
 
-exit 0
+    # Check if the repository exists
+    if $GH repo view "$DST_REPOSITORY" >/dev/null 2>&1; then
+        fatal "Repository already exists; exiting without making changes."
+    fi
 
-# --------------------------- Validate: Repository --------------------------- #
+    info "Verified repository doesn't exist yet."
 
-# Check if the repository exists
-if $GH repo view "$DST_REPOSITORY" >/dev/null 2>&1; then
-    fatal "Repository already exists; exiting without making changes."
-fi
+    # -------------------------- Run: Create repository -------------------------- #
 
-info "Verified repository doesn't exist yet."
+    info "Creating repository from template."
 
-# -------------------------- Run: Create repository -------------------------- #
+    $GH repo create "$DST_REPOSITORY" \
+        --template "$SRC_REPOSITORY" \
+        $([ "${BRANCH_NAME}" != "main" ] && echo "--include-all-branches" || :) \
+        --description "${REPO_DESCRIPTION}" \
+        --disable-wiki \
+        --private
 
-info "Creating repository from template."
+    # Update repository settings
+    info "Updating repository settings."
+    $GH repo edit "$DST_REPOSITORY" \
+        --allow-update-branch \
+        --delete-branch-on-merge \
+        --enable-auto-merge \
+        --enable-squash-merge \
+        --enable-merge-commit=false \
+        --enable-rebase-merge=false \
+        --enable-projects=false
 
-$GH repo create "$DST_REPOSITORY" \
-    --template "$SRC_REPOSITORY" \
-    $([ "${BRANCH_NAME}" != "main" ] && echo "--include-all-branches" || :) \
-    --description "${REPO_DESCRIPTION}" \
-    --disable-wiki \
-    --private
+    # ------------------ Run: Update GitHub Actions permissions ------------------ #
 
-# Update repository settings
-info "Updating repository settings."
-$GH repo edit "$DST_REPOSITORY" \
-    --allow-update-branch \
-    --delete-branch-on-merge \
-    --enable-auto-merge \
-    --enable-squash-merge \
-    --enable-merge-commit=false \
-    --enable-rebase-merge=false \
-    --enable-projects=false
-
-# ------------------ Run: Update GitHub Actions permissions ------------------ #
-
-cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/${GH_USER}/${DST_REPOSITORY}/actions/permissions"
+    cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/${GH_USER}/${DST_REPOSITORY}/actions/permissions"
 {
 "enabled": true,
 "allowed_actions": "all"
 }
 EOM
 
-cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/${GH_USER}/${DST_REPOSITORY}/actions/permissions/workflow"
+    cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/${GH_USER}/${DST_REPOSITORY}/actions/permissions/workflow"
 {
 "default_workflow_permissions":"write",
 "can_approve_pull_request_reviews":true
 }
 EOM
 
-# --------------------------- Run: Clone repository -------------------------- #
+    # --------------------------- Run: Clone repository -------------------------- #
 
-need_cmd git
-need_cmd mktemp
+    need_cmd git
+    need_cmd mktemp
 
-REPO_TMPDIR="$(mktemp -d)"
+    REPO_TMPDIR="$(mktemp -d)"
 
-info "Cloning new repository to directory: $REPO_TMPDIR"
-$GH repo clone "$DST_REPOSITORY" "$REPO_TMPDIR"
+    info "Cloning new repository to directory: $REPO_TMPDIR"
+    $GH repo clone "$DST_REPOSITORY" "$REPO_TMPDIR"
 
-cd "$REPO_TMPDIR"
+    cd "$REPO_TMPDIR"
 
-# Configure the git user
-git config --local user.name "$GIT_USER_NAME"
-git config --local user.email "$GIT_USER_EMAIL"
+    # Configure the git user
+    git config --local user.name "$GIT_USER_NAME"
+    git config --local user.email "$GIT_USER_EMAIL"
 
-# Reset 'main' to the target ref
-git reset --hard "$BRANCH_NAME"
+    # Reset 'main' to the target ref
+    git reset --hard "$BRANCH_NAME"
 
-# Push changes to remote repository
-info "Updating remote branch 'main' to ref: $BRANCH_NAME"
-git push -f origin main
+    # Push changes to remote repository
+    info "Updating remote branch 'main' to ref: $BRANCH_NAME"
+    git push -f origin main
 
-# Delete other branches
-for branch in $(git for-each-ref --format='%(refname:strip=2)' "refs/heads/$1"); do
-    if [ "$branch" == "main" ]; then
-        continue
-    fi
+    # Delete other branches
+    for branch in $(git for-each-ref --format='%(refname:strip=2)' "refs/heads/$1"); do
+        if [ "$branch" == "main" ]; then
+            continue
+        fi
 
-    info "Deleting branch on remote repository: $branch"
-    git push origin --delete "$branch"
-done
+        info "Deleting branch on remote repository: $branch"
+        git push origin --delete "$branch"
+    done
 
-# --------------------------- Run: Update contents --------------------------- #
+    # --------------------------- Run: Update contents --------------------------- #
 
-# Update CHANGELOG
-echo "# Changelog" >CHANGELOG.md
+    # Update CHANGELOG
+    echo "# Changelog" >CHANGELOG.md
 
-# Update README
-cat <<EOM >README.md
+    # Update README
+    cat <<EOM >README.md
 # $REPO_NAME
 
 $REPO_DESCRIPTION
 $(tail -n+4 README.md)
 EOM
 
-git add CHANGELOG.md README.md
-git commit --amend --no-edit
+    git add CHANGELOG.md README.md
+    git commit --amend --no-edit
 
-# --------------------- Run: Initialize 'release-please' --------------------- #
+    # --------------------- Run: Initialize 'release-please' --------------------- #
 
-# Update 'release-please' manifest
-cat <<EOM >.release-please/manifest.json
+    # Update 'release-please' manifest
+    cat <<EOM >.release-please/manifest.json
 {
 ".": "0.1.0"
 }
 EOM
 
-# Commit changes
-git add .release-please/manifest.json
-git commit --amend --no-edit
+    # Commit changes
+    git add .release-please/manifest.json
+    git commit --amend --no-edit
 
-# Push changes to remote repository
-info "Updating 'release-please' manifest on remote"
-git push -f origin main
+    # Push changes to remote repository
+    info "Updating 'release-please' manifest on remote"
+    git push -f origin main
 
-# Tag the initial commit
-info "Tagging initial commit: v0.1.0"
-git tag v0.1.0
-git push origin tag v0.1.0
+    # Tag the initial commit
+    info "Tagging initial commit: v0.1.0"
+    git tag v0.1.0
+    git push origin tag v0.1.0
 
-# ----------------------- Run: Create repository rules ----------------------- #
+    # ----------------------- Run: Create repository rules ----------------------- #
 
-cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$GH_USER/$DST_REPOSITORY/rulesets"
+    cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$GH_USER/$DST_REPOSITORY/rulesets"
 {
     "name": "main",
     "enforcement": "active",
@@ -362,3 +351,6 @@ cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X
     ]
 }
 EOM
+}
+
+main
