@@ -98,6 +98,7 @@ parse_params() {
         -d | --description)
             shift
             REPO_DESCRIPTION="$1"
+            echo "REPO_DESCRIPTION=$REPO_DESCRIPTION"
             ;;
         -n | --name)
             shift
