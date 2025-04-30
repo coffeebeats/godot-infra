@@ -59,6 +59,8 @@ The [@coffeebeats](https://github.com/coffeebeats) user has a few template repos
 
 These can be instantiated with recommended repository settings using the [instantiate-template-repository](./scripts/instantiate-template-repository.sh) script. Run the following command (requires a Unix shell):
 
+> ⚠️ **WARNING:** It's good practice to inspect an installation script prior to execution. The scripts are included in this repository and can be reviewed prior to use.
+
 ```sh
  curl -Ls https://raw.githubusercontent.com/coffeebeats/godot-infra/refs/heads/main/scripts/instantiate-template-repository.sh | sh -s -- \
   --template coffeebeats/godot-project-template \
