@@ -318,7 +318,18 @@ runs:
       shell: bash
       run: sudo rm -rf $GITHUB_WORKSPACE/godot
 
-    - name: Determine export template file name
+    # Save the export template cache (ahead of artifact steps). Note that this
+    # ensures progress is saved even if later steps fail.
+    - uses: actions/cache/save@v3
+      if: steps.godot-cache.outputs.cache-hit != 'true'
+      with:
+        # IF/ELSE: Update the 'cache' step above if this changes.
+        path: ${{ github.workspace }}/build
+        key: ${{ steps.godot-cache-key.outputs.value }}
+
+    # ---------------------- Publish generated artifacts --------------------- #
+
+    - name: Determine file name
       id: artifact
       shell: bash
       run: |
@@ -358,8 +369,6 @@ runs:
         echo "path=$GITHUB_WORKSPACE/build" >> $GITHUB_OUTPUT
         echo "template=$TEMPLATE_NAME" >> $GITHUB_OUTPUT
 
-    # ---------------------- Publish generated artifacts --------------------- #
-
     - name: Set 'extra-bundled-files' output
       id: bundle
       shell: bash
@@ -375,15 +384,6 @@ runs:
             exit 1
         esac
 
-    # Save the export template cache (ahead of post- step)
-    - uses: actions/cache/save@v3
-      if: steps.godot-cache.outputs.cache-hit != 'true'
-      with:
-        # IF/ELSE: Update the 'cache' step above if this changes.
-        path: ${{ github.workspace }}/build
-        key: ${{ steps.godot-cache-key.outputs.value }}
-
-    # Compiled export template
     - uses: actions/upload-artifact@v4
       if: inputs.publish == 'true'
       with:
