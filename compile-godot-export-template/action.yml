@@ -105,7 +105,7 @@ runs:
 
     # --------------------- Vendor the Godot source code --------------------- #
 
-    - uses: coffeebeats/godot-infra/.github/actions/install-godot-source@v2
+    - uses: coffeebeats/godot-infra/.github/actions/install-godot-source@feat/compile/editor
       with:
         dst-path: ${{ github.workspace }}/godot
         godot-src-rev: ${{ inputs.godot-src-rev }}

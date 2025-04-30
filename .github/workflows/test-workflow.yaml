@@ -23,5 +23,13 @@ jobs:
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
     steps:
-      - shell: bash
-        run: exit 0
+      - uses: coffeebeats/godot-infra/compile-godot-export-template@feat/compile/editor
+        id: compile
+        with:
+          compile-editor: true
+          publish: true
+
+          godot-src-rev: 4.4-stable
+
+          platform: windows
+          arch: x86_64
