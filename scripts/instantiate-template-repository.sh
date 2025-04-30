@@ -167,8 +167,6 @@ echo "  user (target): $GH_USER"
 echo "  repository (target): $DST_REPOSITORY"
 echo "  description (target): $REPO_DESCRIPTION"
 
-exit 0
-
 # --------------------------- Validate: Repository --------------------------- #
 
 # Check if the repository exists
