@@ -73,7 +73,7 @@ outputs:
     value: ${{ steps.artifact.outputs.template }}
   path-artifact-dir:
     description: "The path to the directory containing compiled export template artifacts."
-    value: ${{ steps.artifact.outputs.path }}
+    value: ${{ steps.artifact.outputs.dir }}
   extra-bundled-files:
     description: "A space-delimited list of file patterns, relative to 'path-artifact-dir', to include alongside the final game artifact."
     value: ${{ steps.bundle.outputs.paths }}
@@ -220,13 +220,12 @@ runs:
     # ----------------------------- Compile Godot ---------------------------- #
 
     - name: Determine compile target
-      if: steps.godot-cache.outputs.cache-hit != 'true'
       id: target
       shell: bash
       run: |
         if [[ "${{ inputs.compile-editor }}" == "true" ]]; then
           TARGET="editor"
-        elif [[ "${{ inputs.profile }}" == release ]]; then
+        elif [[ "${{ inputs.profile }}" == "release" ]]; then
           TARGET="template_release"
         else
           TARGET="template_debug"
@@ -353,39 +352,36 @@ runs:
       shell: bash
       run: |
         case "${{ inputs.platform }}" in
-          macos) TEMPLATE_NAME=macos.zip ;;
+          macos)
+            TARGET_SUFFIX=${{ steps.target.outputs.value == 'editor' && 'editor' || 'template' }}
+            FILE_EXTENSION=${{ steps.target.outputs.value == 'editor' && 'app' || 'zip' }}
+            TEMPLATE_NAME="godot_macos_${TARGET_SUFFIX}.${FILE_EXTENSION}"
+            ;;
           web)
             PROFILE=$([[ "${{ inputs.profile }}" == release ]] && echo release || echo debug)
             DLINK=$([[ "${{ inputs.enable-gdextension }}" == true ]] && echo _dlink || :)
-
             TEMPLATE_NAME="web${DLINK}_${PROFILE}.zip"
             ;;
           windows)
-            if [[ "${{ inputs.compile-editor }}" == "true" ]]; then
-              TARGET="editor"
-            elif [[ "${{ inputs.profile }}" == release ]]; then
-              TARGET="template_release"
-            else
-              TARGET="template_debug"
-            fi
-
-            DOUBLE=$([[ "${{ inputs.use-double-precision }}" == true ]] && echo ".double" || :)
-
-            TEMPLATE_NAME="godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}.llvm.exe"
-
+            DOUBLE=${{ inputs.use-double-precision == 'true' && '.double' || '' }}
+            TEMPLATE_NAME="godot.${{ inputs.platform }}.${{ steps.target.outputs.value }}${DOUBLE}.${{ inputs.arch }}.llvm.exe"
             ;;
           *)
             echo "Unknown/unsupported platform: ${{ inputs.platform }}"
             exit 1
         esac
 
-        if [[ ! -f "$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" ]]; then
-          echo "Invalid export template filename; no file found."
+        TARGET="${{ steps.target.outputs.value }}"
+        TEMPLATE_PATH="$GITHUB_WORKSPACE/build/$TEMPLATE_NAME"
+        if [[ 
+          ( "$TARGET" == "editor" && ! -d "$TEMPLATE_PATH" ) || \
+          ( "$TARGET" != "editor" && ! -f "$TEMPLATE_PATH" ) ]]; then
+          echo "Invalid export template filename; no file found: '$TEMPLATE_PATH'"
           exit 1
         fi
 
         echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $TEMPLATE_NAME || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
-        echo "path=$GITHUB_WORKSPACE/build" >> $GITHUB_OUTPUT
+        echo "dir=$GITHUB_WORKSPACE/build" >> $GITHUB_OUTPUT
         echo "template=$TEMPLATE_NAME" >> $GITHUB_OUTPUT
 
     - name: Set 'extra-bundled-files' output
