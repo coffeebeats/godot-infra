@@ -139,24 +139,32 @@ fi
 
 need_cmd $GH
 
+info "Defining user variables"
+
 if ! $GH auth status >/dev/null 2>&1; then
     fatal "Failed to identify current GitHub user; please authenticate via 'gh'"
 fi
 
+info "Checking user"
 GH_USER="$($GH api user -q ".login")"
 if [ -z "$GH_USER" ]; then
     fatal "Failed to identify current GitHub user"
 fi
+info "Got user: ${GH_USER}"
 
+info "Checking user.name"
 GIT_USER_NAME=$(git config user.name)
 if [ -z "$GIT_USER_NAME" ]; then
     fatal "Failed to identify current Git user's name"
 fi
+info "Got user.name: ${GIT_USER_NAME}"
 
+info "Checking user.email"
 GIT_USER_EMAIL=$(git config user.email)
 if [ -z "$GIT_USER_EMAIL" ]; then
     fatal "Failed to identify current Git user's email address"
 fi
+info "Got user.email: ${GIT_USER_EMAIL}"
 
 # ---------------------------- Define: Repository ---------------------------- #
 
