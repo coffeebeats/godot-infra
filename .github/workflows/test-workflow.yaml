@@ -15,7 +15,7 @@ on:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
         required: false
-        default: 120
+        default: 60
 
 jobs:
   todo:
@@ -23,13 +23,5 @@ jobs:
     timeout-minutes: ${{ fromJson(inputs.timeout) }}
 
     steps:
-      - uses: coffeebeats/godot-infra/compile-godot-export-template@v2
-        id: compile
-        with:
-          compile-editor: true
-          publish: true
-
-          godot-src-rev: 4.4-stable
-
-          platform: macos
-          arch: arm64
+      - shell: bash
+        run: exit 0
