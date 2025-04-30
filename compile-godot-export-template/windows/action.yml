@@ -53,3 +53,4 @@ runs:
       $([[ "${{ inputs.profile }}" == "release_debug" && "${{ inputs.compile-editor }}" != "true" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
       $([[ "${{ inputs.profile }}" == "release" && "${{ inputs.compile-editor }}" != "true" ]] && echo target=template_release production=yes optimize=speed)
       $([[ "${{ inputs.profile }}" != "release" ]] && echo pix_path=/opt/pix)
+      $([[ "${{ inputs.compile-editor }}" == "true" ]] && echo agility_sdk_path=)

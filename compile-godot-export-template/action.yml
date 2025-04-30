@@ -377,7 +377,11 @@ runs:
           macos) ;;
           web) ;;
           windows)
-            echo paths="D3D12Core.dll d3d12SDKLayers.dll" >> "$GITHUB_OUTPUT"
+            # NOTE: The editor is not compiled with the Agility SDK.
+            if [[ "${{ inputs.compile-editor }}" != "true" ]]; then
+              echo paths="D3D12Core.dll d3d12SDKLayers.dll" >> "$GITHUB_OUTPUT"
+            fi
+
             ;;
           *)
             echo "Unknown/unsupported platform: ${{ inputs.platform }}"
