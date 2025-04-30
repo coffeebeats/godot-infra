@@ -141,7 +141,7 @@ need_cmd $GH
 
 info "Defining user variables"
 
-if ! $GH auth status >/dev/null 2>&1; then
+if ! $GH auth status; then
     fatal "Failed to identify current GitHub user; please authenticate via 'gh'"
 fi
 
