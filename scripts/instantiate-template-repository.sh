@@ -105,7 +105,7 @@ parse_params() {
             ;;
         -t | --template)
             shift
-            TEMPLATE_NAME="$1"
+            TEMPLATE_NAME="${1#coffeebeats/}"
             ;;
 
         -?*) fatal "Unknown option: $1" ;;
@@ -156,7 +156,7 @@ fi
 
 # ---------------------------- Define: Repository ---------------------------- #
 
-SRC_REPOSITORY="coffeebeats/${TEMPLATE_NAME#coffeebeats/}"
+SRC_REPOSITORY="coffeebeats/${TEMPLATE_NAME}"
 DST_REPOSITORY="$GH_USER/$REPO_NAME"
 
 info "Executing command with the following parameters:"
