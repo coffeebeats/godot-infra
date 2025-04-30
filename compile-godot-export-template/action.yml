@@ -16,11 +16,15 @@ inputs:
     required: false
 
   arch:
-    description: "The target architecture of the export template."
+    description: "The target CPU architecture to compile for."
     required: true
   platform:
-    description: "The target platform of the export template."
+    description: "The target platform to compile for."
     required: true
+  compile-editor: # TODO: Refactor and rename this action to fully support any target.
+    description: "Whether to compile an editor build instead of an export template."
+    required: false
+    default: false
 
   encryption-key:
     description: "A Godot script encryption key to embed within the export template."
@@ -64,7 +68,7 @@ inputs:
     required: false
 
 outputs:
-  export-template-filename:
+  export-template-filename: # TODO: Change this name to reflect output could be an editor build.
     description: "The filename of the export template, relative to 'path-artifact-dir'."
     value: ${{ steps.artifact.outputs.template }}
   path-artifact-dir:
@@ -78,10 +82,30 @@ runs:
   using: composite
 
   steps:
+    # ---------------------------- Validate inputs --------------------------- #
+
+    - name: Verify 'editor' build inputs
+      if: inputs.compile-editor == 'true'
+      shell: bash
+      run: |-
+        if [[ "${{ inputs.platform }}" == "web" ]]; then
+          echo "Invalid input; cannot compile an editor for platform: 'web'"
+          exit 1
+        fi
+
+        if [[ ! -z "${{ inputs.encryption-key }}" ]]; then
+          echo "Invalid input; cannot encrypt an editor build"
+          exit 1
+        fi
+
+        if [[ ! -z "${{ inputs.custompy-path }}" ]]; then
+          echo "Invalid input; cannot specify a custom.py file for an editor build"
+          exit 1
+        fi
+
     # --------------------- Vendor the Godot source code --------------------- #
 
     - uses: coffeebeats/godot-infra/.github/actions/install-godot-source@v2
-      id: godot
       with:
         dst-path: ${{ github.workspace }}/godot
         godot-src-rev: ${{ inputs.godot-src-rev }}
@@ -90,7 +114,6 @@ runs:
 
     - name: Parse Godot source code version
       uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v2"
-      id: godot-version
       with:
         versionpy-path: ${{ github.workspace }}/godot/version.py
         minimum-major-version: 4
@@ -98,21 +121,24 @@ runs:
         minimum-patch-version: 0
 
     - name: Remove editor-related source code
+      if: inputs.compile-editor != 'true'
       shell: bash
       run: "rm -rf ${{ github.workspace }}/godot/editor"
 
-    # -------------- Restore the export template + SCons caches -------------- #
+    # --------------- Restore the build artifact + SCons caches -------------- #
 
     # NOTE: This is required so as to avoid leaking the encryption key.
-    - name: Determine Godot export template cache ID
-      id: export-template-cache-id
+    - name: Determine Godot build artifact cache ID
+      id: godot-cache-key
       shell: bash
       run: |
-        INPUT="${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(format('{0}/godot', github.workspace)) }}"
+        INPUT="${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(format('{0}/godot', github.workspace)) }}-${{ inputs.compile-editor }}"
         INPUT="$INPUT-${{ inputs.profile }}-${{ inputs.encryption-key }}-${{ inputs.use-double-precision }}"
         INPUT="$INPUT-${{ hashFiles(inputs.custompy-path) }}-${{ hashFiles(inputs.icon-path) }}"
 
-        echo "value=$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+        VALUE="compile-godot-export-template-godot-${{ runner.os }}-$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)""
+
+        echo "value=$VALUE" >> $GITHUB_OUTPUT
 
     - name: Validate build directories don't exist
       shell: bash
@@ -127,49 +153,52 @@ runs:
           exit 1
         fi
 
-    - name: Cache the Godot export template
-      id: export-template
+    - name: Cache the Godot build artifact
+      id: godot-cache
       uses: actions/cache@v4
       with:
         # NOTE: This path must match the one expected by the container action.
         # IF/ELSE: Update the 'save' step below if this changes.
         path: ${{ github.workspace }}/build
-        key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
+        key: ${{ steps.godot-cache-key.outputs.value }}
 
     - name: Inspect restored artifacts
-      if: steps.export-template.outputs.cache-hit == 'true'
+      if: steps.godot-cache.outputs.cache-hit == 'true'
       shell: bash
       run: tree -lha --dirsfirst $GITHUB_WORKSPACE/build
 
     - name: Cache the 'SCons' build directory
-      if: steps.export-template.outputs.cache-hit != 'true'
+      if: steps.godot-cache.outputs.cache-hit != 'true'
       uses: actions/cache@v4
       with:
         # NOTE: This path must match the one expected by the container action.
         path: ${{ github.workspace }}/.scons
-        key: scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.godot-src-path) }}-${{ hashFiles(inputs.custompy-path) }}
+        key: compile-godot-export-template-scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.compile-editor }}-${{ hashFiles(inputs.custompy-path) }}
         restore-keys: |
-          scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.godot-src-path) }}-
+          compile-godot-export-template-scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.compile-editor }}-
+          compile-godot-export-template-scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.godot-src-path) }}-
 
     # ------------------------ Set up build workspace ------------------------ #
 
     - name: Clear output directory
-      if: steps.export-template.outputs.cache-hit != 'true'
+      if: steps.godot-cache.outputs.cache-hit != 'true'
       shell: bash
       run: rm -rf $GITHUB_WORKSPACE/godot/bin
 
     - name: Copy 'custom.py' into Godot source code directory
       if: |
+        inputs.compile-editor != 'true' &&
         inputs.custompy-path != '' &&
-        steps.export-template.outputs.cache-hit != 'true'
+        steps.godot-cache.outputs.cache-hit != 'true'
       shell: bash
       run: cp ${{ inputs.custompy-path }} ${{ github.workspace }}/godot/custom.py
 
     - name: Copy icon into Godot source code directory
       if: |
+        inputs.compile-editor != 'true' &&
         inputs.icon-path != '' &&
         inputs.platform == 'windows' &&
-        steps.export-template.outputs.cache-hit != 'true'
+        steps.godot-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
         ICON_PATH="${{ inputs.icon-path }}"
@@ -188,7 +217,7 @@ runs:
 
         cp $ICON_PATH ${{ github.workspace }}/godot/platform/windows/godot.ico
 
-    # ---------------------- Compile the export template --------------------- #
+    # ----------------------------- Compile Godot ---------------------------- #
 
     # MacOS
 
@@ -200,11 +229,12 @@ runs:
       if: |
         inputs.platform == 'macos' &&
         (inputs.arch == 'x86_64' || inputs.arch == 'universal') &&
-        steps.export-template.outputs.cache-hit != 'true'
+        steps.godot-cache.outputs.cache-hit != 'true'
       uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v2"
       with:
         app-bundle: ${{ inputs.arch == 'x86_64' }}
         arch: x86_64
+        compile-editor: ${{ inputs.compile-editor }}
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         profile: ${{ inputs.profile }}
@@ -214,11 +244,12 @@ runs:
       if: |
         inputs.platform == 'macos'  &&
         (inputs.arch == 'arm64' || inputs.arch == 'universal') &&
-        steps.export-template.outputs.cache-hit != 'true'
+        steps.godot-cache.outputs.cache-hit != 'true'
       uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v2"
       with:
         app-bundle: true
         arch: arm64
+        compile-editor: ${{ inputs.compile-editor }}
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         lipo: ${{ inputs.arch == 'universal' }}
@@ -229,8 +260,9 @@ runs:
 
     - name: Compile the export template (Web - wasm32)
       if: |
+        inputs.compile-editor != 'true' &&
         inputs.platform == 'web' &&
-        steps.export-template.outputs.cache-hit != 'true'
+        steps.godot-cache.outputs.cache-hit != 'true'
       uses: "coffeebeats/godot-infra/compile-godot-export-template/web@v2"
       with:
         arch: ${{ inputs.arch }}
@@ -246,10 +278,11 @@ runs:
     - name: Compile the export template (Windows - x86_64)
       if: |
         inputs.platform == 'windows' &&
-        steps.export-template.outputs.cache-hit != 'true'
+        steps.godot-cache.outputs.cache-hit != 'true'
       uses: "coffeebeats/godot-infra/compile-godot-export-template/windows@v2"
       with:
         arch: ${{ inputs.arch }}
+        compile-editor: ${{ inputs.compile-editor }}
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         profile: ${{ inputs.profile }}
@@ -258,7 +291,7 @@ runs:
     # ---------------------- Inspect compiled artifacts ---------------------- #
 
     - name: Check for compilation artifacts
-      if: steps.export-template.outputs.cache-hit != 'true'
+      if: steps.godot-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |-
         if [[ ! -d "$GITHUB_WORKSPACE/godot/bin" || -z "$(ls -A "$GITHUB_WORKSPACE/godot/bin")" ]]; then
@@ -267,7 +300,7 @@ runs:
         fi
 
     - name: Move compiled artifacts
-      if: steps.export-template.outputs.cache-hit != 'true'
+      if: steps.godot-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |-
         if [[ -d "$GITHUB_WORKSPACE/build" ]]; then
@@ -298,7 +331,14 @@ runs:
             TEMPLATE_NAME="web${DLINK}_${PROFILE}.zip"
             ;;
           windows)
-            TARGET=$([[ "${{ inputs.profile }}" == release ]] && echo template_release || echo template_debug)
+            if [[ "${{ inputs.compile-editor }}" == "true" ]]; then
+              TARGET="editor"
+            elif [[ "${{ inputs.profile }}" == release ]]; then
+              TARGET="template_release"
+            else
+              TARGET="template_debug"
+            fi
+
             DOUBLE=$([[ "${{ inputs.use-double-precision }}" == true ]] && echo ".double" || :)
 
             TEMPLATE_NAME="godot.${{ inputs.platform }}.${TARGET}${DOUBLE}.${{ inputs.arch }}.llvm.exe"
@@ -337,11 +377,11 @@ runs:
 
     # Save the export template cache (ahead of post- step)
     - uses: actions/cache/save@v3
-      if: steps.export-template.outputs.cache-hit != 'true'
+      if: steps.godot-cache.outputs.cache-hit != 'true'
       with:
         # IF/ELSE: Update the 'cache' step above if this changes.
         path: ${{ github.workspace }}/build
-        key: export-template-${{ runner.os }}-${{ steps.export-template-cache-id.outputs.value }}
+        key: ${{ steps.godot-cache-key.outputs.value }}
 
     # Compiled export template
     - uses: actions/upload-artifact@v4
