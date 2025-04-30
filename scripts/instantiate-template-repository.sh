@@ -107,6 +107,7 @@ parse_params() {
         -t | --template)
             shift
             TEMPLATE_NAME="${1#coffeebeats/}"
+            echo "  template name: $TEMPLATE_NAME"
             ;;
 
         -?*) fatal "Unknown option: $1" ;;
@@ -124,6 +125,8 @@ parse_params() {
 }
 
 parse_params "$@"
+
+info "Parsed params"
 
 # -------------------------------- Define: gh -------------------------------- #
 
