@@ -6,6 +6,10 @@ inputs:
     description: "The target architecture to build the export template for."
     required: false
     default: x86_64
+  compile-editor:
+    description: "Whether to compile an editor build instead of an export template."
+    required: false
+    default: false
   encryption-key:
     description: "A Godot script encryption key to embed within the export template."
     required: false
@@ -44,7 +48,9 @@ runs:
       arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
-      $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug debug_symbols=yes optimize=debug)
-      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
-      $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes optimize=speed)
+      $([[ "${{ inputs.compile-editor }}" == "true" ]] && echo target=editor production=yes optimize=speed)
+      $([[ "${{ inputs.profile }}" == "debug" && "${{ inputs.compile-editor }}" != "true" ]] && echo target=template_debug debug_symbols=yes optimize=debug)
+      $([[ "${{ inputs.profile }}" == "release_debug" && "${{ inputs.compile-editor }}" != "true" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
+      $([[ "${{ inputs.profile }}" == "release" && "${{ inputs.compile-editor }}" != "true" ]] && echo target=template_release production=yes optimize=speed)
       $([[ "${{ inputs.profile }}" != "release" ]] && echo pix_path=/opt/pix)
+      $([[ "${{ inputs.compile-editor }}" == "true" ]] && echo agility_sdk_path=)
