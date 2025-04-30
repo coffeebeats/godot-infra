@@ -219,6 +219,21 @@ runs:
 
     # ----------------------------- Compile Godot ---------------------------- #
 
+    - name: Determine compile target
+      if: steps.godot-cache.outputs.cache-hit != 'true'
+      id: target
+      shell: bash
+      run: |
+        if [[ "${{ inputs.compile-editor }}" == "true" ]]; then
+          TARGET="editor"
+        elif [[ "${{ inputs.profile }}" == release ]]; then
+          TARGET="template_release"
+        else
+          TARGET="template_debug"
+        fi
+
+        echo "value=$TARGET" >> "$GITHUB_OUTPUT"
+
     # MacOS
 
     # TODO: 'universal' builds cannot take advantage of 'x86_64'/'arm64'-
@@ -238,6 +253,7 @@ runs:
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         profile: ${{ inputs.profile }}
+        target: ${{ steps.target.outputs.value }}
         use-double-precision: ${{ inputs.use-double-precision }}
 
     - name: Compile the export template (MacOS - arm64+universal)
@@ -254,6 +270,7 @@ runs:
         godot-src-path: godot
         lipo: ${{ inputs.arch == 'universal' }}
         profile: ${{ inputs.profile }}
+        target: ${{ steps.target.outputs.value }}
         use-double-precision: ${{ inputs.use-double-precision }}
 
     # Web
@@ -271,6 +288,7 @@ runs:
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         profile: ${{ inputs.profile }}
+        target: ${{ steps.target.outputs.value }}
         use-double-precision: ${{ inputs.use-double-precision }}
 
     # Windows
@@ -286,6 +304,7 @@ runs:
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         profile: ${{ inputs.profile }}
+        target: ${{ steps.target.outputs.value }}
         use-double-precision: ${{ inputs.use-double-precision }}
 
     # ---------------------- Inspect compiled artifacts ---------------------- #

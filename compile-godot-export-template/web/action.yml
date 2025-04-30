@@ -5,6 +5,9 @@ inputs:
   arch:
     description: "The target architecture to build the export template for."
     required: true
+  target:
+    description: "Which Godot build target to compile (e.g. 'template_debug')."
+    required: true
   encryption-key:
     description: "A Godot script encryption key to embed within the export template."
     required: false
@@ -52,15 +55,16 @@ runs:
       -j$(nproc)
       -C ${{ inputs.godot-src-path }}
       cache_path=/github/workspace/${{ inputs.scons-cache-path }}
-      arch=${{ inputs.arch }}
       verbose=yes warnings=extra werror=yes
+      arch=${{ inputs.arch }}
+      target=${{ inputs.target }}
       $([[ "${{ inputs.use-double-precision }}" == 'true' ]] && echo "precision=double")
       $([[ "${{ inputs.enable-javascript-eval }}" != 'true' ]] && echo "javascript_eval=no")
       $([[ "${{ inputs.enable-gdextension }}" == 'true' ]] && echo "dlink_enabled=yes")
       $([[ "${{ inputs.enable-threads }}" == 'true' ]] && echo "threads=yes" || echo "threads=no")
-      $([[ "${{ inputs.profile }}" == "debug" ]] && echo target=template_debug debug_symbols=yes optimize=debug)
-      $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo target=template_debug production=yes debug_symbols=yes optimize=speed_trace)
-      $([[ "${{ inputs.profile }}" == "release" ]] && echo target=template_release production=yes optimize=speed)
+      $([[ "${{ inputs.profile }}" == "debug" ]] && echo debug_symbols=yes optimize=debug)
+      $([[ "${{ inputs.profile }}" == "release_debug" ]] && production=yes debug_symbols=yes optimize=speed_trace)
+      $([[ "${{ inputs.profile }}" == "release" ]] && echo production=yes optimize=speed)
 
       mv
       ${{ inputs.godot-src-path }}/bin/godot.web.*.zip
