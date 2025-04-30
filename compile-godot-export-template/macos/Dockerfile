@@ -64,6 +64,33 @@ RUN apt-get install -y --no-install-recommends \
     python3.12 -m venv "/venv"
 
 # ---------------------------------------------------------------------------- #
+#                       Image: Setup - rcodesign (MacOS)                       #
+# ---------------------------------------------------------------------------- #
+
+FROM img-setup-base AS img-setup-rcodesign
+
+# ------------------------ Install: Rust dependencies ------------------------ #
+
+RUN \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    curl
+
+# ------------------------------- Install: Rust ------------------------------ #
+
+ARG RUST_VERSION=""
+ENV \
+    CARGO_HOME="/opt/cargo" \
+    RUSTUP_HOME="/opt/rustup" \
+    PATH="/opt/cargo/bin:$PATH"
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- \
+    -y \
+    --profile minimal \
+    $([ ! -z "${RUST_VERSION}" ] && echo "--default-toolchain=${RUST_VERSION}")
+
+# ---------------------------------------------------------------------------- #
 #                      Image: Setup - OSXCross SDK (MacOS)                     #
 # ---------------------------------------------------------------------------- #
 
@@ -229,6 +256,13 @@ COPY --from=img-setup-angle "/angle" "/opt/angle"
 
 RUN python3.12 -m pip install \
     SCons==4.*
+
+# ------------------------ Install: rcodesign (MacOS) ------------------------ #
+
+COPY \
+    --from=img-setup-rcodesign \
+    "/opt/cargo/bin/rcodesign" \
+    "/bin/rcodesign"
 
 # ------------------------------ Set: SCONSFLAGS ----------------------------- #
 
