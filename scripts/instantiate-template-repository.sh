@@ -1,5 +1,5 @@
 #!/bin/sh
-set -euxo pipefail
+set -eux
 
 # This script instantiates one of @coffeebeats' template repositories. The list
 # of supported repositories includes:
