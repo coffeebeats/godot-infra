@@ -156,14 +156,18 @@ fi
 
 # ---------------------------- Define: Repository ---------------------------- #
 
-SRC_REPOSITORY="coffeebeats/${TEMPLATE_NAME}"
-DST_REPOSITORY="$GH_USER/$REPO_NAME"
-
 info "Executing command with the following parameters:"
+
+SRC_REPOSITORY="coffeebeats/${TEMPLATE_NAME}"
 echo "  template (source): $SRC_REPOSITORY"
 echo "  branch (source): $BRANCH_NAME"
+
+DST_REPOSITORY="$REPO_NAME"
+echo "  user (target): $GH_USER"
 echo "  repository (target): $DST_REPOSITORY"
 echo "  description (target): $REPO_DESCRIPTION"
+
+exit 0
 
 # --------------------------- Validate: Repository --------------------------- #
 
@@ -198,14 +202,14 @@ $GH repo edit "$DST_REPOSITORY" \
 
 # ------------------ Run: Update GitHub Actions permissions ------------------ #
 
-cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/actions/permissions"
+cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$GH_USER/$DST_REPOSITORY/actions/permissions"
 {
 "enabled": true,
 "allowed_actions": "all"
 }
 EOM
 
-cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/actions/permissions/workflow"
+cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$GH_USER/$DST_REPOSITORY/actions/permissions/workflow"
 {
 "default_workflow_permissions":"write",
 "can_approve_pull_request_reviews":true
@@ -285,7 +289,7 @@ git push origin tag v0.1.0
 
 # ----------------------- Run: Create repository rules ----------------------- #
 
-cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/rulesets"
+cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$GH_USER/$DST_REPOSITORY/rulesets"
 {
     "name": "main",
     "enforcement": "active",
