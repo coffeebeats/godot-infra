@@ -98,7 +98,7 @@ parse_params() {
         -d | --description)
             shift
             REPO_DESCRIPTION="$1"
-            echo "REPO_DESCRIPTION=$REPO_DESCRIPTION"
+            echo "  description (target): $REPO_DESCRIPTION"
             ;;
         -n | --name)
             shift
@@ -160,13 +160,13 @@ fi
 info "Executing command with the following parameters:"
 
 SRC_REPOSITORY="coffeebeats/${TEMPLATE_NAME}"
-echo "  template (source): $SRC_REPOSITORY"
-echo "  branch (source): $BRANCH_NAME"
+echo "  template (source): ${SRC_REPOSITORY}"
+echo "  branch (source): ${BRANCH_NAME}"
 
-DST_REPOSITORY="$REPO_NAME"
-echo "  user (target): $GH_USER"
-echo "  repository (target): $DST_REPOSITORY"
-echo "  description (target): $REPO_DESCRIPTION"
+DST_REPOSITORY="${REPO_NAME}"
+echo "  user (target): ${GH_USER}"
+echo "  repository (target): ${DST_REPOSITORY}"
+echo "  description (target): ${REPO_DESCRIPTION}"
 
 # --------------------------- Validate: Repository --------------------------- #
 
@@ -183,8 +183,8 @@ info "Creating repository from template."
 
 $GH repo create "$DST_REPOSITORY" \
     --template "$SRC_REPOSITORY" \
-    $([ "$BRANCH_NAME" != "main" ] && echo "--include-all-branches" || :) \
-    --description "$REPO_DESCRIPTION" \
+    $([ "${BRANCH_NAME}" != "main" ] && echo "--include-all-branches" || :) \
+    --description "${REPO_DESCRIPTION}" \
     --disable-wiki \
     --private
 
@@ -201,14 +201,14 @@ $GH repo edit "$DST_REPOSITORY" \
 
 # ------------------ Run: Update GitHub Actions permissions ------------------ #
 
-cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$GH_USER/$DST_REPOSITORY/actions/permissions"
+cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/${GH_USER}/${DST_REPOSITORY}/actions/permissions"
 {
 "enabled": true,
 "allowed_actions": "all"
 }
 EOM
 
-cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$GH_USER/$DST_REPOSITORY/actions/permissions/workflow"
+cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/${GH_USER}/${DST_REPOSITORY}/actions/permissions/workflow"
 {
 "default_workflow_permissions":"write",
 "can_approve_pull_request_reviews":true
