@@ -113,7 +113,7 @@ runs:
         godot-patches: ${{ inputs.godot-patches }}
 
     - name: Parse Godot source code version
-      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v2"
+      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@feat/compile/editor"
       with:
         versionpy-path: ${{ github.workspace }}/godot/version.py
         minimum-major-version: 4
@@ -230,7 +230,7 @@ runs:
         inputs.platform == 'macos' &&
         (inputs.arch == 'x86_64' || inputs.arch == 'universal') &&
         steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v2"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@feat/compile/editor"
       with:
         app-bundle: ${{ inputs.arch == 'x86_64' }}
         arch: x86_64
@@ -245,7 +245,7 @@ runs:
         inputs.platform == 'macos'  &&
         (inputs.arch == 'arm64' || inputs.arch == 'universal') &&
         steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v2"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@feat/compile/editor"
       with:
         app-bundle: true
         arch: arm64
@@ -263,7 +263,7 @@ runs:
         inputs.compile-editor != 'true' &&
         inputs.platform == 'web' &&
         steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/web@v2"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/web@feat/compile/editor"
       with:
         arch: ${{ inputs.arch }}
         enable-gdextension: ${{ inputs.enable-gdextension }}
@@ -279,7 +279,7 @@ runs:
       if: |
         inputs.platform == 'windows' &&
         steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/windows@v2"
+      uses: "coffeebeats/godot-infra/compile-godot-export-template/windows@feat/compile/editor"
       with:
         arch: ${{ inputs.arch }}
         compile-editor: ${{ inputs.compile-editor }}
