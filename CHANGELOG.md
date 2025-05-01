@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.2 (2025-05-01)
+
+## What's Changed
+* fix(compile): standardize default artifact name by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/404
+* fix(compile): determine correct export template filename by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/406
+* fix(compile): correctly delete extraneous files when building for `macos` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/407
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.1...v2.2.2
+
 ## 2.2.1 (2025-05-01)
 
 ## What's Changed
