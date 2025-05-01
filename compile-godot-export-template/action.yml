@@ -377,7 +377,12 @@ runs:
           exit 1
         fi
 
-        echo "name=$([[ -z "${{ inputs.artifact-name }}" ]] && echo $TEMPLATE_NAME || echo ${{ inputs.artifact-name }})" >> $GITHUB_OUTPUT
+        ARTIFACT_NAME="${{ inputs.artifact-name }}"
+        if [[ -z "$ARTIFACT_NAME" ]]; then
+          ARTIFACT_NAME="godot-${TARGET%_*}-${{ inputs.arch }}-${{ inputs.platform }}-${{ inputs.profile }}"
+        fi
+
+        echo "name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
         echo "dir=$GITHUB_WORKSPACE/build" >> $GITHUB_OUTPUT
         echo "template=$TEMPLATE_NAME" >> $GITHUB_OUTPUT
 
