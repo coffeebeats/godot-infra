@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.4 (2025-05-01)
+
+## What's Changed
+* fix(compile): handle directory by appending `/` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/412
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.3...v2.2.4
+
 ## 2.2.3 (2025-05-01)
 
 ## What's Changed
