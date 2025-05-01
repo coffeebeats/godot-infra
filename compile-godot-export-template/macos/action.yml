@@ -77,4 +77,7 @@ runs:
       rcodesign sign
       --entitlements-xml-path ${{ inputs.godot-src-path }}/misc/dist/macos/editor.entitlements
       ${{ inputs.godot-src-path }}/bin/godot_macos_editor.app;
+      rm ${{ inputs.godot-src-path }}/bin/*.!(app);
+      elif [[ "${{ inputs.target }}" == "template"* && "${{ inputs.app-bundle }}" == "true" ]]; then
+      rm ${{ inputs.godot-src-path }}/bin/*.!(zip);
       fi
