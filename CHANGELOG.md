@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.1 (2025-05-01)
+
+## What's Changed
+* fix(compile): remove unused input by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/401
+* fix(compile): remove extra files after compiling for `macos` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/403
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.0...v2.2.1
+
 ## 2.2.0 (2025-05-01)
 
 ## What's Changed
