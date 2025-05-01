@@ -292,56 +292,73 @@ cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X
     "target": "branch",
     "bypass_actors": [
         {
-        "actor_id": 2,
-        "actor_type": "RepositoryRole"
+            "actor_id": 2,
+            "actor_type": "RepositoryRole"
         },
         {
-        "actor_id": 4,
-        "actor_type": "RepositoryRole"
+            "actor_id": 4,
+            "actor_type": "RepositoryRole"
         }
     ],
     "conditions": {
         "ref_name": {
-        "exclude": [],
-        "include": ["~DEFAULT_BRANCH"]
+            "exclude": [],
+            "include": ["~DEFAULT_BRANCH"]
         }
     },
     "rules": [
         {
-        "type": "creation"
+            "type": "creation"
         },
         {
-        "type": "deletion"
+            "type": "deletion"
         },
         {
-        "type": "required_linear_history"
+            "type": "required_linear_history"
         },
         {
-        "type": "non_fast_forward"
+            "type": "pull_request",
+            "parameters": {
+                "allowed_merge_methods": ["squash"],
+                "dismiss_stale_reviews_on_push": true,
+                "require_code_owner_review": true,
+                "require_last_push_approval": false,
+                "required_approving_review_count": 0,
+                "required_review_thread_resolution": true
+            }
         },
         {
-        "type": "pull_request",
-        "parameters": {
-            "allowed_merge_methods": ["squash"],
-            "dismiss_stale_reviews_on_push": true,
-            "require_code_owner_review": true,
-            "require_last_push_approval": false,
-            "required_approving_review_count": 0,
-            "required_review_thread_resolution": true
+            "type": "required_status_checks",
+            "parameters": {
+                "do_not_enforce_on_create": true,
+                "strict_required_status_checks_policy": true,
+                "required_status_checks": [
+                    {
+                        "context": "branch_protection",
+                        "integration_id": 15368
+                    }
+                ]
+            }
         }
-        },
-        {
-        "type": "required_status_checks",
-        "parameters": {
-            "do_not_enforce_on_create": true,
-            "strict_required_status_checks_policy": true,
-            "required_status_checks": [
-            {
-                "context": "branch_protection",
-                "integration_id": 15368
-            }  
-            ]
+    ]
+}
+EOM
+
+cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/rulesets"
+{
+    "name": "push",
+    "enforcement": "active",
+    "target": "branch",
+    "bypass_actors": [],
+    "conditions": {
+        "ref_name": {
+            "exclude": [],
+            "include": ["~DEFAULT_BRANCH"]
         }
+    },
+    "rules": [
+        {
+            "type": "non_fast_forward"
         }
     ]
 }
