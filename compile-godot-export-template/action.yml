@@ -422,5 +422,5 @@ runs:
       if: inputs.publish == 'true'
       with:
         name: ${{ steps.artifact.outputs.name }}
-        path: ${{ github.workspace }}/build
+        path: ${{ github.workspace }}/build/*
         if-no-files-found: error
