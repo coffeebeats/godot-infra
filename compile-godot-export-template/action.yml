@@ -84,6 +84,17 @@ runs:
   steps:
     # ---------------------------- Validate inputs --------------------------- #
 
+    - name: Verify common build inputs
+      shell: bash
+      run: |-
+        case "${{ inputs.profile }}" in
+          debug|release_rebug|release) ;;
+          *)
+            echo "Unrecognize optimization profile: ${{ inputs.profile }}"
+            exit 1
+            ;;
+        esac
+
     - name: Verify 'editor' build inputs
       if: inputs.compile-editor == 'true'
       shell: bash
