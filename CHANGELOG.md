@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.2.0 (2025-05-01)
+
+## What's Changed
+* fix(compile): derive correct template names by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/392
+* feat(compile): install `rcodesign` into `macos` compile image by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/394
+* fix(compile): upgrade base image to `ubuntu:25.04` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/395
+* fix(compile): revert to `ubuntu:24.04` base; ensure `rcodesign` is installed by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/396
+* fix(compile): codesign the bundled editor on `macos` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/400
+* chore(deps): bump docker/build-push-action from 6.15.0 to 6.16.0 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/397
+* chore(deps): bump tj-actions/changed-files from 46.0.3 to 46.0.5 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/398
+* chore(deps): bump actions/download-artifact from 4.2.1 to 4.3.0 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/399
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.1.0...v2.2.0
+
 ## 2.1.0 (2025-04-30)
 
 ## What's Changed
