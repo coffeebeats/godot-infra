@@ -60,34 +60,34 @@ jobs:
       # compile-godot-export-template
 
       - id: compile-godot-export-template-macos
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c
         with:
           files: compile-godot-export-template/macos/
 
       - id: compile-godot-export-template-windows
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c
         with:
           files: compile-godot-export-template/windows/
 
       - id: compile-godot-export-template-web
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c
         with:
           files: compile-godot-export-template/web/
 
       # export-godot-project-preset
 
       - id: export-godot-project-preset-macos
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c
         with:
           files: export-godot-project-preset/macos/
 
       - id: export-godot-project-preset-windows
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c
         with:
           files: export-godot-project-preset/windows/
 
       - id: export-godot-project-preset-web
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c
         with:
           files: export-godot-project-preset/web/
 
