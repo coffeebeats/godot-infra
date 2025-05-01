@@ -248,7 +248,6 @@ runs:
       with:
         app-bundle: ${{ inputs.arch == 'x86_64' }}
         arch: x86_64
-        compile-editor: ${{ inputs.compile-editor }}
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         profile: ${{ inputs.profile }}
@@ -264,7 +263,6 @@ runs:
       with:
         app-bundle: true
         arch: arm64
-        compile-editor: ${{ inputs.compile-editor }}
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         lipo: ${{ inputs.arch == 'universal' }}
@@ -299,7 +297,6 @@ runs:
       uses: "coffeebeats/godot-infra/compile-godot-export-template/windows@v2"
       with:
         arch: ${{ inputs.arch }}
-        compile-editor: ${{ inputs.compile-editor }}
         encryption-key: ${{ inputs.encryption-key }}
         godot-src-path: godot
         profile: ${{ inputs.profile }}
