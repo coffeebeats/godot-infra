@@ -72,3 +72,9 @@ runs:
       $([[ "${{ inputs.profile }}" == "release" ]] && echo production=yes optimize=speed)
       $([[ "${{ inputs.app-bundle }}" == "true" ]] && echo generate_bundle=yes)
       $([[ "${{ inputs.target }}" == "editor" ]] && echo bundle_sign_identity=)
+
+      if [[ "${{ inputs.target }}" == "editor" && "${{ inputs.app-bundle }}" == "true" ]]; then
+      rcodesign sign
+      --entitlements-xml-path ${{ inputs.godot-src-path }}/misc/dist/macos/editor.entitlements
+      ${{ inputs.godot-src-path }}/bin/godot_macos_editor.app;
+      fi
