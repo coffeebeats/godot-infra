@@ -359,11 +359,14 @@ runs:
       id: artifact
       shell: bash
       run: |
+        TARGET="${{ steps.target.outputs.value }}"
+
         case "${{ inputs.platform }}" in
           macos)
-            TARGET_SUFFIX=${{ steps.target.outputs.value == 'editor' && 'editor' || 'template' }}
-            FILE_EXTENSION=${{ steps.target.outputs.value == 'editor' && 'app' || 'zip' }}
-            TEMPLATE_NAME="godot_macos_${TARGET_SUFFIX}.${FILE_EXTENSION}"
+            case "$TARGET" in
+              editor) TEMPLATE_NAME="godot_macos_editor.app" ;;
+              *) TEMPLATE_NAME="godot_macos.zip" ;;
+            esac
             ;;
           web)
             PROFILE=$([[ "${{ inputs.profile }}" == release ]] && echo release || echo debug)
@@ -379,7 +382,6 @@ runs:
             exit 1
         esac
 
-        TARGET="${{ steps.target.outputs.value }}"
         TEMPLATE_PATH="$GITHUB_WORKSPACE/build/$TEMPLATE_NAME"
         if [[ 
           ( "$TARGET" == "editor" && ! -d "$TEMPLATE_PATH" ) || \
