@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.3 (2025-05-01)
+
+## What's Changed
+* fix(ci): add missing `issues:write` permission to `release-please` workflow by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/408
+* fix(scripts): reorganize repository rulesets to correctly block force pushes by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/410
+* fix(compile): handle uploading a single `.app` directory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/411
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.2...v2.2.3
+
 ## 2.2.2 (2025-05-01)
 
 ## What's Changed
