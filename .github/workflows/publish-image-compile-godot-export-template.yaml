@@ -256,7 +256,7 @@ jobs:
       - name: Build and push
         id: build-and-push-macos
         if: inputs.platform == 'macos'
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1
         with:
           context: compile-godot-export-template/macos
           push: true
@@ -284,7 +284,7 @@ jobs:
       - name: Build and push
         id: build-and-push-web
         if: inputs.platform == 'web'
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1
         with:
           context: compile-godot-export-template/web
           push: true
@@ -301,7 +301,7 @@ jobs:
       - name: Build and push
         id: build-and-push-windows
         if: inputs.platform == 'windows'
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1
         with:
           context: compile-godot-export-template/windows
           push: true
