@@ -100,10 +100,11 @@ runs:
 
                   file=$(realpath --relative-to ${{ steps.clone.outputs.directory }} $file)
 
-                  (
-                    cd ${{ steps.clone.outputs.directory }}
-                    git apply "$file"
-                  )
+                  git apply \
+                    -v \
+                    --ignore-whitespace \
+                    --directory=${{ steps.clone.outputs.directory }} \
+                    "$file"
                 done
             )
         done
