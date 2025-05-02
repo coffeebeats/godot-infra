@@ -280,7 +280,7 @@ $REPO_DESCRIPTION
 $(tail -n+4 README.md)
 EOM
 
-    git add CHANGELOG.md README.md
+    git add LICENSE CHANGELOG.md README.md
     git commit --amend --no-edit
 }
 
