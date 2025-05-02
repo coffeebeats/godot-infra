@@ -189,7 +189,7 @@ create_repository() {
         $([ "$BRANCH_NAME" != "main" ] && echo "--include-all-branches" || :) \
         --description "$REPO_DESCRIPTION" \
         --disable-wiki \
-        --private
+        $([ "$PUBLIC" -ne 0 ] && echo "--public" || echo "--private")
 
     # Update repository settings
     info "Updating repository settings."
