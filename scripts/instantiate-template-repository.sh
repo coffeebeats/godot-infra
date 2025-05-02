@@ -280,6 +280,17 @@ $REPO_DESCRIPTION
 $(tail -n+4 README.md)
 EOM
 
+    LICENSE_BLOCK_LINENO=$(grep -n '## \*\*License\*\*' README.md | cut -d : -f 1)
+    if [ ! -z "$LICENSE_BLOCK_LINENO" ]; then
+        LINE_COUNT="$(wc -l README.md | cut -d ' ' -f 1)"
+
+        head -n -$(($LINE_COUNT - $LICENSE_BLOCK_LINENO + 2)) README.md >README.md.tmp
+        cat README.md.tmp >README.md
+        rm README.md.tmp
+    else
+        fatal "Failed to remove license section of README.md"
+    fi
+
     git add LICENSE CHANGELOG.md README.md
     git commit --amend --no-edit
 }
