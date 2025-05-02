@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.5 (2025-05-02)
+
+## What's Changed
+* fix(compile): limit maximum depth when looking for files to delete in `macos` builds by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/414
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.4...v2.2.5
+
 ## 2.2.4 (2025-05-01)
 
 ## What's Changed
