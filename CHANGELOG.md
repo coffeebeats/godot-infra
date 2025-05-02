@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.7 (2025-05-02)
+
+## What's Changed
+* fix(ci): don't make patch file relative to source directory by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/418
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.6...v2.2.7
+
 ## 2.2.6 (2025-05-02)
 
 ## What's Changed
