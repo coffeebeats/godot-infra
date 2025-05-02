@@ -82,6 +82,7 @@ runs:
       find
       ${{ inputs.godot-src-path }}/bin
       -type f
+      -maxdepth 1
       ! -name '*.app'
       ! -name '*.zip'
       -exec rm -rf {} \;
