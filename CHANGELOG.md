@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.9 (2025-05-02)
+
+## What's Changed
+* fix(scripts): improve safety of template instantiation, handle `LICENSE` and `README.md` changes by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/422
+* fix(compile): rename editor binaries; correctly check for missing outputs on `windows` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/424
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.8...v2.2.9
+
 ## 2.2.8 (2025-05-02)
 
 ## What's Changed
