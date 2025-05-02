@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.6 (2025-05-02)
+
+## What's Changed
+* fix(ci): apply patches with more observability, exit on error by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/416
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.5...v2.2.6
+
 ## 2.2.5 (2025-05-02)
 
 ## What's Changed
