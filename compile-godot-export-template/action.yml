@@ -359,12 +359,19 @@ runs:
       id: artifact
       shell: bash
       run: |
+        PLATFORM="${{ inputs.platform }}"
         TARGET="${{ steps.target.outputs.value }}"
 
-        case "${{ inputs.platform }}" in
+        case "$PLATFORM" in
           macos)
             case "$TARGET" in
-              editor) TEMPLATE_NAME="godot_macos_editor.app" ;;
+              editor)
+                mv \
+                  "$GITHUB_WORKSPACE/build/godot_macos_editor.app" \
+                  "$GITHUB_WORKSPACE/build/Godot.app"
+
+                TEMPLATE_NAME="Godot.app"
+                ;;
               *) TEMPLATE_NAME="godot_macos.zip" ;;
             esac
             ;;
@@ -375,24 +382,39 @@ runs:
             ;;
           windows)
             DOUBLE=${{ inputs.use-double-precision == 'true' && '.double' || '' }}
-            TEMPLATE_NAME="godot.${{ inputs.platform }}.${{ steps.target.outputs.value }}${DOUBLE}.${{ inputs.arch }}.llvm.exe"
+            TEMPLATE_NAME="godot.$PLATFORM.${{ steps.target.outputs.value }}${DOUBLE}.${{ inputs.arch }}.llvm.exe"
+
+            if [[ "$TARGET" == "editor" ]]; then
+              mv \
+                  "$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" \
+                  "$GITHUB_WORKSPACE/build/Godot.exe"
+
+              TEMPLATE_NAME="Godot.exe"
+            fi
             ;;
           *)
-            echo "Unknown/unsupported platform: ${{ inputs.platform }}"
+            echo "Unknown/unsupported platform: $PLATFORM"
             exit 1
         esac
 
         TEMPLATE_PATH="$GITHUB_WORKSPACE/build/$TEMPLATE_NAME"
         if [[ 
-          ( "$TARGET" == "editor" && ! -d "$TEMPLATE_PATH" ) || \
-          ( "$TARGET" != "editor" && ! -f "$TEMPLATE_PATH" ) ]]; then
+          (
+            "$TARGET" == "editor" && \
+            (
+              ( "$PLATFORM" == "macos" && ! -d "$TEMPLATE_PATH" ) || \
+              ( "$PLATFORM" != "macos" && ! -f "$TEMPLATE_PATH" ) \
+            ) \
+          ) || \
+          ( "$TARGET" != "editor" && ! -f "$TEMPLATE_PATH" ) \
+        ]]; then
           echo "Invalid export template filename; no file found: '$TEMPLATE_PATH'"
           exit 1
         fi
 
         ARTIFACT_NAME="${{ inputs.artifact-name }}"
         if [[ -z "$ARTIFACT_NAME" ]]; then
-          ARTIFACT_NAME="godot-${TARGET%_*}-${{ inputs.arch }}-${{ inputs.platform }}-${{ inputs.profile }}"
+          ARTIFACT_NAME="godot-${TARGET%_*}-${{ inputs.arch }}-$PLATFORM-${{ inputs.profile }}"
         fi
 
         echo "name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
