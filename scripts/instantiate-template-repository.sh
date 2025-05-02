@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -eu
 
 # This script instantiates one of @coffeebeats' template repositories. The list
 # of supported repositories includes:
@@ -64,6 +64,7 @@ Available options:
     -d, --description   A description for the new repository.
     -t, --template      The name of the @coffeebeats template repository.
     -b, --branch        The template repository's branch or ref to instantiate (default=main).
+    --public            Make the repository public (default=false).
 EOF
     exit
 }
@@ -85,6 +86,7 @@ parse_params() {
     REPO_NAME=""
     REPO_DESCRIPTION="A new Godot 4+ project."
     TEMPLATE_NAME=""
+    PUBLIC=0
 
     while :; do
         case "${1:-}" in
@@ -102,6 +104,9 @@ parse_params() {
         -n | --name)
             shift
             REPO_NAME="$1"
+            ;;
+        --public)
+            PUBLIC=1
             ;;
         -t | --template)
             shift
@@ -176,116 +181,143 @@ info "Verified repository doesn't exist yet."
 
 # -------------------------- Run: Create repository -------------------------- #
 
-info "Creating repository from template."
+create_repository() {
+    info "Creating repository from template."
 
-$GH repo create "$DST_REPOSITORY" \
-    --template "$SRC_REPOSITORY" \
-    $([ "$BRANCH_NAME" != "main" ] && echo "--include-all-branches" || :) \
-    --description "$REPO_DESCRIPTION" \
-    --disable-wiki \
-    --private
+    $GH repo create "$DST_REPOSITORY" \
+        --template "$SRC_REPOSITORY" \
+        $([ "$BRANCH_NAME" != "main" ] && echo "--include-all-branches" || :) \
+        --description "$REPO_DESCRIPTION" \
+        --disable-wiki \
+        --private
 
-# Update repository settings
-info "Updating repository settings."
-$GH repo edit "$DST_REPOSITORY" \
-    --allow-update-branch \
-    --delete-branch-on-merge \
-    --enable-auto-merge \
-    --enable-squash-merge \
-    --enable-merge-commit=false \
-    --enable-rebase-merge=false \
-    --enable-projects=false
+    # Update repository settings
+    info "Updating repository settings."
+    $GH repo edit "$DST_REPOSITORY" \
+        --allow-update-branch \
+        --delete-branch-on-merge \
+        --enable-auto-merge \
+        --enable-squash-merge \
+        --enable-merge-commit=false \
+        --enable-rebase-merge=false \
+        --enable-projects=false
+}
 
 # ------------------ Run: Update GitHub Actions permissions ------------------ #
 
-cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/actions/permissions"
+update_gha_permissions() {
+    info "Updating repository's GitHub Actions permissions."
+
+    cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/actions/permissions"
 {
 "enabled": true,
 "allowed_actions": "all"
 }
 EOM
 
-cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/actions/permissions/workflow"
+    cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/actions/permissions/workflow"
 {
 "default_workflow_permissions":"write",
 "can_approve_pull_request_reviews":true
 }
 EOM
+}
 
 # --------------------------- Run: Clone repository -------------------------- #
 
 need_cmd git
 need_cmd mktemp
 
-REPO_TMPDIR="$(mktemp -d)"
+clone_repository() {
+    REPO_TMPDIR="$(mktemp -d)"
 
-info "Cloning new repository to directory: $REPO_TMPDIR"
-$GH repo clone "$DST_REPOSITORY" "$REPO_TMPDIR"
+    info "Cloning new repository to directory: $REPO_TMPDIR"
+    $GH repo clone "$DST_REPOSITORY" "$REPO_TMPDIR"
 
-cd "$REPO_TMPDIR"
+    cd "$REPO_TMPDIR"
 
-# Configure the git user
-git config --local user.name "$GIT_USER_NAME"
-git config --local user.email "$GIT_USER_EMAIL"
+    # Configure the git user
+    git config --local user.name "$GIT_USER_NAME"
+    git config --local user.email "$GIT_USER_EMAIL"
 
-# Reset 'main' to the target ref
-git reset --hard "$BRANCH_NAME"
+    # Reset 'main' to the target ref
+    git reset --hard "$BRANCH_NAME"
 
-# Push changes to remote repository
-info "Updating remote branch 'main' to ref: $BRANCH_NAME"
-git push -f origin main
+    # Push changes to remote repository
+    info "Updating remote branch 'main' to ref: $BRANCH_NAME"
+    git push -f origin main
 
-# Delete other branches
-for branch in $(git for-each-ref --format='%(refname:strip=2)' "refs/heads/$1"); do
-    if [ "$branch" == "main" ]; then
-        continue
-    fi
+    # Delete other branches
+    for branch in $(git for-each-ref --format='%(refname:strip=2)' "refs/heads/$1"); do
+        if [ "$branch" == "main" ]; then
+            continue
+        fi
 
-    info "Deleting branch on remote repository: $branch"
-    git push origin --delete "$branch"
-done
+        info "Deleting branch on remote repository: $branch"
+        git push origin --delete "$branch"
+    done
+}
 
 # --------------------------- Run: Update contents --------------------------- #
 
-# Update CHANGELOG
-echo "# Changelog" >CHANGELOG.md
+update_contents() {
+    info "Updating repository's contents."
 
-# Update README
-cat <<EOM >README.md
+    # Remove LICENSE
+    if [ "$PUBLIC" -eq 0 ]; then
+        info "Removing license for private repository."
+        rm LICENSE
+    fi
+
+    # Update CHANGELOG
+    echo "# Changelog" >CHANGELOG.md
+
+    # Update README
+    cat <<EOM >README.md
 # $REPO_NAME
 
 $REPO_DESCRIPTION
 $(tail -n+4 README.md)
 EOM
 
-git add CHANGELOG.md README.md
-git commit --amend --no-edit
+    git add CHANGELOG.md README.md
+    git commit --amend --no-edit
+}
 
 # --------------------- Run: Initialize 'release-please' --------------------- #
 
-# Update 'release-please' manifest
-cat <<EOM >.release-please/manifest.json
+initialize_releases() {
+    info "Initializing release for the repository."
+
+    # Update 'release-please' manifest
+    cat <<EOM >.release-please/manifest.json
 {
 ".": "0.1.0"
 }
 EOM
 
-# Commit changes
-git add .release-please/manifest.json
-git commit --amend --no-edit
+    # Commit changes
+    git add .release-please/manifest.json
+    git commit --amend --no-edit
 
-# Push changes to remote repository
-info "Updating 'release-please' manifest on remote"
-git push -f origin main
+    # Push changes to remote repository
+    info "Updating 'release-please' manifest on remote"
+    git push -f origin main
 
-# Tag the initial commit
-info "Tagging initial commit: v0.1.0"
-git tag v0.1.0
-git push origin tag v0.1.0
+    # Tag the initial commit
+    info "Tagging initial commit: v0.1.0"
+    git tag v0.1.0
+    git push origin tag v0.1.0
+}
 
 # ----------------------- Run: Create repository rules ----------------------- #
 
-cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/rulesets"
+create_rule_sets() {
+    info "Creating repository rule sets."
+
+    # Create a rule which requires PRs and status checks to merge into the
+    # default branch.
+    cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/rulesets"
 {
     "name": "main",
     "enforcement": "active",
@@ -344,7 +376,9 @@ cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X
 }
 EOM
 
-cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/rulesets"
+    # Create a rule which blocks everyone from force pushing to the default
+    # branch.
+    cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/rulesets"
 {
     "name": "push",
     "enforcement": "active",
@@ -363,3 +397,17 @@ cat <<EOM | $GH api --method POST -H "Accept: application/vnd.github+json" -H "X
     ]
 }
 EOM
+}
+
+# --------------------------------- Run: Main -------------------------------- #
+
+main() {
+    create_repository
+    update_gha_permissions
+    clone_repository
+    update_contents
+    initialize_releases
+    create_rule_sets
+}
+
+main
