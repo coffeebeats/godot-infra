@@ -249,7 +249,7 @@ clone_repository() {
 
     # Delete other branches
     for branch in $(git for-each-ref --format='%(refname:strip=2)' "refs/heads/"); do
-        if [ "$branch" == "main" ]; then
+        if [ "$branch" = "main" ]; then
             continue
         fi
 
