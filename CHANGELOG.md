@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.8 (2025-05-02)
+
+## What's Changed
+* fix(ci): apply patches in relative `--directory` argument by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/420
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.7...v2.2.8
+
 ## 2.2.7 (2025-05-02)
 
 ## What's Changed
