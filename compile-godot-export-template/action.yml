@@ -364,7 +364,13 @@ runs:
         case "${{ inputs.platform }}" in
           macos)
             case "$TARGET" in
-              editor) TEMPLATE_NAME="godot_macos_editor.app" ;;
+              editor)
+                mv \
+                  "$GITHUB_WORKSPACE/build/godot_macos_editor.app" \
+                  "$GITHUB_WORKSPACE/build/Godot.app"
+
+                TEMPLATE_NAME="Godot.app"
+                ;;
               *) TEMPLATE_NAME="godot_macos.zip" ;;
             esac
             ;;
@@ -376,6 +382,14 @@ runs:
           windows)
             DOUBLE=${{ inputs.use-double-precision == 'true' && '.double' || '' }}
             TEMPLATE_NAME="godot.${{ inputs.platform }}.${{ steps.target.outputs.value }}${DOUBLE}.${{ inputs.arch }}.llvm.exe"
+
+            if [[ "$TARGET" == "editor" ]]; then
+              mv \
+                  "$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" \
+                  "$GITHUB_WORKSPACE/build/Godot.exe"
+
+              TEMPLATE_NAME="Godot.exe"
+            fi
             ;;
           *)
             echo "Unknown/unsupported platform: ${{ inputs.platform }}"
