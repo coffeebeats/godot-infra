@@ -293,6 +293,11 @@ EOM
         fi
     fi
 
+    # Updating links to point to the new repository.
+    SRC="$(echo "$SRC_REPOSITORY" | sed 's/\//\\\//g')"
+    DST="$(echo "$DST_REPOSITORY" | sed 's/\//\\\//g')"
+    sed -i -e "s/\/${SRC}/\/${DST}/g" README.md
+
     git add LICENSE CHANGELOG.md README.md
     git commit --amend --no-edit
 }
