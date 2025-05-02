@@ -98,8 +98,6 @@ runs:
 
                   echo "Applying patch: $file"
 
-                  file=$(realpath --relative-to ${{ steps.clone.outputs.directory }} $file)
-
                   git apply \
                     -v \
                     --ignore-whitespace \
