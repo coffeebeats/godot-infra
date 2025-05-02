@@ -101,7 +101,7 @@ runs:
                   git apply \
                     -v \
                     --ignore-whitespace \
-                    --directory=${{ steps.clone.outputs.directory }} \
+                    --directory="$(realpath --relative-to "$PWD" "${{ steps.clone.outputs.directory }}")" \
                     "$file"
                 done
             )
