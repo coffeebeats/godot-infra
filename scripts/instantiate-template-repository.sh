@@ -402,12 +402,12 @@ EOM
 # --------------------------------- Run: Main -------------------------------- #
 
 main() {
-    create_repository
-    update_gha_permissions
-    clone_repository
-    update_contents
-    initialize_releases
-    create_rule_sets
+    create_repository || fatal "Failed to create repository."
+    update_gha_permissions || fatal "Failed to update GitHub Actions permissions."
+    clone_repository || fatal "Failed to clone repository."
+    update_contents || fatal "Failed to update repository contents."
+    initialize_releases || fatal "Failed to initialize releases."
+    create_rule_sets || fatal "Failed to create rule sets."
 }
 
 main
