@@ -248,7 +248,7 @@ clone_repository() {
     git push -f origin main
 
     # Delete other branches
-    for branch in $(git for-each-ref --format='%(refname:strip=2)' "refs/heads/$1"); do
+    for branch in $(git for-each-ref --format='%(refname:strip=2)' "refs/heads/"); do
         if [ "$branch" == "main" ]; then
             continue
         fi
