@@ -143,13 +143,22 @@ runs:
       id: godot-cache-key
       shell: bash
       run: |
-        INPUT="${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(format('{0}/godot', github.workspace)) }}-${{ inputs.compile-editor }}"
-        INPUT="$INPUT-${{ inputs.profile }}-${{ inputs.encryption-key }}-${{ inputs.use-double-precision }}"
-        INPUT="$INPUT-${{ hashFiles(inputs.custompy-path) }}-${{ hashFiles(inputs.icon-path) }}"
+        PREFIX="compile-godot-export-template-godot"
+        PLATFORM="${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}"
+        TARGET="${{ hashFiles(format('{0}/godot', github.workspace)) }}-${{ inputs.compile-editor }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}"
+        SECRET_HASH="$(echo "${{ inputs.encryption-key }}" | sha256sum | cut -d ' ' -f 1)"
+        BUILD_OPTIONS="${{ hashFiles(inputs.custompy-path) }}-${{ hashFiles(inputs.icon-path) }}"
 
-        VALUE="compile-godot-export-template-godot-${{ runner.os }}-$(echo "$INPUT" | sha256sum | cut -d ' ' -f 1)"
+        BASE="$PREFIX-$PLATFORM-$TARGET"
 
-        echo "value=$VALUE" >> $GITHUB_OUTPUT
+        VALUE="$BASE-$SECRET_HASH-${BUILD_OPTIONS}"
+        echo "value=$VALUE" >> "$GITHUB_OUTPUT"
+
+        echo "restore-keys<<EOM" >> "$GITHUB_OUTPUT"
+        echo "$BASE-$SECRET_HASH-${{ hashFiles(inputs.custompy-path) }}" >> "$GITHUB_OUTPUT"
+        echo "$BASE-$SECRET_HASH" >> "$GITHUB_OUTPUT"
+        echo "$BASE" >> "$GITHUB_OUTPUT"
+        echo "EOM" >> "$GITHUB_OUTPUT"
 
     - name: Validate build directories don't exist
       shell: bash
@@ -172,6 +181,7 @@ runs:
         # IF/ELSE: Update the 'save' step below if this changes.
         path: ${{ github.workspace }}/build
         key: ${{ steps.godot-cache-key.outputs.value }}
+        restore-keys: ${{ steps.godot-cache-key.outputs.restore-keys }}
 
     - name: Inspect restored artifacts
       if: steps.godot-cache.outputs.cache-hit == 'true'
