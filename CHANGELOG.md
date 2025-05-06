@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.12 (2025-05-06)
+
+## What's Changed
+* fix(compile): add missing `sudo` commands for write operations in `$GITHUB_WORKSPACE` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/429
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.11...v2.2.12
+
 ## 2.2.11 (2025-05-06)
 
 ## What's Changed
