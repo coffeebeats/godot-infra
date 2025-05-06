@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.11 (2025-05-06)
+
+## What's Changed
+* fix(compile): fix syntax error in updated cache keys by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/427
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.10...v2.2.11
+
 ## 2.2.10 (2025-05-06)
 
 ## What's Changed
