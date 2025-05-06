@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.10 (2025-05-06)
+
+## What's Changed
+* fix(compile): adjust cache key structure to improve cache hits by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/425
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.9...v2.2.10
+
 ## 2.2.9 (2025-05-02)
 
 ## What's Changed
