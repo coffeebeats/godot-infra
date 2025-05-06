@@ -194,10 +194,10 @@ runs:
       with:
         # NOTE: This path must match the one expected by the container action.
         path: ${{ github.workspace }}/.scons
-        key: compile-godot-export-template-scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path)-${{ inputs.compile-editor }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.custompy-path) }}
+        key: compile-godot-export-template-scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.compile-editor }}-${{ inputs.profile }}-${{ inputs.use-double-precision }}-${{ hashFiles(inputs.custompy-path) }}
         restore-keys: |
-          compile-godot-export-template-scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path)-${{ inputs.compile-editor }}-${{ inputs.profile }}-
-          compile-godot-export-template-scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path)-${{ inputs.compile-editor }}
+          compile-godot-export-template-scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.compile-editor }}-${{ inputs.profile }}-
+          compile-godot-export-template-scons-${{ runner.os }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ hashFiles(inputs.godot-src-path) }}-${{ inputs.compile-editor }}
 
     # ------------------------ Set up build workspace ------------------------ #
 
