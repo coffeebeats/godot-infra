@@ -376,7 +376,7 @@ runs:
           macos)
             case "$TARGET" in
               editor)
-                mv \
+                sudo mv \
                   "$GITHUB_WORKSPACE/build/godot_macos_editor.app" \
                   "$GITHUB_WORKSPACE/build/Godot.app"
 
@@ -395,7 +395,7 @@ runs:
             TEMPLATE_NAME="godot.$PLATFORM.${{ steps.target.outputs.value }}${DOUBLE}.${{ inputs.arch }}.llvm.exe"
 
             if [[ "$TARGET" == "editor" ]]; then
-              mv \
+              sudo mv \
                   "$GITHUB_WORKSPACE/build/$TEMPLATE_NAME" \
                   "$GITHUB_WORKSPACE/build/Godot.exe"
 
