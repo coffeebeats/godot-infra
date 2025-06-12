@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.13 (2025-06-12)
+
+## What's Changed
+* chore(deps): bump docker/build-push-action from 6.16.0 to 6.18.0 by @dependabot in https://github.com/coffeebeats/godot-infra/pull/431
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.12...v2.2.13
+
 ## 2.2.12 (2025-05-06)
 
 ## What's Changed
