@@ -89,7 +89,7 @@ jobs:
           path: ${{ env.path }}
 
       # Publish the cached artifact
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: steps.cache-artifact.outputs.cache-hit == 'true'
         with:
           name: ${{ env.path }}
@@ -128,7 +128,7 @@ jobs:
           xcode-version: ${{ inputs.xcode-version }}
 
       # Publish the artifact
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: ${{ env.path }}
           path: ${{ env.path }}
