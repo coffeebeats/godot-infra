@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.2.13 (2025-11-08)
+
+## What's Changed
+* chore(deps): bump docker/build-push-action from 6.16.0 to 6.18.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/431
+* chore(deps): bump docker/setup-buildx-action from 3.10.0 to 3.11.1 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/433
+* chore(deps): bump actions/checkout from 4.2.2 to 5.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/434
+* chore(deps): bump docker/login-action from 3.4.0 to 3.5.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/435
+* chore(deps): bump googleapis/release-please-action from 4.2.0 to 4.3.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/436
+* chore(deps): bump actions/cache from 4.2.3 to 4.2.4 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/437
+* chore(deps): bump actions/download-artifact from 4.3.0 to 5.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/438
+* chore(deps): bump docker/login-action from 3.5.0 to 3.6.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/441
+* chore(deps): bump tj-actions/changed-files from 46.0.5 to 47.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/440
+* chore(deps): bump actions/cache from 4.2.4 to 4.3.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/439
+* chore(deps): bump actions/upload-artifact from 4.6.2 to 5.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/444
+* chore(deps): bump googleapis/release-please-action from 4.3.0 to 4.4.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/443
+* chore(deps): bump actions/download-artifact from 5.0.0 to 6.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/442
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.12...v2.2.13
+
 ## 2.2.12 (2025-05-06)
 
 ## What's Changed
