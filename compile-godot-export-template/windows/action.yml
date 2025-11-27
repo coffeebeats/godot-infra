@@ -31,7 +31,7 @@ inputs:
 
 runs:
   using: docker
-  image: docker://ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.4-windows
+  image: docker://ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.5-windows
   args:
     - /bin/bash
     - -c

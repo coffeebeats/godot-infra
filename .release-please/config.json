@@ -15,10 +15,7 @@
   "packages": {
     ".": {
       "release-type": "simple",
-
-      "changelog-path": "CHANGELOG.md",
-
-      "extra-files": ["README.md"]
+      "changelog-path": "CHANGELOG.md"
     }
   }
 }
