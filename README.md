@@ -19,7 +19,7 @@ Currently, `godot-infra` supports targeting three platforms:
 This repository supports multiple minor versions of Godot. The `main` branch always contains the latest `godot-infra` changes and targets support for the latest Godot stable release. See the list below for the mapping of `godot-infra` release versions to supported Godot version.
 
 > [!NOTE]
-> It's recommended to use the release tag as the version pin in your GitHub Actions workflow files since these represent stable, tested versions of this project.
+> Although it's recommended to [pin actions to the full-length commit SHA](https://docs.github.com/en/actions/reference/security/secure-use#using-third-party-actions), the following release tags define stable, tested versions of this project.
 
 #### Branch name / Release tag: Godot version
 
