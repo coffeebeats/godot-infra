@@ -81,9 +81,6 @@ Dependency versions are taken from the defaults defined in the [publish-image-co
 <details>
 <summary><strong>macOS</strong></summary>
 
-> [!NOTE]
-> The macOS image requires the `osxcross` and `moltenvk` build contexts; these dependencies are packaged by the [package-macos-sdk.yml](.github/workflows/package-macos-sdk.yml) and [package-moltenvk-sdk.yml](.github/workflows/package-moltenvk-sdk.yml) workflows. Run these via GitHub, download and extract the resulting artifacts, then place their contents in the expected directories.
-
 ```sh
 docker build \
   --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
@@ -96,6 +93,9 @@ docker build \
   -t compile-godot-export-template:godot-v4.5-macos \
   compile-godot-export-template/macos
 ```
+
+> [!NOTE]
+> The macOS image requires the `osxcross` and `moltenvk` build contexts; these dependencies are packaged by the [package-macos-sdk.yml](.github/workflows/package-macos-sdk.yml) and [package-moltenvk-sdk.yml](.github/workflows/package-moltenvk-sdk.yml) workflows. Run these via GitHub, download and extract the resulting artifacts, then place their contents in the expected directories.
 
 </details>
 
