@@ -27,7 +27,7 @@ RUN \
     ca-certificates \
     curl \
     pkg-config \
-    python3.12 \
+    python3.13 \
     # Add support for compressing/extracting archive files
     xz-utils \
     zip
@@ -59,9 +59,9 @@ FROM img-setup-base AS img-setup-python
 
 RUN apt-get install -y --no-install-recommends \
     # Install 'python3' and 'venv'
-    python3.12-venv && \
+    python3.13-venv && \
     # Set up the virtual environment
-    python3.12 -m venv "/venv"
+    python3.13 -m venv "/venv"
 
 # ---------------------------------------------------------------------------- #
 #                       Image: Setup - rcodesign (MacOS)                       #
@@ -259,7 +259,7 @@ COPY --from=img-setup-angle "/angle" "/opt/angle"
 
 # ------------------------------ Install: SCons ------------------------------ #
 
-RUN python3.12 -m pip install \
+RUN python3.13 -m pip install \
     SCons==4.*
 
 # ------------------------ Install: rcodesign (MacOS) ------------------------ #
