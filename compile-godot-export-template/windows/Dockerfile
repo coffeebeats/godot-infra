@@ -26,7 +26,7 @@ RUN \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     pkg-config \
-    python3.12
+    python3.13
 
 # ---------------------------------------------------------------------------- #
 #                             Image: Setup - Python                            #
@@ -38,9 +38,9 @@ FROM img-setup-base AS img-setup-python
 
 RUN apt-get install -y --no-install-recommends \
     # Install 'python3' and 'venv'
-    python3.12-venv && \
+    python3.13-venv && \
     # Set up the virtual environment
-    python3.12 -m venv "/venv"
+    python3.13 -m venv "/venv"
 
 # ---------------------------------------------------------------------------- #
 #                           Image: Setup - MinGW-LLVM                          #
@@ -87,7 +87,7 @@ ENV PATH="/opt/mingw-llvm/bin:$PATH"
 
 # ------------------------------ Install: SCons ------------------------------ #
 
-RUN python3.12 -m pip install \
+RUN python3.13 -m pip install \
     SCons==4.*
 
 # ---------------------------------------------------------------------------- #
@@ -113,7 +113,7 @@ RUN \
     https://github.com/godotengine/godot-nir-static.git \
     /godot-nir-static && \
     # Initialize submodules and dependencies
-    python3.12 -m pip install mako && \
+    python3.13 -m pip install mako && \
     cd /godot-nir-static && \
     git submodule update --init && \
     ./update_mesa.sh && \

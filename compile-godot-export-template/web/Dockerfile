@@ -26,7 +26,7 @@ RUN \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     pkg-config \
-    python3.12
+    python3.13
 
 # ---------------------------------------------------------------------------- #
 #                             Image: Setup - Python                            #
@@ -38,9 +38,9 @@ FROM img-setup-os AS img-setup-python
 
 RUN apt-get install -y --no-install-recommends \
     # Install 'python3' and 'venv'
-    python3.12-venv && \
+    python3.13-venv && \
     # Set up the virtual environment
-    python3.12 -m venv "/venv"
+    python3.13 -m venv "/venv"
 
 
 # ---------------------------------------------------------------------------- #
@@ -112,7 +112,7 @@ ENV PATH="/opt/emsdk/upstream/emscripten:/opt/emsdk/upstream/bin:$PATH"
 
 # ------------------------------ Install: SCons ------------------------------ #
 
-RUN python3.12 -m pip install \
+RUN python3.13 -m pip install \
     SCons==4.*
 
 # ------------------------------ Set: SCONSFLAGS ----------------------------- #
