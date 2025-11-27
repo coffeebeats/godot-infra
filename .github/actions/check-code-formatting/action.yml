@@ -35,7 +35,7 @@ runs:
 
         ${{ inputs.fix-command }}
 
-    - uses: coffeebeats/godot-infra/commit-changes@v2
+    - uses: coffeebeats/godot-infra/commit-changes@v3
       if: steps.check-formatting.outcome == 'failure'
       with:
         description: "fix formatting"
