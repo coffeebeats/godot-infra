@@ -53,7 +53,7 @@ FROM img-setup-base AS img-setup-mingw-llvm
 ARG MINGW_LLVM_VERSION
 RUN test -n "$MINGW_LLVM_VERSION" || (echo "Missing build argument: 'MINGW_LLVM_VERSION'" && exit 1)
 
-ENV MINGW_LLVM_PKG_NAME="llvm-mingw-$MINGW_LLVM_VERSION-ucrt-ubuntu-22.04-x86_64.tar.xz"
+ENV MINGW_LLVM_PKG_NAME="llvm-mingw-$MINGW_LLVM_VERSION-ucrt-ubuntu-20.04-x86_64.tar.xz"
 
 RUN \
     # Install dependencies required for compiler installation
