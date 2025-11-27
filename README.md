@@ -68,6 +68,104 @@ These can be instantiated with recommended repository settings using the [instan
   --description "A new Godot 4+ project."
 ```
 
+## **Development**
+
+### Building images locally
+
+During development, you may want to build the infrastructure images locally rather than relying on CI/CD workflows. This section provides commands for building images on your local machine.
+
+#### `compile-godot-export-template`
+
+Dependency versions are taken from the defaults defined in the [publish-image-compile-godot-export-template.yaml](.github/workflows/publish-image-compile-godot-export-template.yaml) workflow.
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+> **NOTE:** The macOS image requires the `osxcross` and `moltenvk` build contexts; these dependencies are packaged by the [package-macos-sdk.yml](.github/workflows/package-macos-sdk.yml) and [package-moltenvk-sdk.yml](.github/workflows/package-moltenvk-sdk.yml) workflows. Run these via GitHub, download and extract the resulting artifacts, then place their contents in the expected directories.
+
+```sh
+docker build \
+  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
+  --build-arg LLVM_VERSION=17 \
+  --build-arg MACOS_VERSION_MINIMUM=10.15 \
+  --build-arg MACOS_VERSION=15.2 \
+  --build-arg OSXCROSS_SDK=darwin24.2 \
+  --build-context osxcross=thirdparty/osxcross \
+  --build-context vulkan=thirdparty/moltenvk \
+  -t compile-godot-export-template:godot-v4.5-macos \
+  compile-godot-export-template/macos
+```
+
+</details>
+
+<details>
+<summary><strong>Web</strong></summary>
+
+```sh
+docker build \
+  --build-arg EMSCRIPTEN_SDK_VERSION=3.1.64 \
+  -t compile-godot-export-template:godot-v4.5-web \
+  compile-godot-export-template/web
+```
+
+</details>
+
+<details>
+<summary><strong>Windows</strong></summary>
+
+```sh
+docker build \
+  --build-arg AGILITY_VERSION=1.613.3 \
+  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
+  --build-arg GODOT_NIR_STATIC_VERSION=23.1.9-1 \
+  --build-arg MINGW_LLVM_VERSION=20250528 \
+  --build-arg PIX_VERSION=1.0.240308001 \
+  -t compile-godot-export-template:godot-v4.5-windows \
+  compile-godot-export-template/windows
+```
+
+</details>
+
+#### `export-godot-project-preset`
+
+Dependency versions are taken from the defaults defined in the [publish-image-export-godot-project-preset.yaml](.github/workflows/publish-image-export-godot-project-preset.yaml) workflow.
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+```sh
+docker build \
+  --build-arg RUST_VERSION=1.86.0 \
+  -t export-godot-project-preset:godot-v4.5-macos \
+  export-godot-project-preset/macos
+```
+
+</details>
+
+<details>
+<summary><strong>Web</strong></summary>
+
+```sh
+docker build \
+  --build-arg RUST_VERSION=1.86.0 \
+  -t export-godot-project-preset:godot-v4.5-web \
+  export-godot-project-preset/web
+```
+
+</details>
+
+<details>
+<summary><strong>Windows</strong></summary>
+
+```sh
+docker build \
+  --build-arg RUST_VERSION=1.86.0 \
+  -t export-godot-project-preset:godot-v4.5-windows \
+  export-godot-project-preset/windows
+```
+
+</details>
+
 ## **Contributing**
 
 All contributions are welcome! Feel free to file [bugs](https://github.com/coffeebeats/godot-infra/issues/new?assignees=&labels=bug&projects=&template=bug-report.md&title=) and [feature requests](https://github.com/coffeebeats/godot-infra/issues/new?assignees=&labels=enhancement&projects=&template=feature-request.md&title=) and/or open pull requests.
