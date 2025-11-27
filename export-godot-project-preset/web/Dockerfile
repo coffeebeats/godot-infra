@@ -4,7 +4,7 @@
 #                              Image: Setup - Base                             #
 # ---------------------------------------------------------------------------- #
 
-FROM ubuntu:24.04 AS img-setup-base
+FROM ubuntu:25.10 AS img-setup-base
 
 # ------------------------- Update: Package registry ------------------------- #
 
