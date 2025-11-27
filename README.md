@@ -81,8 +81,7 @@ Dependency versions are taken from the defaults defined in the [publish-image-co
 <details>
 <summary><strong>macOS</strong></summary>
 
-> [!NOTE]
-> The macOS image requires the `osxcross` and `moltenvk` build contexts; these dependencies are packaged by the [package-macos-sdk.yml](.github/workflows/package-macos-sdk.yml) and [package-moltenvk-sdk.yml](.github/workflows/package-moltenvk-sdk.yml) workflows. Run these via GitHub, download and extract the resulting artifacts, then place their contents in the expected directories.
+> **NOTE:** The macOS image requires the `osxcross` and `moltenvk` build contexts; these dependencies are packaged by the [package-macos-sdk.yml](.github/workflows/package-macos-sdk.yml) and [package-moltenvk-sdk.yml](.github/workflows/package-moltenvk-sdk.yml) workflows. Run these via GitHub, download and extract the resulting artifacts, then place their contents in the expected directories.
 
 ```sh
 docker build \
