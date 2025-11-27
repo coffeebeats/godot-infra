@@ -4,7 +4,7 @@
 #                              Image: Setup - Base                             #
 # ---------------------------------------------------------------------------- #
 
-FROM ubuntu:24.04 AS img-setup-base
+FROM ubuntu:25.10 AS img-setup-base
 
 # ------------------------- Update: Package registry ------------------------- #
 
@@ -63,7 +63,6 @@ RUN \
     # Install the prebuilt MinGW-LLVM compiler
     mkdir "/mingw-llvm" && \
     curl -LO "https://github.com/mstorsjo/llvm-mingw/releases/download/$MINGW_LLVM_VERSION/$MINGW_LLVM_PKG_NAME" && \
-    ls && \
     tar -C "/mingw-llvm" -xf "$MINGW_LLVM_PKG_NAME" --strip-components=1
 
 # ---------------------------------------------------------------------------- #
