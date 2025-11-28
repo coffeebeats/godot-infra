@@ -4,7 +4,7 @@
 #                              Image: Setup - Base                             #
 # ---------------------------------------------------------------------------- #
 
-FROM ubuntu:25.10 AS img-setup-base
+FROM ubuntu:24.04 AS img-setup-base
 
 # ------------------------- Update: Package registry ------------------------- #
 
@@ -27,7 +27,7 @@ RUN \
     ca-certificates \
     curl \
     pkg-config \
-    python3.13 \
+    python3.12 \
     # Add support for compressing/extracting archive files
     xz-utils \
     zip
@@ -59,9 +59,9 @@ FROM img-setup-base AS img-setup-python
 
 RUN apt-get install -y --no-install-recommends \
     # Install 'python3' and 'venv'
-    python3.13-venv && \
+    python3.12-venv && \
     # Set up the virtual environment
-    python3.13 -m venv "/venv"
+    python3.12 -m venv "/venv"
 
 # ---------------------------------------------------------------------------- #
 #                       Image: Setup - rcodesign (MacOS)                       #
@@ -110,7 +110,8 @@ RUN apt-get install -y --no-install-recommends \
     libxml2-dev \
     liblzma-dev \
     make \
-    patch
+    patch \
+    zlib1g-dev
 
 # ------------------------- Add: OSXCross source code ------------------------ #
 
@@ -149,9 +150,6 @@ RUN \
     ./build.sh
 
 RUN \
-    # NOTE: This seems to prevent multiple jobs from trying to create the same
-    # symlink, which would otherwise cause a build error.
-    JOBS=1 \
     # NOTE: The "build_compiler_rt.sh" checks for osxcross to be installed into
     # the PATH variable. Since we don't necessarily want to do that at this
     # point, fake it for the script.
@@ -160,6 +158,9 @@ RUN \
     # errors with using "___isPlatformVersionAtLeast".
     # See https://github.com/tpoechtrager/osxcross/issues/278 for reference.
     ENABLE_COMPILER_RT_INSTALL=1 \
+    # NOTE: When upgrading to 'ubuntu:25.10' an error is encountered stemming
+    # from multiple jobs from trying to create the same symlink. Set 'JOBS=1'
+    # to prevent this.
     ./build_compiler_rt.sh
 
 # Verify "*-apple-$OSXCROSS_SDK-*" tools are present in the expected format
@@ -262,7 +263,7 @@ COPY --from=img-setup-angle "/angle" "/opt/angle"
 
 # ------------------------------ Install: SCons ------------------------------ #
 
-RUN python3.13 -m pip install \
+RUN python3.12 -m pip install \
     SCons==4.*
 
 # ------------------------ Install: rcodesign (MacOS) ------------------------ #
