@@ -66,7 +66,7 @@ permissions:
   packages: write
 
 env:
-  RUST_VERSION: ${{ inputs.rust-version || '1.86.0' }}
+  RUST_VERSION: ${{ inputs.rust-version || '1.91.1' }}
 
 jobs:
   build-and-publish:

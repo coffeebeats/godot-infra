@@ -123,16 +123,16 @@ jobs:
 
       # MacOS-specific inputs.
 
-      llvm-version: ${{ inputs.llvm-version || '17' }}
+      llvm-version: ${{ inputs.llvm-version || '19' }} # https://github.com/godotengine/build-containers/blob/ab3b0db1e16ed4c9512506e9fad964c101ba93ff/Dockerfile.osx#L21
       # IF/ELSE: Update the minimum macOS version if needed.
-      moltenvk-version: ${{ inputs.moltenvk-version || '1.2.11' }}
-      osx-version: ${{ inputs.osx-version || '15.2' }}
+      moltenvk-version: ${{ inputs.moltenvk-version || '1.4.0' }}
+      osx-version: ${{ inputs.osx-version || '15.5' }}
       # NOTE: MoltenVK requires at least macOS 10.15; see
-      # https://github.com/KhronosGroup/MoltenVK/blob/v1.2.11/Docs/MoltenVK_Runtime_UserGuide.md#build-and-runtime-requirements.
+      # https://github.com/KhronosGroup/MoltenVK/blob/v1.4.0/Docs/MoltenVK_Runtime_UserGuide.md#build-and-runtime-requirements.
       osx-version-min: ${{ inputs.osx-version-min || '10.15' }}
-      osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin24.2' }}
-      rust-version: ${{ inputs.rust-version || '1.86.0' }}
-      xcode-version: ${{ inputs.xcode-version || '16.2' }}
+      osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin24.5' }} # https://github.com/godotengine/godot-build-scripts/blob/69b6f0a66ef4135aff44c05fe7cc238d80feb44d/build-macos/build.sh#L8
+      rust-version: ${{ inputs.rust-version || '1.91.1' }}
+      xcode-version: ${{ inputs.xcode-version || '16.4' }} # https://developer.apple.com/support/xcode
 
       # Web-specific inputs.
 
