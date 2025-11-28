@@ -130,9 +130,9 @@ jobs:
       # NOTE: MoltenVK requires at least macOS 10.15; see
       # https://github.com/KhronosGroup/MoltenVK/blob/v1.4.0/Docs/MoltenVK_Runtime_UserGuide.md#build-and-runtime-requirements.
       osx-version-min: ${{ inputs.osx-version-min || '10.15' }}
-      osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin24.5' }}
+      osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin24.5' }} # https://github.com/godotengine/godot-build-scripts/blob/69b6f0a66ef4135aff44c05fe7cc238d80feb44d/build-macos/build.sh#L8
       rust-version: ${{ inputs.rust-version || '1.91.1' }}
-      xcode-version: ${{ inputs.xcode-version || '16.4' }}
+      xcode-version: ${{ inputs.xcode-version || '16.4' }} # https://developer.apple.com/support/xcode
 
       # Web-specific inputs.
 
