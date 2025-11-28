@@ -136,9 +136,7 @@ jobs:
 
       # Web-specific inputs.
 
-      # NOTE: This should match official build images; see
-      # https://github.com/godotengine/build-containers/blob/main/Dockerfile.web#L4.
-      emscripten-version: ${{ inputs.emscripten-version || '3.1.64' }}
+      emscripten-version: ${{ inputs.emscripten-version || '4.0.10' }} # https://github.com/godotengine/build-containers/blob/ab3b0db1e16ed4c9512506e9fad964c101ba93ff/Dockerfile.web#L4.
 
       # Windows-specific inputs.
 

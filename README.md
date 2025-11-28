@@ -103,7 +103,7 @@ docker build \
 
 ```sh
 docker build \
-  --build-arg EMSCRIPTEN_SDK_VERSION=3.1.64 \
+  --build-arg EMSCRIPTEN_SDK_VERSION=4.0.10 \
   -t compile-godot-export-template:godot-v4.5-web \
   compile-godot-export-template/web
 ```
