@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.1 (2025-11-28)
+
+## What's Changed
+* chore: upgrade to Godot `v4.5.1-stable` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/452
+* chore(compile): upgrade emscripten version to `4.0.10` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/454
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.0.0...v3.0.1
+
 ## 3.0.0 (2025-11-28)
 
 ## What's Changed
