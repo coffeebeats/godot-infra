@@ -119,11 +119,11 @@ jobs:
     timeout-minutes: 1
 
     outputs:
-      godot-angle-static-version: ${{ inputs.godot-angle-static-version || 'chromium/6601.2' }}
+      godot-angle-static-version: ${{ inputs.godot-angle-static-version || 'chromium/7219' }} # https://github.com/godotengine/godot-build-scripts/blob/69b6f0a66ef4135aff44c05fe7cc238d80feb44d/build.sh#L175
 
       # MacOS-specific inputs.
 
-      llvm-version: ${{ inputs.llvm-version || '19' }} # https://github.com/godotengine/build-containers/blob/ab3b0db1e16ed4c9512506e9fad964c101ba93ff/Dockerfile.osx#L21
+      llvm-version: ${{ inputs.llvm-version || '20' }} # https://github.com/godotengine/build-containers/blob/ab3b0db1e16ed4c9512506e9fad964c101ba93ff/Dockerfile.osx#L21
       # IF/ELSE: Update the minimum macOS version if needed.
       moltenvk-version: ${{ inputs.moltenvk-version || '1.4.0' }}
       osx-version: ${{ inputs.osx-version || '15.5' }}

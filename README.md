@@ -85,11 +85,11 @@ Dependency versions are taken from the defaults defined in the [publish-image-co
 
 ```sh
 docker build \
-  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
-  --build-arg LLVM_VERSION=17 \
+  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/7219 \
+  --build-arg LLVM_VERSION=20 \
   --build-arg MACOS_VERSION_MINIMUM=10.15 \
-  --build-arg MACOS_VERSION=15.2 \
-  --build-arg OSXCROSS_SDK=darwin24.2 \
+  --build-arg MACOS_VERSION=15.5 \
+  --build-arg OSXCROSS_SDK=darwin24.5 \
   --build-context osxcross=thirdparty/osxcross \
   --build-context vulkan=thirdparty/moltenvk \
   -t compile-godot-export-template:godot-v4.5-macos \
@@ -116,7 +116,7 @@ docker build \
 ```sh
 docker build \
   --build-arg AGILITY_VERSION=1.613.3 \
-  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
+  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/7219 \
   --build-arg GODOT_NIR_STATIC_VERSION=23.1.9-1 \
   --build-arg MINGW_LLVM_VERSION=20240619 \
   --build-arg PIX_VERSION=1.0.240308001 \
