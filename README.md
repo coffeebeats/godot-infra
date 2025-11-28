@@ -135,7 +135,7 @@ Dependency versions are taken from the defaults defined in the [publish-image-ex
 
 ```sh
 docker build \
-  --build-arg RUST_VERSION=1.86.0 \
+  --build-arg RUST_VERSION=1.91.1 \
   -t export-godot-project-preset:godot-v4.5-macos \
   export-godot-project-preset/macos
 ```
@@ -147,7 +147,7 @@ docker build \
 
 ```sh
 docker build \
-  --build-arg RUST_VERSION=1.86.0 \
+  --build-arg RUST_VERSION=1.91.1 \
   -t export-godot-project-preset:godot-v4.5-web \
   export-godot-project-preset/web
 ```
@@ -159,7 +159,7 @@ docker build \
 
 ```sh
 docker build \
-  --build-arg RUST_VERSION=1.86.0 \
+  --build-arg RUST_VERSION=1.91.1 \
   -t export-godot-project-preset:godot-v4.5-windows \
   export-godot-project-preset/windows
 ```
