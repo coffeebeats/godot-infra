@@ -116,7 +116,7 @@ docker build \
 ```sh
 docker build \
   --build-arg AGILITY_VERSION=1.613.3 \
-  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
+  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/7219 \
   --build-arg GODOT_NIR_STATIC_VERSION=23.1.9-1 \
   --build-arg MINGW_LLVM_VERSION=20240619 \
   --build-arg PIX_VERSION=1.0.240308001 \
