@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.0.0 (2025-11-28)
+
+## What's Changed
+* chore!: upgrade to `v3` (Godot `v4.5-stable`) by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/445
+* chore(docs): provide local development instructions for building images by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/447
+* chore(compile,export): upgrade base images to `ubuntu:25.10` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/448
+* chore(compile): upgrade to `python3.13` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/449
+* chore(compile): update to latest macOS dependencies and Rust version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/450
+* fix(compile): correct build errors for macOS `compile-godot-export-template` images by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/451
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v2.2.13...v3.0.0
+
 ## 2.2.13 (2025-11-08)
 
 ## What's Changed
