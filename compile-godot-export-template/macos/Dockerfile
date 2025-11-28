@@ -149,6 +149,9 @@ RUN \
     ./build.sh
 
 RUN \
+    # NOTE: This seems to prevent multiple jobs from trying to create the same
+    # symlink, which would otherwise cause a build error.
+    JOBS=1 \
     # NOTE: The "build_compiler_rt.sh" checks for osxcross to be installed into
     # the PATH variable. Since we don't necessarily want to do that at this
     # point, fake it for the script.
