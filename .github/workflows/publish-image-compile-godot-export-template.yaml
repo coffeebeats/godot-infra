@@ -123,7 +123,7 @@ jobs:
 
       # MacOS-specific inputs.
 
-      llvm-version: ${{ inputs.llvm-version || '19' }} # https://github.com/godotengine/build-containers/blob/ab3b0db1e16ed4c9512506e9fad964c101ba93ff/Dockerfile.osx#L21
+      llvm-version: ${{ inputs.llvm-version || '20' }} # https://github.com/godotengine/build-containers/blob/ab3b0db1e16ed4c9512506e9fad964c101ba93ff/Dockerfile.osx#L21
       # IF/ELSE: Update the minimum macOS version if needed.
       moltenvk-version: ${{ inputs.moltenvk-version || '1.4.0' }}
       osx-version: ${{ inputs.osx-version || '15.5' }}
