@@ -108,7 +108,7 @@ RUN apt-get install -y --no-install-recommends \
     git \
     libssl-dev \
     libxml2-dev \
-    lzma-dev \
+    liblzma-dev \
     make \
     patch
 
