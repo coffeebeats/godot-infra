@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.1.0 (2025-11-29)
+
+## What's Changed
+* feat(ci): add dispatch trigger for build-all-images workflow by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/455
+* chore(ci): remove typo in parameter description by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/457
+* fix(compile): revert back to compatible ANGLE version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/458
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.0.1...v3.1.0
+
 ## 3.0.1 (2025-11-28)
 
 ## What's Changed
