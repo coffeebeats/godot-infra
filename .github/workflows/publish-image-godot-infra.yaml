@@ -11,6 +11,13 @@ on:
     branches:
       - main
       - godot-v*
+  workflow_dispatch:
+    inputs:
+      force:
+        type: boolean
+        description: Rebuild all images without using the cache."
+        required: false
+        default: true
 
 permissions:
   contents: write
@@ -29,12 +36,12 @@ jobs:
 
     outputs:
       version: ${{ steps.target.outputs.version }}
-      compile-godot-export-template-macos: ${{ steps.compile-godot-export-template-macos.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-macos == 'true' }}
-      compile-godot-export-template-windows: ${{ steps.compile-godot-export-template-windows.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-windows == 'true' }}
-      compile-godot-export-template-web: ${{ steps.compile-godot-export-template-web.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-web == 'true' }}
-      export-godot-project-preset-macos: ${{ steps.export-godot-project-preset-macos.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-macos == 'true' }}
-      export-godot-project-preset-windows: ${{ steps.export-godot-project-preset-windows.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-windows == 'true' }}
-      export-godot-project-preset-web: ${{ steps.export-godot-project-preset-web.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-web == 'true' }}
+      compile-godot-export-template-macos: ${{ github.event_name == 'workflow_dispatch' || steps.compile-godot-export-template-macos.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-macos == 'true' }}
+      compile-godot-export-template-windows: ${{ github.event_name == 'workflow_dispatch' || steps.compile-godot-export-template-windows.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-windows == 'true' }}
+      compile-godot-export-template-web: ${{ github.event_name == 'workflow_dispatch' || steps.compile-godot-export-template-web.outputs.any_modified == 'true' || steps.missing.outputs.compile-godot-export-template-web == 'true' }}
+      export-godot-project-preset-macos: ${{ github.event_name == 'workflow_dispatch' || steps.export-godot-project-preset-macos.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-macos == 'true' }}
+      export-godot-project-preset-windows: ${{ github.event_name == 'workflow_dispatch' || steps.export-godot-project-preset-windows.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-windows == 'true' }}
+      export-godot-project-preset-web: ${{ github.event_name == 'workflow_dispatch' || steps.export-godot-project-preset-web.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-web == 'true' }}
 
     steps:
       - name: Determine the target major-minor version
@@ -117,75 +124,81 @@ jobs:
 
     if: |
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.compile-godot-export-template-macos == 'true'
 
     uses: ./.github/workflows/publish-image-compile-godot-export-template.yaml
     with:
       platform: "macos"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' }}
+      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
 
   compile-godot-export-template-windows:
     needs: ["build-required"]
 
     if: |
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.compile-godot-export-template-windows == 'true'
 
     uses: ./.github/workflows/publish-image-compile-godot-export-template.yaml
     with:
       platform: "windows"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' }}
+      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
 
   compile-godot-export-template-web:
     needs: ["build-required"]
 
     if: |
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.compile-godot-export-template-web == 'true'
 
     uses: ./.github/workflows/publish-image-compile-godot-export-template.yaml
     with:
       platform: "web"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' }}
+      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
 
   export-godot-project-preset-macos:
     needs: ["build-required"]
 
     if: |
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.export-godot-project-preset-macos == 'true'
 
     uses: ./.github/workflows/publish-image-export-godot-project-preset.yaml
     with:
       platform: "macos"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' }}
+      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
 
   export-godot-project-preset-windows:
     needs: ["build-required"]
 
     if: |
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.export-godot-project-preset-windows == 'true'
 
     uses: ./.github/workflows/publish-image-export-godot-project-preset.yaml
     with:
       platform: "windows"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' }}
+      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
 
   export-godot-project-preset-web:
     needs: ["build-required"]
 
     if: |
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.export-godot-project-preset-web == 'true'
 
     uses: ./.github/workflows/publish-image-export-godot-project-preset.yaml
     with:
       platform: "web"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' }}
+      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
