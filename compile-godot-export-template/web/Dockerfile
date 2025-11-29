@@ -25,6 +25,7 @@ RUN \
     # Install global dependencies
     apt-get install -y --no-install-recommends \
     ca-certificates \
+    libatomic1 \
     pkg-config \
     python3.13
 
