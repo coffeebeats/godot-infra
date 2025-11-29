@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.1 (2025-11-29)
+
+## What's Changed
+* fix(compile): install missing `libatomic1` dependency for Web builds by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/459
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.0...v3.1.1
+
 ## 3.1.0 (2025-11-29)
 
 ## What's Changed
