@@ -15,9 +15,9 @@ on:
     inputs:
       force:
         type: boolean
-        description: "Force rebuild all images without using cache"
+        description: Rebuild all images without using the cache."
         required: false
-        default: false
+        default: true
 
 permissions:
   contents: write
