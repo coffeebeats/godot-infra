@@ -19,3 +19,5 @@ thirdparty/moltenvk/*
 
 # Testing-related ignores
 # ...
+.scons/
+godot/
