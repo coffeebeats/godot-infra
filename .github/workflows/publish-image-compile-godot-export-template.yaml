@@ -276,10 +276,6 @@ jobs:
             osxcross=thirdparty/osxcross
             vulkan=thirdparty/moltenvk
 
-      - name: Display 'push' outputs
-        if: inputs.platform == 'macos'
-        run: echo "${{ toJSON(steps.build-and-push-macos.outputs.metadata) }}"
-
       # Web
 
       - name: Build and push
@@ -317,10 +313,6 @@ jobs:
             PIX_VERSION=${{ needs.inputs.outputs.pix-version }}
             AGILITY_VERSION=${{ needs.inputs.outputs.agility-version }}
             GODOT_ANGLE_STATIC_VERSION=${{ needs.inputs.outputs.godot-angle-static-version }}
-
-      - name: Display 'push' outputs
-        if: inputs.platform == 'windows'
-        run: echo "${{ toJSON(steps.build-and-push-windows.outputs.metadata) }}"
 
   remove-stale-images:
     needs: ["build-and-publish"]

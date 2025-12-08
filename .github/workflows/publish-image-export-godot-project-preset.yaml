@@ -105,9 +105,6 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
-      - name: Display 'push' outputs
-        run: echo "${{ toJSON(steps.build-and-push.outputs.metadata) }}"
-
   remove-stale-images:
     needs: ["build-and-publish"]
     if: |
