@@ -174,7 +174,7 @@ You can test building export templates locally using the above images. First, ve
 gdenv vendor
 ```
 
-This will download and extract the Godot source code into the `godot/` directory. Then, use the Docker commands below to build export templates for each platform. Replace `<profile>` with `debug`, `release_debug`, or `release`.
+This will download and extract the Godot source code into the `godot/` directory. Then, use the Docker commands below to build export templates for each platform.
 
 <details>
 <summary><strong>macOS</strong></summary>
