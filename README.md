@@ -166,6 +166,55 @@ docker build \
 
 </details>
 
+### Compiling export templates locally
+
+You can test building export templates locally using the above images. First, vendor the Godot source code using [gdenv](https://github.com/coffeebeats/gdenv) by running:
+
+```sh
+gdenv vendor
+```
+
+This will download and extract the Godot source code into the `godot/` directory. Then, use the Docker commands below to build export templates for each platform.
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+```sh
+docker run --rm -it \
+  -v "$(pwd)/godot:/github/workspace" \
+  -v "$(pwd)/.scons:/github/workspace/.scons" \
+  compile-godot-export-template:godot-v4.5-macos \
+  /bin/bash -c -O extglob "scons -j\$(nproc) -C /github/workspace cache_path=/github/workspace/.scons verbose=yes warnings=extra werror=yes arch=arm64 target=template_debug debug_symbols=yes optimize=debug ccflags='-Wno-ordered-compare-function-pointers -Wno-c99-designator'"
+```
+
+</details>
+
+<details>
+<summary><strong>Web</strong></summary>
+
+```sh
+docker run --rm -it \
+  -v "$(pwd)/godot:/github/workspace" \
+  -v "$(pwd)/.scons:/github/workspace/.scons" \
+  compile-godot-export-template:godot-v4.5-web \
+  /bin/bash -c "scons -j\$(nproc) -C /github/workspace cache_path=/github/workspace/.scons verbose=yes warnings=extra werror=yes arch=wasm32 target=template_debug debug_symbols=yes optimize=debug"
+```
+
+</details>
+
+<details>
+<summary><strong>Windows</strong></summary>
+
+```sh
+docker run --rm -it \
+  -v "$(pwd)/godot:/github/workspace" \
+  -v "$(pwd)/.scons:/github/workspace/.scons" \
+  compile-godot-export-template:godot-v4.5-windows \
+  /bin/bash -c "scons -j\$(nproc) -C /github/workspace cache_path=/github/workspace/.scons verbose=yes warnings=extra werror=yes arch=x86_64 target=template_debug debug_symbols=yes optimize=debug"
+```
+
+</details>
+
 ## **Contributing**
 
 All contributions are welcome! Feel free to file [bugs](https://github.com/coffeebeats/godot-infra/issues/new?assignees=&labels=bug&projects=&template=bug-report.md&title=) and [feature requests](https://github.com/coffeebeats/godot-infra/issues/new?assignees=&labels=enhancement&projects=&template=feature-request.md&title=) and/or open pull requests.
