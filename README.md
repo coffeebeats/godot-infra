@@ -193,7 +193,7 @@ docker run --rm -it \
 <summary><strong>Web</strong></summary>
 
 ```sh
-docker run --rm \
+docker run --rm -it \
   -v "$(pwd)/godot:/github/workspace" \
   -v "$(pwd)/.scons:/github/workspace/.scons" \
   compile-godot-export-template:godot-v4.5-web \
@@ -206,7 +206,7 @@ docker run --rm \
 <summary><strong>Windows</strong></summary>
 
 ```sh
-docker run --rm \
+docker run --rm -it \
   -v "$(pwd)/godot:/github/workspace" \
   -v "$(pwd)/.scons:/github/workspace/.scons" \
   compile-godot-export-template:godot-v4.5-windows \
