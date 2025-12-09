@@ -26,28 +26,14 @@ RUN \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
-    pkg-config \
-    python3.12 \
-    # Add support for compressing/extracting archive files
-    xz-utils \
-    zip
-
-# ----------------------- Install: Clang / LLVM (MacOS) ---------------------- #
-
-ARG LLVM_VERSION
-
-RUN apt-get install -y --no-install-recommends \
     gnupg \
     lsb-release \
+    pkg-config \
+    python3.12 \
     software-properties-common \
+    xz-utils \
+    zip \
     wget
-
-RUN \
-    # Install LLVM/Clang
-    curl -LSsf https://apt.llvm.org/llvm.sh | bash -s $LLVM_VERSION && \
-    # Set 'clang-$LLVM_VERSION' as default 'clang'
-    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-$LLVM_VERSION 1 && \
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-$LLVM_VERSION 1
 
 # ---------------------------------------------------------------------------- #
 #                             Image: Setup - Python                            #
@@ -104,18 +90,24 @@ FROM img-setup-base AS img-setup-osxcross
 # ------------------------ Install: Build dependencies ----------------------- #
 
 RUN apt-get install -y --no-install-recommends \
+    binutils \
+    build-essential \
     cmake \
     git \
     libssl-dev \
-    libxml2-dev \
     liblzma-dev \
+    libxml2-dev \
     make \
     patch \
+    unzip \
     zlib1g-dev
 
 # ------------------------- Add: OSXCross source code ------------------------ #
 
 # Verify build arguments were set.
+ARG CLANG_VERSION
+RUN test -n "$CLANG_VERSION" || (echo "Missing build argument: 'CLANG_VERSION'" && exit 1)
+
 ARG MACOS_VERSION
 RUN test -n "$MACOS_VERSION" || (echo "Missing build argument: 'MACOS_VERSION'" && exit 1)
 
@@ -137,6 +129,7 @@ RUN test -f "/osxcross-src/tarballs/MacOSX${MACOS_VERSION}.sdk.tar.gz" || \
 # ------------------------------ Build: OSXCross ----------------------------- #
 
 ENV \
+    UNATTENDED=1 \
     TARGET_DIR="/osxcross" \
     SDK_VERSION="$MACOS_VERSION" \
     OSX_VERSION_MIN="$MACOS_VERSION_MINIMUM" \
@@ -144,16 +137,24 @@ ENV \
 
 WORKDIR /osxcross-src
 
+# Build Apple clang
+RUN \
+    CLANG_VERSION=$CLANG_VERSION \
+    ENABLE_CLANG_INSTALL=1 \
+    INSTALLPREFIX=/opt/clang \
+    JOBS=4 \
+    ./build_apple_clang.sh
+
 # Run the build script
 RUN \
-    UNATTENDED=1 \
+    PATH="/opt/clang/bin:$PATH" \
     ./build.sh
 
 RUN \
     # NOTE: The "build_compiler_rt.sh" checks for osxcross to be installed into
     # the PATH variable. Since we don't necessarily want to do that at this
     # point, fake it for the script.
-    PATH="$TARGET_DIR/bin:$PATH" \
+    PATH="$TARGET_DIR/bin:/opt/clang/bin:$PATH" \
     # NOTE: Variable `ENABLE_COMPILER_RT_INSTALL=1` is needed to prevent linker
     # errors with using "___isPlatformVersionAtLeast".
     # See https://github.com/tpoechtrager/osxcross/issues/278 for reference.
@@ -217,17 +218,18 @@ ENV \
 
 # ----------------------- Install: OSXCross SDK (MacOS) ---------------------- #
 
+# Copy and install Apple 'clang'
+COPY \
+    --from=img-setup-osxcross \
+    "/opt/clang" \
+    "/opt/clang"
+ENV \
+    PATH="/opt/clang/bin:$PATH"
+
 # Copy osxcross files
 COPY \
     --from=img-setup-osxcross \
     "/osxcross" "/usr/local/lib/osxcross/target"
-
-# The 'osxcross/build_compiler_rt.sh' script installs libraries into these directories.
-ARG LLVM_VERSION
-COPY \
-    --from=img-setup-osxcross \
-    "/usr/lib/llvm-$LLVM_VERSION/lib/clang" \
-    "/usr/lib/llvm-$LLVM_VERSION/lib/clang"
 
 ARG MACOS_VERSION
 ARG MACOS_VERSION_MINIMUM

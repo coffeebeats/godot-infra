@@ -28,9 +28,9 @@ on:
         required: false
 
       # MacOS-specific inputs.
-      llvm-version:
+      clang-version:
         type: string
-        description: "The 'LLVM' version to install in the image."
+        description: "The Apple 'clang' version to install in the image."
         required: false
       moltenvk-version:
         type: string
@@ -105,7 +105,7 @@ on:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
         required: false
-        default: 60
+        default: 300
 
 permissions:
   contents: write
@@ -123,7 +123,7 @@ jobs:
 
       # MacOS-specific inputs.
 
-      llvm-version: ${{ inputs.llvm-version || '20' }} # https://github.com/godotengine/build-containers/blob/ab3b0db1e16ed4c9512506e9fad964c101ba93ff/Dockerfile.osx#L21
+      clang-version: ${{ inputs.clang-version || '19.1.4' }} # https://github.com/godotengine/build-containers/blob/ab3b0db1e16ed4c9512506e9fad964c101ba93ff/Dockerfile.osx#L21
       # IF/ELSE: Update the minimum macOS version if needed.
       moltenvk-version: ${{ inputs.moltenvk-version || '1.4.0' }}
       osx-version: ${{ inputs.osx-version || '15.5' }}
@@ -267,7 +267,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
           build-args: |
-            LLVM_VERSION=${{ needs.inputs.outputs.llvm-version }}
+            CLANG_VERSION=${{ needs.inputs.outputs.clang-version }}
             MACOS_VERSION=${{ needs.inputs.outputs.osx-version }}
             MACOS_VERSION_MINIMUM=${{ needs.inputs.outputs.osx-version-min }}
             OSXCROSS_SDK=${{ needs.inputs.outputs.osxcross-sdk }}
