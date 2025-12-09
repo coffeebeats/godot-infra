@@ -20,7 +20,7 @@ on:
         type: number
         description: "The workflow's maximum allowed run duration (in minutes)."
         required: false
-        default: 60
+        default: 300
 
       godot-angle-static-version:
         type: string
