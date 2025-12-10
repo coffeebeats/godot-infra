@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.1.2 (2025-12-10)
+
+## What's Changed
+* chore(docs): add instructions for compiling export templates locally by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/462
+* chore(deps): bump actions/checkout from 5.0.0 to 6.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/461
+* fix(ci): remove broken metadata print step as it's redundant by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/464
+* fix(compile): build Apple `clang` in macOS image by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/465
+* fix(ci): update time limit for workflow calls by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/466
+* chore: update `README.md` for new `CLANG_VERSION` build argument by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/467
+* fix(ci): exclude redefined `libxml2` module when packaging macOS SDK by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/469
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.1...v3.1.2
+
 ## 3.1.1 (2025-11-29)
 
 ## What's Changed
