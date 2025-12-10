@@ -35,9 +35,14 @@ runs:
     - name: Create macOS SDK archive
       shell: bash
       run: |
+        XCODEDIR=/Applications/Xcode_${{ inputs.xcode-version }}.app
+
+        # NOTE(#468): Remove redefined 'libxml2' module prior to packaging SDK.
+        rm -f $XCODEDIR/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/libxml2/libxml
+
         SDK_VERSION=${{ inputs.version }} \
         SDK_COMPRESSOR=gz \
-        XCODEDIR=/Applications/Xcode_${{ inputs.xcode-version }}.app \
+        XCODEDIR=$XCODEDIR \
           thirdparty/osxcross/tools/gen_sdk_package.sh
 
         echo "Files in current directory:"
