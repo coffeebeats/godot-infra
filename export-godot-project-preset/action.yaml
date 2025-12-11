@@ -106,7 +106,7 @@ runs:
 
     # TODO: Consider removing this and using the input editor version instead.
     - name: Parse Godot editor version
-      uses: "./.github/actions/parse-godot-version"
+      uses: ./.github/actions/parse-godot-version
       id: godot-version
       with:
         editor-path: ${{ steps.editor.outputs.path }}/bin/godot
@@ -233,7 +233,7 @@ runs:
 
     - name: Export the Godot project preset (MacOS)
       if: steps.platform.outputs.value == 'macos'
-      uses: "./export-godot-project-preset/macos"
+      uses: ./export-godot-project-preset/macos
       with:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
@@ -259,7 +259,7 @@ runs:
 
     - name: Export the Godot project preset (Web)
       if: steps.platform.outputs.value == 'web'
-      uses: "./export-godot-project-preset/web"
+      uses: ./export-godot-project-preset/web
       with:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
@@ -275,7 +275,7 @@ runs:
 
     - name: Export the Godot project preset (Windows)
       if: steps.platform.outputs.value == 'windows'
-      uses: "./export-godot-project-preset/windows"
+      uses: ./export-godot-project-preset/windows
       with:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
