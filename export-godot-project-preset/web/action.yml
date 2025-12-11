@@ -57,6 +57,10 @@ runs:
       '${{ inputs.preset-name }}'
       $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
 
+      if [[ "$?" -ne 0 ]]; then exit 1; fi
+
       mv
       $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
       $(dirname $GITHUB_WORKSPACE/${{ inputs.preset-output-path }})/index.html
+
+      if [[ "$?" -ne 0 ]]; then exit 1; fi

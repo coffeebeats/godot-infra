@@ -53,3 +53,5 @@ runs:
       $([[ "${{ inputs.profile }}" == "release_debug" ]] && echo production=yes debug_symbols=yes optimize=speed_trace)
       $([[ "${{ inputs.profile }}" == "release" ]] && echo production=yes optimize=speed)
       $([[ "${{ inputs.profile }}" != "release" ]] && echo pix_path=/opt/pix)
+
+      if [[ "$?" -ne 0 ]]; then exit 1; fi
