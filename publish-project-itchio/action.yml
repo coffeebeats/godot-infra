@@ -21,7 +21,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: ./.github/actions/setup-butler
+    - uses: coffeebeats/godot-infra/.github/actions/setup-butler@v3
 
     - name: Log in to itch.io
       shell: bash
