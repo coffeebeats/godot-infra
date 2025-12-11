@@ -73,11 +73,15 @@ runs:
       $([[ "${{ inputs.app-bundle }}" == "true" ]] && echo generate_bundle=yes)
       $([[ "${{ inputs.target }}" == "editor" ]] && echo bundle_sign_identity=)
 
+      if [[ "$?" -ne 0 ]]; then exit 1; fi
+
       if [[ "${{ inputs.target }}" == "editor" && "${{ inputs.app-bundle }}" == "true" ]]; then
       rcodesign sign
       --entitlements-xml-path ${{ inputs.godot-src-path }}/misc/dist/macos/editor.entitlements
       ${{ inputs.godot-src-path }}/bin/godot_macos_editor.app;
       fi
+
+      if [[ "$?" -ne 0 ]]; then exit 1; fi
 
       find
       ${{ inputs.godot-src-path }}/bin
@@ -86,3 +90,5 @@ runs:
       ! -name '*.app'
       ! -name '*.zip'
       -exec rm -rf {} \;
+
+      if [[ "$?" -ne 0 ]]; then exit 1; fi

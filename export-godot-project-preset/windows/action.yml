@@ -62,3 +62,5 @@ runs:
       $([[ ${{ inputs.pck-only }} == true ]] && echo --export-pack)
       '${{ inputs.preset-name }}'
       $GITHUB_WORKSPACE/${{ inputs.preset-output-path }}
+
+      if [[ "$?" -ne 0 ]]; then exit 1; fi

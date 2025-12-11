@@ -66,11 +66,17 @@ runs:
       $([[ "${{ inputs.profile }}" == "release_debug" ]] && production=yes debug_symbols=yes optimize=speed_trace)
       $([[ "${{ inputs.profile }}" == "release" ]] && echo production=yes optimize=speed)
 
+      if [[ "$?" -ne 0 ]]; then exit 1; fi
+
       mv
       ${{ inputs.godot-src-path }}/bin/godot.web.*.zip
       "${{ inputs.godot-src-path }}/bin/web$([[ ${{ inputs.enable-gdextension }} == true ]] && echo _dlink)_$([[ ${{ inputs.profile }} == release ]] && echo release || echo debug).zip"
+
+      if [[ "$?" -ne 0 ]]; then exit 1; fi
 
       rm -rf
       .web_zip
       *.js
       *.wasm
+
+      if [[ "$?" -ne 0 ]]; then exit 1; fi
