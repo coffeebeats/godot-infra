@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.4 (2025-12-11)
+
+## What's Changed
+* fix: Revert "fix(ci): reference this repository's actions via paths (#472)" by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/474
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.3...v3.1.4
+
 ## 3.1.3 (2025-12-11)
 
 ## What's Changed
