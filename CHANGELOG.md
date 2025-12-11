@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.1.3 (2025-12-11)
+
+## What's Changed
+* fix(compile,export): exit early if statement fails by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/470
+* fix(ci): reference this repository's actions via paths by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/472
+* chore(ci): claim additional disk space back via `setup-runner` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/473
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.2...v3.1.3
+
 ## 3.1.2 (2025-12-10)
 
 ## What's Changed
