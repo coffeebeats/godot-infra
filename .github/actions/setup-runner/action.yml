@@ -10,10 +10,15 @@ runs:
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        sudo rm -rf /usr/local/lib/android # Free ~10 GB; removes Android support
-        sudo rm -rf /usr/share/dotnet # Free ~20GB; removes .NET support
-        sudo rm -rf /usr/local/share/powershell # Free ~1.2GB; removes PowerShell support
-        sudo rm -rf /usr/local/share/chromium # Free ~0.5GB; removes Chromium support
+        # Languages & runtimes
+        sudo rm -rf /usr/local/.ghcup # ~3GB; removes Haskell support
+        sudo rm -rf /usr/local/julia* # ~0.5GB; removes Julia support
+        sudo rm -rf /usr/local/lib/android # ~10 GB; removes Android support
+        sudo rm -rf /usr/share/dotnet # ~20GB; removes .NET support
+        sudo rm -rf /usr/share/swift # ~2.5GB; removes Swift support
+        sudo rm -rf $JAVA_HOME_8_X64 $JAVA_HOME_11_X64 $JAVA_HOME_17_X64 $JAVA_HOME_21_X64 # ~1.3GB; removes Java support
 
-        # Free ~1.3GB; removes Java support
-        sudo rm -rf $JAVA_HOME_8_X64 $JAVA_HOME_11_X64 $JAVA_HOME_17_X64 $JAVA_HOME_21_X64
+        # Tools
+        sudo rm -rf /opt/hostedtoolcache/CodeQL # ~2GB; removes CodeQL
+        sudo rm -rf /usr/local/share/chromium # ~1.5GB; removes Chrome
+        sudo rm -rf /usr/local/share/powershell # ~0.8GB; removes PowerShell
