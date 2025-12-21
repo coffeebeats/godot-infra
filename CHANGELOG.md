@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.5 (2025-12-21)
+
+## What's Changed
+* fix(package-addon): keep icon resources as they might be used by addon by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/476
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.4...v3.1.5
+
 ## 3.1.4 (2025-12-11)
 
 ## What's Changed
