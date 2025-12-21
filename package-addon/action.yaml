@@ -71,7 +71,6 @@ runs:
 
         # Remove development/project-related files.
         rm -f project.godot
-        rm -f icon.*
         rm -rf script_templates
 
         # Remove all nested addon dependencies.
