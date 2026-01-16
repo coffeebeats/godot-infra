@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.1.6 (2026-01-16)
+
+## What's Changed
+* fix(scripts): default instantiated repositories to require pinning actions to full commit hash by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/483
+* chore(deps): bump actions/upload-artifact from 5.0.0 to 6.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/482
+* chore(deps): bump actions/checkout from 6.0.0 to 6.0.1 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/481
+* chore(deps): bump actions/cache from 4.3.0 to 5.0.1 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/480
+* chore(deps): bump docker/setup-buildx-action from 3.11.1 to 3.12.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/479
+* chore(deps): bump tj-actions/changed-files from 47.0.0 to 47.0.1 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/478
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.5...v3.1.6
+
 ## 3.1.5 (2025-12-21)
 
 ## What's Changed
