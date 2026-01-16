@@ -211,7 +211,8 @@ update_gha_permissions() {
     cat <<EOM | $GH api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" --input - "repos/$DST_REPOSITORY/actions/permissions"
 {
 "enabled": true,
-"allowed_actions": "all"
+"allowed_actions": "all",
+"sha_pinning_required": true,
 }
 EOM
 
