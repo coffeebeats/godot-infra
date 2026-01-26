@@ -169,14 +169,20 @@ runs:
     - name: Push the latest changes to the target branch
       shell: bash
       run: |
-        # Check out to target branch
-        BRANCHES=$(git ls-remote --heads origin ${{ inputs.target-branch }})
+        # Check out to target branch (skip if already on it)
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-        if [[ -z "$BRANCHES" ]]; then
-          git checkout -b ${{ inputs.target-branch }}
+        if [[ "$CURRENT_BRANCH" != "${{ inputs.target-branch }}" ]]; then
+          BRANCHES=$(git ls-remote --heads origin ${{ inputs.target-branch }})
+
+          if [[ -z "$BRANCHES" ]]; then
+            git checkout -b ${{ inputs.target-branch }}
+          else
+            git fetch origin +refs/heads/${{ inputs.target-branch }}:refs/heads/${{ inputs.target-branch }}
+            git checkout ${{ inputs.target-branch }}
+          fi
         else
-          git fetch origin +refs/heads/${{ inputs.target-branch }}:refs/heads/${{ inputs.target-branch }}
-          git checkout ${{ inputs.target-branch }}
+          echo "Already on target branch '${{ inputs.target-branch }}'; skipping checkout."
         fi
 
         # Set options to enable more extensive globbing.
