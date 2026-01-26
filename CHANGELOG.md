@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.7 (2026-01-26)
+
+## What's Changed
+* fix(ci): ensure `addons/` directory exists when packaging root-type addon by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/485
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.6...v3.1.7
+
 ## 3.1.6 (2026-01-16)
 
 ## What's Changed
