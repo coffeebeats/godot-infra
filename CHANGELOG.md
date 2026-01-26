@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.10 (2026-01-26)
+
+## What's Changed
+* fix(ci): remove untracked files and directories when restoring the worktree by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/491
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.9...v3.1.10
+
 ## 3.1.9 (2026-01-26)
 
 ## What's Changed
