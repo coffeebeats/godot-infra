@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.9 (2026-01-26)
+
+## What's Changed
+* fix(ci): revert "skip checkout if already on branch (#487)" by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/489
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.8...v3.1.9
+
 ## 3.1.8 (2026-01-26)
 
 ## What's Changed
