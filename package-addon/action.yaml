@@ -141,6 +141,7 @@ runs:
         # Add packaged directory into project as an addon. This ensures paths
         # within '*.import' files match what a project would require.
         rm -rf "$PROJECT_DIR"
+        mkdir -p "$(dirname $PROJECT_DIR)"
         mv "$PACKAGE_DIR" "$PROJECT_DIR"
 
         # NOTE: It's okay if this fails, probably. For example, coffeebeats/gut
