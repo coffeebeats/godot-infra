@@ -164,7 +164,9 @@ runs:
       # Reset the working tree since we don't need to keep edits.
     - name: Restore worktree
       shell: bash
-      run: "git restore ."
+      run: |
+        git restore .
+        git clean -fd
 
     - name: Push the latest changes to the target branch
       shell: bash
