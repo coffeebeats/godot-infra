@@ -113,7 +113,9 @@ RUN \
     https://github.com/godotengine/godot-nir-static.git \
     /godot-nir-static && \
     # Initialize submodules and dependencies
-    python3.13 -m pip install mako && \
+    python3.13 -m pip install \
+        mako \
+        PyYAML && \
     cd /godot-nir-static && \
     git submodule update --init && \
     ./update_mesa.sh && \
