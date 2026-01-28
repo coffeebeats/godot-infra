@@ -1,4 +1,5 @@
 name: "📁 Archive: MacOS SDK"
+description: "Create a macOS SDK archive from the specified 'Xcode' version."
 
 inputs:
   version:

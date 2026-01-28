@@ -1,4 +1,5 @@
 name: "📁 Archive: Vulkan SDK"
+description: "Download and archive the specified version of 'Vulkan' SDK."
 
 inputs:
   out:
