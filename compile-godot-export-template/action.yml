@@ -116,7 +116,7 @@ runs:
 
     # --------------------- Vendor the Godot source code --------------------- #
 
-    - uses: coffeebeats/godot-infra/.github/actions/install-godot-source@v4
+    - uses: ./.github/actions/install-godot-source
       with:
         dst-path: ${{ github.workspace }}/godot
         godot-src-rev: ${{ inputs.godot-src-rev }}
@@ -124,7 +124,7 @@ runs:
         godot-patches: ${{ inputs.godot-patches }}
 
     - name: Parse Godot source code version
-      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v4"
+      uses: ./.github/actions/parse-godot-version
       with:
         versionpy-path: ${{ github.workspace }}/godot/version.py
         minimum-major-version: 4
@@ -265,7 +265,7 @@ runs:
         inputs.platform == 'macos' &&
         (inputs.arch == 'x86_64' || inputs.arch == 'universal') &&
         steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v4"
+      uses: ./compile-godot-export-template/macos
       with:
         app-bundle: ${{ inputs.arch == 'x86_64' }}
         arch: x86_64
@@ -280,7 +280,7 @@ runs:
         inputs.platform == 'macos'  &&
         (inputs.arch == 'arm64' || inputs.arch == 'universal') &&
         steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/macos@v4"
+      uses: ./compile-godot-export-template/macos
       with:
         app-bundle: true
         arch: arm64
@@ -298,7 +298,7 @@ runs:
         inputs.compile-editor != 'true' &&
         inputs.platform == 'web' &&
         steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/web@v4"
+      uses: ./compile-godot-export-template/web
       with:
         arch: ${{ inputs.arch }}
         enable-gdextension: ${{ inputs.enable-gdextension }}
@@ -315,7 +315,7 @@ runs:
       if: |
         inputs.platform == 'windows' &&
         steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "coffeebeats/godot-infra/compile-godot-export-template/windows@v4"
+      uses: ./compile-godot-export-template/windows
       with:
         arch: ${{ inputs.arch }}
         encryption-key: ${{ inputs.encryption-key }}

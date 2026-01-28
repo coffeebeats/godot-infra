@@ -28,7 +28,7 @@ runs:
       shell: bash
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-    - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v4
+    - uses: ./.github/actions/setup-godot
       with:
         version: ${{ inputs.godot-editor-version }}
 
@@ -195,7 +195,7 @@ runs:
         echo "Target addon workspace (after):"
         tree -lha --dirsfirst -I .git
 
-    - uses: coffeebeats/godot-infra/commit-changes@v4
+    - uses: ./commit-changes
       with:
         description: "updating \\`${{ inputs.subfolder }}\\` to ${{ steps.commit.outputs.sha_short }}"
         target-branch: ${{ inputs.target-branch }}
