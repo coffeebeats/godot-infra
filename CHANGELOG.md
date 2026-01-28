@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.0.0 (2026-01-28)
+
+## What's Changed
+* fix(ci): add missing descriptions for actions by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/493
+* chore!: bump to Godot `v4.6-stable` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/495
+* fix(compile): install missing dependency for `godot-nir-static` compilation by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/496
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v3.1.10...v4.0.0
+
 ## 3.1.10 (2026-01-26)
 
 ## What's Changed
