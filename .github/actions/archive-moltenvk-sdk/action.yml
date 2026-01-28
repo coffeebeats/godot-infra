@@ -1,4 +1,5 @@
 name: "📁 Archive: MoltenVK SDK"
+description: "Compile and archive the specified version of 'MoltenVK' SDK."
 
 # NOTE: This action compiles 'MoltenVK' from source using specific compilation
 # flags that restore compatibility with 'osxcross'.
@@ -9,7 +10,7 @@ inputs:
     required: true
   xcode-version:
     description: "The 'Xcode' version to use for building/extracting."
-    required:
+    required: false
   osx-version-min:
     description: "The minimum supported 'macOS' version."
     required: true
