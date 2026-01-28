@@ -85,14 +85,14 @@ Dependency versions are taken from the defaults defined in the [publish-image-co
 
 ```sh
 docker build \
-  --build-arg CLANG_VERSION=19.1.4 \
+  --build-arg CLANG_VERSION=19.1.5 \
   --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
-  --build-arg MACOS_VERSION_MINIMUM=10.15 \
-  --build-arg MACOS_VERSION=15.5 \
-  --build-arg OSXCROSS_SDK=darwin24.5 \
+  --build-arg MACOS_VERSION_MINIMUM=11.0 \
+  --build-arg MACOS_VERSION=26.1 \
+  --build-arg OSXCROSS_SDK=darwin25.1 \
   --build-context osxcross=thirdparty/osxcross \
   --build-context vulkan=thirdparty/moltenvk \
-  -t compile-godot-export-template:godot-v4.5-macos \
+  -t compile-godot-export-template:godot-v4.6-macos \
   compile-godot-export-template/macos
 ```
 
@@ -103,8 +103,8 @@ docker build \
 
 ```sh
 docker build \
-  --build-arg EMSCRIPTEN_SDK_VERSION=4.0.10 \
-  -t compile-godot-export-template:godot-v4.5-web \
+  --build-arg EMSCRIPTEN_SDK_VERSION=4.0.20 \
+  -t compile-godot-export-template:godot-v4.6-web \
   compile-godot-export-template/web
 ```
 
@@ -115,12 +115,12 @@ docker build \
 
 ```sh
 docker build \
-  --build-arg AGILITY_VERSION=1.613.3 \
+  --build-arg AGILITY_VERSION=1.618.5 \
   --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
-  --build-arg GODOT_NIR_STATIC_VERSION=23.1.9-1 \
+  --build-arg GODOT_NIR_STATIC_VERSION=25.3.1-1 \
   --build-arg MINGW_LLVM_VERSION=20240619 \
   --build-arg PIX_VERSION=1.0.240308001 \
-  -t compile-godot-export-template:godot-v4.5-windows \
+  -t compile-godot-export-template:godot-v4.6-windows \
   compile-godot-export-template/windows
 ```
 
@@ -135,8 +135,8 @@ Dependency versions are taken from the defaults defined in the [publish-image-ex
 
 ```sh
 docker build \
-  --build-arg RUST_VERSION=1.91.1 \
-  -t export-godot-project-preset:godot-v4.5-macos \
+  --build-arg RUST_VERSION=1.93.0 \
+  -t export-godot-project-preset:godot-v4.6-macos \
   export-godot-project-preset/macos
 ```
 
@@ -147,8 +147,8 @@ docker build \
 
 ```sh
 docker build \
-  --build-arg RUST_VERSION=1.91.1 \
-  -t export-godot-project-preset:godot-v4.5-web \
+  --build-arg RUST_VERSION=1.93.0 \
+  -t export-godot-project-preset:godot-v4.6-web \
   export-godot-project-preset/web
 ```
 
@@ -159,8 +159,8 @@ docker build \
 
 ```sh
 docker build \
-  --build-arg RUST_VERSION=1.91.1 \
-  -t export-godot-project-preset:godot-v4.5-windows \
+  --build-arg RUST_VERSION=1.93.0 \
+  -t export-godot-project-preset:godot-v4.6-windows \
   export-godot-project-preset/windows
 ```
 
