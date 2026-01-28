@@ -42,7 +42,7 @@ inputs:
 
 runs:
   using: docker
-  image: docker://ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.5-web
+  image: docker://ghcr.io/coffeebeats/compile-godot-export-template:godot-v4.6-web
   args:
     - /bin/bash
     - -c

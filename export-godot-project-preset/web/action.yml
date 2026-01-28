@@ -34,7 +34,7 @@ inputs:
 
 runs:
   using: docker
-  image: docker://ghcr.io/coffeebeats/export-godot-project-preset:godot-v4.5-web
+  image: docker://ghcr.io/coffeebeats/export-godot-project-preset:godot-v4.6-web
   env:
     GODOT_SCRIPT_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
   args:
