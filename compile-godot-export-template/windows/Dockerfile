@@ -53,7 +53,7 @@ FROM img-setup-base AS img-setup-mingw-llvm
 ARG MINGW_LLVM_VERSION
 RUN test -n "$MINGW_LLVM_VERSION" || (echo "Missing build argument: 'MINGW_LLVM_VERSION'" && exit 1)
 
-ENV MINGW_LLVM_PKG_NAME="llvm-mingw-$MINGW_LLVM_VERSION-ucrt-ubuntu-20.04-x86_64.tar.xz"
+ENV MINGW_LLVM_PKG_NAME="llvm-mingw-$MINGW_LLVM_VERSION-ucrt-ubuntu-22.04-x86_64.tar.xz"
 
 RUN \
     # Install dependencies required for compiler installation
@@ -169,33 +169,35 @@ RUN \
 #                         Image: Setup - ANGLE support                         #
 # ---------------------------------------------------------------------------- #
 
-FROM img-setup-compilers AS img-setup-angle
+FROM img-setup-base AS img-setup-angle
 
 # -------------------------- Install: ANGLE library -------------------------- #
+
+# NOTE: Compiling ANGLE from source only works with LLVM-MinGW version
+# '20240619' [1]. This is due to an upstream bug in MinGW [2], though a patch
+# for this existed at one point (link broken) [3]. Until such time that this
+# works with the target MinGW-LLVM version, use pre-built libraries.
+#
+# [1] https://github.com/godotengine/godot-angle-static/issues/15
+# [2] https://github.com/mstorsjo/llvm-mingw/issues/489
+# [3] https://github.com/msys2/MINGW-packages/blob/master/mingw-w64-headers-git/0001-remove-ireference-boolean.patch
 
 ARG GODOT_ANGLE_STATIC_VERSION
 RUN test -n "$GODOT_ANGLE_STATIC_VERSION" || (echo "Missing build argument: 'GODOT_ANGLE_STATIC_VERSION'" && exit 1)
 
+ENV GODOT_ANGLE_STATIC_BASE_URL="https://github.com/godotengine/godot-angle-static/releases/download/"
+
 RUN \
     # Install installation dependencies
     apt-get install -y --no-install-recommends \
-    git && \
-    # Clone the 'godot-angle-static' repository
-    git clone \
-    --no-tags \
-    --depth=1 \
-    -b $GODOT_ANGLE_STATIC_VERSION \
-    https://github.com/godotengine/godot-angle-static.git \
-    /godot-angle-static && \
-    # Initialize submodules and dependencies
-    cd /godot-angle-static && \
-    git submodule update --init && \
-    ./update_angle.sh && \
-    # Build the static library for supported platforms
-    scons platform=windows arch=arm64 use_mingw=yes use_llvm=yes optimize=speed && \
-    scons platform=windows arch=x86_64 use_mingw=yes use_llvm=yes optimize=speed && \
+    curl \
+    jq \
+    unzip && \
+    # Download prebuilt 'x86_64' ANGLE libraries
     mkdir /angle && \
-    mv bin/* /angle
+    GODOT_ANGLE_STATIC_BASE_URL="https://github.com/godotengine/godot-angle-static/releases/download/$(printf "${GODOT_ANGLE_STATIC_VERSION}" | jq -sRr '@uri')"; \
+    curl -L -o win_x86_64.zip "$GODOT_ANGLE_STATIC_BASE_URL/godot-angle-static-x86_64-llvm-release.zip" && \
+    unzip -o -d /angle win_x86_64.zip && rm -f win_x86_64.zip
 
 # ---------------------------------------------------------------------------- #
 #                             Image: Setup - Final                             #

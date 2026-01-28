@@ -140,15 +140,7 @@ jobs:
 
       # Windows-specific inputs.
 
-      # FIXME(#342): Compiling ANGLE from source only works with LLVM-MinGW version '20240619' [1].
-      # Despite Godot itself using a newer version [2], pin to older version for now. This is due
-      # to an upstream bug in MinGW [3], though a patch for this exists [4].
-      #
-      # [1] https://github.com/godotengine/godot-angle-static/issues/15
-      # [2] https://github.com/godotengine/build-containers/blob/ab3b0db1e16ed4c9512506e9fad964c101ba93ff/Dockerfile.windows#L6
-      # [3] https://github.com/mstorsjo/llvm-mingw/issues/489
-      # [4] https://github.com/msys2/MINGW-packages/blob/master/mingw-w64-headers-git/0001-remove-ireference-boolean.patch
-      mingw-llvm-version: ${{ inputs.mingw-llvm-version || '20240619' }} # https://github.com/godotengine/build-containers/blob/a8991faab8b279249f238b66f7c14c0c311ccd27/Dockerfile.windows#L6
+      mingw-llvm-version: ${{ inputs.mingw-llvm-version || '20251118' }} # https://github.com/godotengine/build-containers/blob/a8991faab8b279249f238b66f7c14c0c311ccd27/Dockerfile.windows#L6
       godot-nir-static-version: ${{ inputs.godot-nir-static-version || '25.3.1-1' }} # https://github.com/godotengine/godot/blob/543f47485c0c952b122747ef05af60e778c44139/misc/scripts/install_d3d12_sdk_windows.py#L36
       pix-version: ${{ inputs.pix-version || '1.0.240308001' }} # https://github.com/godotengine/godot/blob/543f47485c0c952b122747ef05af60e778c44139/misc/scripts/install_d3d12_sdk_windows.py#L39
       agility-version: ${{ inputs.agility-version || '1.618.5' }} # https://github.com/godotengine/godot/blob/543f47485c0c952b122747ef05af60e778c44139/misc/scripts/install_d3d12_sdk_windows.py#L46

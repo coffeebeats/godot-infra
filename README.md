@@ -119,7 +119,7 @@ docker build \
   --build-arg AGILITY_VERSION=1.618.5 \
   --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/7578 \
   --build-arg GODOT_NIR_STATIC_VERSION=25.3.1-1 \
-  --build-arg MINGW_LLVM_VERSION=20240619 \
+  --build-arg MINGW_LLVM_VERSION=20251118 \
   --build-arg PIX_VERSION=1.0.240308001 \
   -t compile-godot-export-template:godot-v4.6-windows \
   compile-godot-export-template/windows
