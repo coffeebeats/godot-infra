@@ -87,7 +87,7 @@ Dependency versions are taken from the defaults defined in the [publish-image-co
 ```sh
 docker build \
   --build-arg CLANG_VERSION=19.1.5 \
-  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
+  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/7578 \
   --build-arg MACOS_VERSION_MINIMUM=11.0 \
   --build-arg MACOS_VERSION=26.1 \
   --build-arg OSXCROSS_SDK=darwin25.1 \
@@ -117,7 +117,7 @@ docker build \
 ```sh
 docker build \
   --build-arg AGILITY_VERSION=1.618.5 \
-  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/6601.2 \
+  --build-arg GODOT_ANGLE_STATIC_VERSION=chromium/7578 \
   --build-arg GODOT_NIR_STATIC_VERSION=25.3.1-1 \
   --build-arg MINGW_LLVM_VERSION=20240619 \
   --build-arg PIX_VERSION=1.0.240308001 \

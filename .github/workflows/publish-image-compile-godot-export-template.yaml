@@ -119,7 +119,7 @@ jobs:
     timeout-minutes: 1
 
     outputs:
-      godot-angle-static-version: ${{ inputs.godot-angle-static-version || 'chromium/6601.2' }} # https://github.com/godotengine/godot/blob/543f47485c0c952b122747ef05af60e778c44139/.github/workflows/windows_builds.yml#L91
+      godot-angle-static-version: ${{ inputs.godot-angle-static-version || 'chromium/7578' }} # https://github.com/godotengine/godot-build-scripts/blob/f96241dc42946e717e69a836aae8280759b3127c/build.sh#L184
 
       # MacOS-specific inputs.
 
