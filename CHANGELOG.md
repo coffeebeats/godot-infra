@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.0.1 (2026-01-29)
+
+## What's Changed
+* chore(ci): update GitHub actions and workflows to use `v4` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/497
+* chore(ci): use `godot-infra` actions via local path by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/499
+* fix(ci): update to correct `ANGLE` version by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/500
+* fix(compile): migrate Windows builds to precompiled `ANGLE`; update `MinGW-LLVM` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/501
+* fix(ci): Update README for Godot version release tags by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/502
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.0.0...v4.0.1
+
 ## 4.0.0 (2026-01-28)
 
 ## What's Changed
