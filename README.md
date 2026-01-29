@@ -21,9 +21,9 @@ This repository supports multiple minor versions of Godot. The `main` branch alw
 > [!NOTE]
 > Although it's recommended to [pin actions to the full-length commit SHA](https://docs.github.com/en/actions/reference/security/secure-use#using-third-party-actions), the following release tags define stable, tested versions of this project.
 
-#### Branch name / Release tag: Godot version
+#### Release tag: Godot version
 
-- `main` / `v4`: `v4.6.0`
+- `v4` (`main`): `v4.6.0`
 - `v3`: `v4.5.1`
 - `v2`: `v4.4.1`
 - `v1`: `v4.3`
