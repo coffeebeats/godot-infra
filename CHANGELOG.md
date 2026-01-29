@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.0.2 (2026-01-29)
+
+## What's Changed
+* fix(ci): Revert "use `godot-infra` actions via local path (#499)" by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/503
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.0.1...v4.0.2
+
 ## 4.0.1 (2026-01-29)
 
 ## What's Changed
