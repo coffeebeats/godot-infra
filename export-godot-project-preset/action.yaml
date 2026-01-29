@@ -99,14 +99,14 @@ runs:
         EDITOR_PATH=$(mktemp -d -p ${{ github.workspace }})
         echo "path=${EDITOR_PATH#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
 
-    - uses: ./.github/actions/setup-godot
+    - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v4
       with:
         version: ${{ inputs.godot-editor-version }}
         install-dir: ${{ steps.editor.outputs.path }}
 
     # TODO: Consider removing this and using the input editor version instead.
     - name: Parse Godot editor version
-      uses: ./.github/actions/parse-godot-version
+      uses: "coffeebeats/godot-infra/.github/actions/parse-godot-version@v4"
       id: godot-version
       with:
         editor-path: ${{ steps.editor.outputs.path }}/bin/godot
@@ -154,7 +154,7 @@ runs:
         echo "path=${TARGET#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
 
     - name: Set path to export template in 'export_presets.cfg'
-      uses: ./inspect-godot-export-presets
+      uses: coffeebeats/godot-infra/inspect-godot-export-presets@v4
       with:
         project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
         operation: "set"
@@ -165,7 +165,7 @@ runs:
     # ---------------------- Configure export properties --------------------- #
 
     - name: Get the configured preset platform
-      uses: ./inspect-godot-export-presets
+      uses: coffeebeats/godot-infra/inspect-godot-export-presets@v4
       id: preset-platform
       with:
         project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
@@ -191,7 +191,7 @@ runs:
         echo "Determined platform for preset '${{ inputs.preset-name }}': $PLATFORM"
 
     - name: Get the configured preset export path
-      uses: ./inspect-godot-export-presets
+      uses: coffeebeats/godot-infra/inspect-godot-export-presets@v4
       id: preset-export-path
       with:
         project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
@@ -233,7 +233,7 @@ runs:
 
     - name: Export the Godot project preset (MacOS)
       if: steps.platform.outputs.value == 'macos'
-      uses: ./export-godot-project-preset/macos
+      uses: "coffeebeats/godot-infra/export-godot-project-preset/macos@v4"
       with:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
@@ -259,7 +259,7 @@ runs:
 
     - name: Export the Godot project preset (Web)
       if: steps.platform.outputs.value == 'web'
-      uses: ./export-godot-project-preset/web
+      uses: "coffeebeats/godot-infra/export-godot-project-preset/web@v4"
       with:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
@@ -275,7 +275,7 @@ runs:
 
     - name: Export the Godot project preset (Windows)
       if: steps.platform.outputs.value == 'windows'
-      uses: ./export-godot-project-preset/windows
+      uses: "coffeebeats/godot-infra/export-godot-project-preset/windows@v4"
       with:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
