@@ -146,7 +146,8 @@ RUN \
     CLANG_VERSION=$CLANG_VERSION \
     ENABLE_CLANG_INSTALL=1 \
     INSTALLPREFIX=/opt/clang \
-    JOBS=4 \
+    # NOTE: Exceeding this seems to cause OOMs on certain machines.
+    JOBS=6 \
     ./build_apple_clang.sh
 
 # Run the build script
