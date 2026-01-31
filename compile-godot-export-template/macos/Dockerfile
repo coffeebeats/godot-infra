@@ -100,7 +100,18 @@ RUN apt-get install -y --no-install-recommends \
     make \
     patch \
     unzip \
-    zlib1g-dev
+    zlib1g-dev && \
+    # NOTE: Ubuntu 25.10 switched to using Rust-based GNU coreutils instead of
+    # the GNU implementation. The new 'ln' seems to have different behavior
+    # under parallel execution that causes race conditions in osxcross's
+    # 'build_compiler_rt.sh' script; install GNU 'ln' as a workaround.
+    apt-get install -y --no-install-recommends coreutils && \
+    mkdir -p /opt/gnu-coreutils/bin && \
+    ln -sf "/usr/bin/gnuln" "/opt/gnu-coreutils/bin/ln"
+
+# Verify GNU 'ln' is prioritized.
+ENV PATH "/opt/gnu-coreutils/bin:$PATH"
+RUN echo "PATH=$PATH\nln=$(which ln)" && ls /opt/gnu-coreutils/bin && ln --version && ln --version | grep -q "GNU coreutils" || (echo "Wrong 'ln' found; expected GNU coreutils version" && exit 1)
 
 # ------------------------- Add: OSXCross source code ------------------------ #
 
@@ -167,9 +178,6 @@ RUN \
     # errors with using "___isPlatformVersionAtLeast".
     # See https://github.com/tpoechtrager/osxcross/issues/278 for reference.
     ENABLE_COMPILER_RT_INSTALL=1 \
-    # NOTE: When upgrading to 'ubuntu:25.10' an error is encountered stemming
-    # from multiple jobs from trying to create the same symlink. Set 'JOBS=1'
-    # to prevent this.
     ./build_compiler_rt.sh
 
 # Verify "*-apple-$OSXCROSS_SDK-*" tools are present in the expected format
