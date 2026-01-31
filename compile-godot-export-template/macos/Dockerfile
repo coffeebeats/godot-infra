@@ -4,7 +4,7 @@
 #                              Image: Setup - Base                             #
 # ---------------------------------------------------------------------------- #
 
-FROM ubuntu:24.04 AS img-setup-base
+FROM ubuntu:25.10 AS img-setup-base
 
 # ------------------------- Update: Package registry ------------------------- #
 
@@ -29,7 +29,7 @@ RUN \
     gnupg \
     lsb-release \
     pkg-config \
-    python3.12 \
+    python3.13 \
     software-properties-common \
     xz-utils \
     zip \
@@ -45,9 +45,9 @@ FROM img-setup-base AS img-setup-python
 
 RUN apt-get install -y --no-install-recommends \
     # Install 'python3' and 'venv'
-    python3.12-venv && \
+    python3.13-venv && \
     # Set up the virtual environment
-    python3.12 -m venv "/venv"
+    python3.13 -m venv "/venv"
 
 # ---------------------------------------------------------------------------- #
 #                       Image: Setup - rcodesign (MacOS)                       #
@@ -175,8 +175,8 @@ RUN \
     # point, fake it for the script.
     PATH="$TARGET_DIR/bin:/opt/clang/bin:$PATH" \
     # NOTE: Variable `ENABLE_COMPILER_RT_INSTALL=1` is needed to prevent linker
-    # errors with using "___isPlatformVersionAtLeast".
-    # See https://github.com/tpoechtrager/osxcross/issues/278 for reference.
+    # errors with using "___isPlatformVersionAtLeast". See
+    # https://github.com/tpoechtrager/osxcross/issues/278 for reference.
     ENABLE_COMPILER_RT_INSTALL=1 \
     ./build_compiler_rt.sh
 
@@ -281,7 +281,7 @@ COPY --from=img-setup-angle "/angle" "/opt/angle"
 
 # ------------------------------ Install: SCons ------------------------------ #
 
-RUN python3.12 -m pip install \
+RUN python3.13 -m pip install \
     SCons==4.*
 
 # ------------------------ Install: rcodesign (MacOS) ------------------------ #
