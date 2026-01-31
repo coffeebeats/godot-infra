@@ -122,6 +122,10 @@ RUN test -n "$OSXCROSS_SDK" || (echo "Missing build argument: 'OSXCROSS_SDK'" &&
 # 'osxcross/tarballs' directory.
 COPY --from=osxcross . "/osxcross-src"
 
+# Apply patches to osxcross
+COPY --from=patches osxcross-*.patch "/patches/"
+RUN for p in /patches/osxcross-*.patch; do patch -d /osxcross-src -p1 < "$p"; done
+
 # Verify MacOS SDK is present in the expected format
 RUN test -f "/osxcross-src/tarballs/MacOSX${MACOS_VERSION}.sdk.tar.gz" || \
     (echo "Missing MacOS SDK tarball: 'tarballs/MacOSX${MACOS_VERSION}.sdk.tar.gz'" && exit 1)
@@ -151,6 +155,9 @@ RUN \
     ./build.sh
 
 RUN \
+    # NOTE: Skip 'arm64e'; it's not required for Godot. This requires the
+    # 'osxcross-allow-archs-override.patch' patch.
+    ARCHS="x86_64 arm64" \
     # NOTE: The "build_compiler_rt.sh" checks for osxcross to be installed into
     # the PATH variable. Since we don't necessarily want to do that at this
     # point, fake it for the script.

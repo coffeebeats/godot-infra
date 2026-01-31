@@ -92,6 +92,7 @@ docker build \
   --build-arg MACOS_VERSION=26.1 \
   --build-arg OSXCROSS_SDK=darwin25.1 \
   --build-context osxcross=thirdparty/osxcross \
+  --build-context patches=thirdparty/.patches \
   --build-context vulkan=thirdparty/moltenvk \
   -t compile-godot-export-template:godot-v4.6-macos \
   compile-godot-export-template/macos
@@ -105,6 +106,7 @@ docker build \
 ```sh
 docker build \
   --build-arg EMSCRIPTEN_SDK_VERSION=4.0.20 \
+  --build-context patches=thirdparty/.patches \
   -t compile-godot-export-template:godot-v4.6-web \
   compile-godot-export-template/web
 ```
@@ -121,6 +123,7 @@ docker build \
   --build-arg GODOT_NIR_STATIC_VERSION=25.3.1-1 \
   --build-arg MINGW_LLVM_VERSION=20251118 \
   --build-arg PIX_VERSION=1.0.240308001 \
+  --build-context patches=thirdparty/.patches \
   -t compile-godot-export-template:godot-v4.6-windows \
   compile-godot-export-template/windows
 ```
@@ -137,6 +140,7 @@ Dependency versions are taken from the defaults defined in the [publish-image-ex
 ```sh
 docker build \
   --build-arg RUST_VERSION=1.93.0 \
+  --build-context patches=thirdparty/.patches \
   -t export-godot-project-preset:godot-v4.6-macos \
   export-godot-project-preset/macos
 ```
@@ -149,6 +153,7 @@ docker build \
 ```sh
 docker build \
   --build-arg RUST_VERSION=1.93.0 \
+  --build-context patches=thirdparty/.patches \
   -t export-godot-project-preset:godot-v4.6-web \
   export-godot-project-preset/web
 ```
@@ -161,6 +166,7 @@ docker build \
 ```sh
 docker build \
   --build-arg RUST_VERSION=1.93.0 \
+  --build-context patches=thirdparty/.patches \
   -t export-godot-project-preset:godot-v4.6-windows \
   export-godot-project-preset/windows
 ```
