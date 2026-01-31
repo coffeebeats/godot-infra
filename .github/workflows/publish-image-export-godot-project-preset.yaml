@@ -104,6 +104,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          build-contexts: |
+            patches=thirdparty/.patches
 
   remove-stale-images:
     needs: ["build-and-publish"]

@@ -263,6 +263,7 @@ jobs:
             GODOT_ANGLE_STATIC_VERSION=${{ needs.inputs.outputs.godot-angle-static-version }}
           build-contexts: |
             osxcross=thirdparty/osxcross
+            patches=thirdparty/.patches
             vulkan=thirdparty/moltenvk
 
       # Web
@@ -281,6 +282,8 @@ jobs:
           platforms: linux/amd64
           build-args: |
             EMSCRIPTEN_SDK_VERSION=${{ needs.inputs.outputs.emscripten-version }}
+          build-contexts: |
+            patches=thirdparty/.patches
 
       # Windows
 
@@ -302,6 +305,8 @@ jobs:
             PIX_VERSION=${{ needs.inputs.outputs.pix-version }}
             AGILITY_VERSION=${{ needs.inputs.outputs.agility-version }}
             GODOT_ANGLE_STATIC_VERSION=${{ needs.inputs.outputs.godot-angle-static-version }}
+          build-contexts: |
+            patches=thirdparty/.patches
 
   remove-stale-images:
     needs: ["build-and-publish"]

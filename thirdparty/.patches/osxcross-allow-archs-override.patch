@@ -1,0 +1,19 @@
+diff --git a/build_compiler_rt.sh b/build_compiler_rt.sh
+index 5ce8697..3245845 100755
+--- a/build_compiler_rt.sh
++++ b/build_compiler_rt.sh
+@@ -222,10 +222,11 @@ if [ $f_res -eq 1 ]; then
+         rmdir $tmp
+       }
+ 
+-      ARCHS=""
+-      check_archs i386 x86_64 x86_64h arm64 arm64e
++      if [ -z "${ARCHS:-}" ]; then
++        check_archs i386 x86_64 x86_64h arm64 arm64e
++      fi
+ 
+-      if [ -z "$ARCHS" ]; then
++      if [ -z "${ARCHS:-}" ]; then
+         echo "Compiler does not seem to work"
+         exit 1
+       fi
