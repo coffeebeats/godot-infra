@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.0.5 (2026-02-01)
+
+## What's Changed
+* fix(scripts): ensure JSON is valid by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/514
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.0.4...v4.0.5
+
 ## 4.0.4 (2026-02-01)
 
 ## What's Changed
