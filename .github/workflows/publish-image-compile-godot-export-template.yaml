@@ -221,7 +221,7 @@ jobs:
       # Extract MoltenVK SDK
       - name: Download 'MoltenVK' SDK artifact
         if: inputs.platform == 'macos'
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
         with:
           name: ${{ needs.package-moltenvk-sdk.outputs.name }}
 
