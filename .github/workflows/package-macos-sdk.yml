@@ -92,7 +92,7 @@ jobs:
     steps:
       - name: Mount cache for artifact
         id: cache-artifact
-        uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306
         with:
           key: ${{ env.key }}
           path: ${{ env.dir }}/${{ env.name }}
@@ -121,7 +121,7 @@ jobs:
           xcode-version: ${{ inputs.xcode-version }}
 
       - name: Save SDK artifact in cache
-        uses: actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb
+        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306
         with:
           key: ${{ env.key }}
           path: ${{ env.dir }}/${{ env.name }}
