@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.0.4 (2026-02-01)
+
+## What's Changed
+* chore(compile): migrate to newer `ENV` syntax by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/512
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.0.3...v4.0.4
+
 ## 4.0.3 (2026-02-01)
 
 ## What's Changed
