@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.0.3 (2026-02-01)
+
+## What's Changed
+* fix(compile): upgrade macOS base image to `ubuntu:25.10` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/505
+* chore(deps): bump actions/cache from 5.0.1 to 5.0.3 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/510
+* chore(deps): bump docker/login-action from 3.6.0 to 3.7.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/509
+* chore(deps): bump actions/download-artifact from 6.0.0 to 7.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/508
+* chore(deps): bump actions/checkout from 6.0.1 to 6.0.2 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/507
+* fix(ci): remove restriction on job count by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/511
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.0.2...v4.0.3
+
 ## 4.0.2 (2026-01-29)
 
 ## What's Changed
