@@ -110,7 +110,7 @@ RUN apt-get install -y --no-install-recommends \
     ln -sf "/usr/bin/gnuln" "/opt/gnu-coreutils/bin/ln"
 
 # Verify GNU 'ln' is prioritized.
-ENV PATH "/opt/gnu-coreutils/bin:$PATH"
+ENV PATH="/opt/gnu-coreutils/bin:$PATH"
 RUN echo "PATH=$PATH\nln=$(which ln)" && ls /opt/gnu-coreutils/bin && ln --version && ln --version | grep -q "GNU coreutils" || (echo "Wrong 'ln' found; expected GNU coreutils version" && exit 1)
 
 # ------------------------- Add: OSXCross source code ------------------------ #
