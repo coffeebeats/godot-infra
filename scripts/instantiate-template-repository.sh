@@ -212,7 +212,7 @@ update_gha_permissions() {
 {
 "enabled": true,
 "allowed_actions": "all",
-"sha_pinning_required": true,
+"sha_pinning_required": true
 }
 EOM
 
