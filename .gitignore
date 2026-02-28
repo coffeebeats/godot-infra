@@ -21,3 +21,10 @@ thirdparty/moltenvk/*
 # ...
 .scons/
 godot/
+
+# IDE-related ignores
+.vscode/*
+
+# Coding agent-related files
+.claude/*
+!.claude/skills
