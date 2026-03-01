@@ -122,7 +122,7 @@ runs:
 
     - name: Upload the source code artifact
       if: inputs.artifact-name != ''
-      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ github.workspace }}/godot-${{ inputs.godot-src-rev }}
