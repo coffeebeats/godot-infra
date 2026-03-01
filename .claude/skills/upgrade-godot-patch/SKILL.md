@@ -21,6 +21,10 @@ Docker image tags and workflow variables use `major.minor` only.
      table entry under `#### Release tag: Godot version`
    - `package-addon/action.yaml` — find the `godot-editor-version` input's `default` value
 
+   **Verify this is an upgrade:** the new version's `major.minor` must match the current `main`
+   entry's `major.minor`, and the new patch must be higher than the current patch (or current
+   patch must be 0). If not, stop and ask the user.
+
 3. **Update `README.md`** — exactly two edits:
    - **Badge:** Replace the version in the badge URL
      `https://img.shields.io/badge/godot-v<OLD>-478cbf` →
