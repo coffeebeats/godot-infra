@@ -23,12 +23,27 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # TODO(https://github.com/actions/runner/issues/1348): Replace this workaround
+    # with the `$/` syntax once GitHub ships native self-referencing support.
+    - name: Link godot-infra actions into workspace
+      id: godot-infra-init
+      shell: bash
+      env:
+        MSYS: winsymlinks:nativestrict
+      run: |
+        if [ -e "$GITHUB_WORKSPACE/.godot-infra" ]; then
+          exit 0
+        fi
+
+        ln -sfn "$(cd "${{ github.action_path }}/.." && pwd)" "$GITHUB_WORKSPACE/.godot-infra"
+        echo "created=true" >> "$GITHUB_OUTPUT"
+
     - name: Identify commit
       id: commit
       shell: bash
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-    - uses: coffeebeats/godot-infra/.github/actions/setup-godot@v4
+    - uses: ./.godot-infra/.github/actions/setup-godot
       with:
         version: ${{ inputs.godot-editor-version }}
 
@@ -166,7 +181,7 @@ runs:
       shell: bash
       run: |
         git restore .
-        git clean -fd
+        git clean -fd -e .godot-infra
 
     - name: Push the latest changes to the target branch
       shell: bash
@@ -185,7 +200,7 @@ runs:
         shopt -s extglob
         shopt -s globstar
 
-        rm -rf * .@(!(.||git))
+        rm -rf * .@(!(.||git||godot-infra))
 
         echo "Target addon workspace (before):"
         tree -lha --dirsfirst -I .git
@@ -195,7 +210,12 @@ runs:
         echo "Target addon workspace (after):"
         tree -lha --dirsfirst -I .git
 
-    - uses: coffeebeats/godot-infra/commit-changes@v4
+    - uses: ./.godot-infra/commit-changes
       with:
         description: "updating \\`${{ inputs.subfolder }}\\` to ${{ steps.commit.outputs.sha_short }}"
         target-branch: ${{ inputs.target-branch }}
+
+    - name: Remove godot-infra workspace link
+      if: always() && steps.godot-infra-init.outputs.created == 'true'
+      shell: bash
+      run: rm -rf "$GITHUB_WORKSPACE/.godot-infra"

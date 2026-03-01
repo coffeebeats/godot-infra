@@ -21,7 +21,22 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: coffeebeats/godot-infra/.github/actions/setup-butler@v4
+    # TODO(https://github.com/actions/runner/issues/1348): Replace this workaround
+    # with the `$/` syntax once GitHub ships native self-referencing support.
+    - name: Link godot-infra actions into workspace
+      id: godot-infra-init
+      shell: bash
+      env:
+        MSYS: winsymlinks:nativestrict
+      run: |
+        if [ -e "$GITHUB_WORKSPACE/.godot-infra" ]; then
+          exit 0
+        fi
+
+        ln -sfn "$(cd "${{ github.action_path }}/.." && pwd)" "$GITHUB_WORKSPACE/.godot-infra"
+        echo "created=true" >> "$GITHUB_OUTPUT"
+
+    - uses: ./.godot-infra/.github/actions/setup-butler
 
     - name: Log in to itch.io
       shell: bash
@@ -39,3 +54,8 @@ runs:
         --userversion=${{ inputs.version }}
         ${{ inputs.path }}
         ${{ inputs.itchio-project }}:${{ inputs.itchio-channel }}
+
+    - name: Remove godot-infra workspace link
+      if: always() && steps.godot-infra-init.outputs.created == 'true'
+      shell: bash
+      run: rm -rf "$GITHUB_WORKSPACE/.godot-infra"
