@@ -1,5 +1,21 @@
 # Changelog
 
+## 4.0.5 (2026-03-01)
+
+## What's Changed
+* fix(scripts): ensure JSON is valid by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/514
+* chore: upgrade Godot to `v4.6.1-stable` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/520
+* fix(claude): add skills to execute major Godot version upgrade by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/525
+* chore(deps): bump actions/download-artifact from 7.0.0 to 8.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/524
+* chore(deps): bump tj-actions/changed-files from 47.0.1 to 47.0.4 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/522
+* chore(deps): bump actions/upload-artifact from 6.0.0 to 7.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/521
+* chore(deps): bump docker/build-push-action from 6.18.0 to 6.19.2 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/523
+* chore(ci): add a cooldown for new dependency upgrades by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/526
+* fix(ci): raise cooldown to 30 days by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/527
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.0.4...v4.0.5
+
 ## 4.0.4 (2026-02-01)
 
 ## What's Changed
