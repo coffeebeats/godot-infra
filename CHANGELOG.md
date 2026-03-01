@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.1.0 (2026-03-01)
+
+## What's Changed
+* chore(ci): update `actions/upload-artifact` used within `install-godot-source` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/528
+* feat(ci): reference internal actions by path by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/530
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.0.5...v4.1.0
+
 ## 4.0.5 (2026-03-01)
 
 ## What's Changed
