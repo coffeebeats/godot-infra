@@ -41,7 +41,7 @@ runs:
           Windows) platform="windows-amd64" ;;
         esac
 
-        curl -L -o butler.zip "https://broth.itch.ovh/butler/${platform}/${{ inputs.version }}/archive/default"
+        curl -L -o butler.zip "https://broth.itch.zone/butler/${platform}/${{ inputs.version }}/archive/default"
         unzip butler.zip
         chmod +x butler
 
