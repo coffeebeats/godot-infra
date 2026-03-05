@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.1 (2026-03-05)
+
+## What's Changed
+* fix(package-addon): cleanup `.godot-infra` directory before packaging by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/531
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.1.0...v4.1.1
+
 ## 4.1.0 (2026-03-01)
 
 ## What's Changed
