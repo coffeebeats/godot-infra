@@ -47,6 +47,11 @@ runs:
       with:
         version: ${{ inputs.godot-editor-version }}
 
+    - name: Remove godot-infra workspace link
+      if: always() && steps.godot-infra-init.outputs.created == 'true'
+      shell: bash
+      run: rm -rf "$GITHUB_WORKSPACE/.godot-infra"
+
     - name: Construct addon directory
       id: addon
       shell: bash
@@ -214,8 +219,3 @@ runs:
       with:
         description: "updating \\`${{ inputs.subfolder }}\\` to ${{ steps.commit.outputs.sha_short }}"
         target-branch: ${{ inputs.target-branch }}
-
-    - name: Remove godot-infra workspace link
-      if: always() && steps.godot-infra-init.outputs.created == 'true'
-      shell: bash
-      run: rm -rf "$GITHUB_WORKSPACE/.godot-infra"
