@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.2 (2026-03-05)
+
+## What's Changed
+* fix(ci): migrate to newer Butler host by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/533
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.1.1...v4.1.2
+
 ## 4.1.1 (2026-03-05)
 
 ## What's Changed
