@@ -34,6 +34,9 @@ from upstream), and internal action reference bumps.
    - `.github/workflows/publish-image-export-godot-project-preset.yaml`
    - The 6 Docker image action files listed in Stage 1
 
+4. **Create a new branch** named `chore/godot/upgrade` off the current branch (typically `main`)
+   before making any edits. Do not commit the upgrade directly to `main`.
+
 ### 2. Stage 1 — Boilerplate version bump
 
 Replace all `major.minor` version references from old to new. Let `OLD` = old major.minor (e.g.
@@ -161,7 +164,7 @@ Present the diff summary to the user for review before committing.
 
 ### 6. Commit
 
-Create a single commit with the message:
+Create a single commit on the `chore/godot/upgrade` branch with the message:
 ```
 chore!: upgrade to Godot `v<NEW>-stable`
 ```

@@ -25,21 +25,24 @@ Docker image tags and workflow variables use `major.minor` only.
    entry's `major.minor`, and the new patch must be higher than the current patch (or current
    patch must be 0). If not, stop and ask the user.
 
-3. **Update `README.md`** — exactly two edits:
+3. **Create a new branch** named `chore/godot/upgrade` off the current branch (typically `main`)
+   before making any edits. Do not commit the upgrade directly to `main`.
+
+4. **Update `README.md`** — exactly two edits:
    - **Badge:** Replace the version in the badge URL
      `https://img.shields.io/badge/godot-v<OLD>-478cbf` →
      `https://img.shields.io/badge/godot-v<NEW>-478cbf`
    - **Version table:** Replace the version in the `main` mapping entry
      e.g. `` `v4.6.0` `` → `` `v4.6.1` ``
 
-4. **Update `package-addon/action.yaml`** — one edit:
+5. **Update `package-addon/action.yaml`** — one edit:
    - **`godot-editor-version` default:** Replace the default value
      e.g. `"v4.6-stable"` or `"v4.6.0-stable"` → `"v4.6.1-stable"`
 
-5. **Verify the diff.** Run `git diff --stat` and confirm exactly 2 files changed with 3
+6. **Verify the diff.** Run `git diff --stat` and confirm exactly 2 files changed with 3
    insertions and 3 deletions.
 
-6. **Commit** with the message:
+7. **Commit** on the `chore/godot/upgrade` branch with the message:
    ```
    chore: upgrade to Godot `v<NEW_VERSION>-stable`
    ```
