@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.1.3 (2026-05-04)
+
+## What's Changed
+* chore(deps): bump tj-actions/changed-files from 47.0.4 to 47.0.5 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/540
+* chore(deps): bump actions/cache from 5.0.3 to 5.0.4 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/539
+* chore(deps): bump googleapis/release-please-action from 4.4.0 to 4.4.1 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/538
+* chore(deps): bump actions/download-artifact from 8.0.0 to 8.0.1 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/537
+* chore(deps): bump docker/build-push-action from 6.19.2 to 7.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/536
+* chore(godot): upgrade Godot to `v4.6.2-stable` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/542
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.1.2...v4.1.3
+
 ## 4.1.2 (2026-03-09)
 
 ## What's Changed
