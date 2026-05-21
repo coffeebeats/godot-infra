@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.4 (2026-05-21)
+
+## What's Changed
+* chore: upgrade to Godot `v4.6.3-stable` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/543
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.1.3...v4.1.4
+
 ## 4.1.3 (2026-05-04)
 
 ## What's Changed
