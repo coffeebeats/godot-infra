@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.5 (2026-05-22)
+
+## What's Changed
+* fix(ci): ignore the `.godot-infra` symlink from the `commit-changes` action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/545
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.1.4...v4.1.5
+
 ## 4.1.4 (2026-05-21)
 
 ## What's Changed
