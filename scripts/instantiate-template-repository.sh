@@ -344,11 +344,13 @@ create_rule_sets() {
     "bypass_actors": [
         {
             "actor_id": 2,
-            "actor_type": "RepositoryRole"
+            "actor_type": "RepositoryRole",
+            "bypass_mode": "pull_request"
         },
         {
             "actor_id": 4,
-            "actor_type": "RepositoryRole"
+            "actor_type": "RepositoryRole",
+            "bypass_mode": "pull_request"
         }
     ],
     "conditions": {
