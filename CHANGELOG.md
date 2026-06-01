@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.1.6 (2026-06-01)
+
+## What's Changed
+* fix(scripts): properly set `bypass_mode` for new rulesets by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/547
+* chore(deps): bump actions/cache from 5.0.4 to 5.0.5 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/553
+* chore(deps): bump docker/build-push-action from 7.0.0 to 7.1.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/552
+* chore(deps): bump tj-actions/changed-files from 47.0.5 to 47.0.6 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/550
+* chore(deps): bump googleapis/release-please-action from 4.4.1 to 5.0.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/549
+* chore(deps): bump actions/upload-artifact from 7.0.0 to 7.0.1 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/551
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.1.5...v4.1.6
+
 ## 4.1.5 (2026-05-22)
 
 ## What's Changed
