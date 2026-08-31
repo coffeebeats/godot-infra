@@ -119,31 +119,31 @@ jobs:
     timeout-minutes: 1
 
     outputs:
-      godot-angle-static-version: ${{ inputs.godot-angle-static-version || 'chromium/7578' }} # https://github.com/godotengine/godot-build-scripts/blob/f96241dc42946e717e69a836aae8280759b3127c/build.sh#L184
+      godot-angle-static-version: ${{ inputs.godot-angle-static-version || 'chromium/7578' }} # https://github.com/godotengine/godot-build-scripts/blob/70a7c3c6ac64a4658446cf79f6587c65740e19c3/build.sh#L229
 
       # MacOS-specific inputs.
 
-      clang-version: ${{ inputs.clang-version || '19.1.5' }} # https://github.com/godotengine/build-containers/blob/a8991faab8b279249f238b66f7c14c0c311ccd27/Dockerfile.osx#L26
+      clang-version: ${{ inputs.clang-version || '19.1.5' }} # https://github.com/godotengine/build-containers/blob/3f3cc50c3f91c2be66e37aece9d9a57284e39db7/Dockerfile.osx#L26
       # IF/ELSE: Update the minimum macOS version if needed.
-      moltenvk-version: ${{ inputs.moltenvk-version || '1.4.1' }} # https://github.com/godotengine/godot-build-scripts/blob/f96241dc42946e717e69a836aae8280759b3127c/build.sh#L161
-      osx-version: ${{ inputs.osx-version || '26.1' }} # https://github.com/godotengine/build-containers/blob/a8991faab8b279249f238b66f7c14c0c311ccd27/Dockerfile.osx#L9
+      moltenvk-version: ${{ inputs.moltenvk-version || '1.4.1' }} # https://github.com/godotengine/godot-build-scripts/blob/70a7c3c6ac64a4658446cf79f6587c65740e19c3/build.sh#L196
+      osx-version: ${{ inputs.osx-version || '26.1' }} # https://github.com/godotengine/build-containers/blob/3f3cc50c3f91c2be66e37aece9d9a57284e39db7/Dockerfile.osx#L9
       # NOTE: MoltenVK requires at least macOS 11.0; see
       # https://github.com/KhronosGroup/MoltenVK/blob/v1.4.1/Docs/MoltenVK_Runtime_UserGuide.md#build-and-runtime-requirements.
       osx-version-min: ${{ inputs.osx-version-min || '11.0' }}
-      osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin25.1' }} # https://github.com/godotengine/godot-build-scripts/blob/f96241dc42946e717e69a836aae8280759b3127c/build-macos/build.sh#L8
-      rust-version: ${{ inputs.rust-version || '1.93.0' }}
-      xcode-version: ${{ inputs.xcode-version || '26.1.1' }} # https://github.com/godotengine/build-containers/blob/a8991faab8b279249f238b66f7c14c0c311ccd27/Dockerfile.osx#L8C16-L8C22
+      osxcross-sdk: ${{ inputs.osxcross-sdk || 'darwin25.1' }} # https://github.com/godotengine/godot-build-scripts/blob/70a7c3c6ac64a4658446cf79f6587c65740e19c3/build-macos/build.sh#L8
+      rust-version: ${{ inputs.rust-version || '1.98.0' }}
+      xcode-version: ${{ inputs.xcode-version || '26.1.1' }} # https://github.com/godotengine/build-containers/blob/3f3cc50c3f91c2be66e37aece9d9a57284e39db7/Dockerfile.osx#L8C16-L8C22
 
       # Web-specific inputs.
 
-      emscripten-version: ${{ inputs.emscripten-version || '4.0.20' }} # https://github.com/godotengine/build-containers/blob/a8991faab8b279249f238b66f7c14c0c311ccd27/Dockerfile.web#L4
+      emscripten-version: ${{ inputs.emscripten-version || '4.0.20' }} # https://github.com/godotengine/build-containers/blob/3f3cc50c3f91c2be66e37aece9d9a57284e39db7/Dockerfile.web#L4
 
       # Windows-specific inputs.
 
-      mingw-llvm-version: ${{ inputs.mingw-llvm-version || '20251118' }} # https://github.com/godotengine/build-containers/blob/a8991faab8b279249f238b66f7c14c0c311ccd27/Dockerfile.windows#L6
-      godot-nir-static-version: ${{ inputs.godot-nir-static-version || '25.3.1-1' }} # https://github.com/godotengine/godot/blob/543f47485c0c952b122747ef05af60e778c44139/misc/scripts/install_d3d12_sdk_windows.py#L36
-      pix-version: ${{ inputs.pix-version || '1.0.240308001' }} # https://github.com/godotengine/godot/blob/543f47485c0c952b122747ef05af60e778c44139/misc/scripts/install_d3d12_sdk_windows.py#L39
-      agility-version: ${{ inputs.agility-version || '1.618.5' }} # https://github.com/godotengine/godot/blob/543f47485c0c952b122747ef05af60e778c44139/misc/scripts/install_d3d12_sdk_windows.py#L46
+      mingw-llvm-version: ${{ inputs.mingw-llvm-version || '20251118' }} # https://github.com/godotengine/build-containers/blob/3f3cc50c3f91c2be66e37aece9d9a57284e39db7/Dockerfile.windows#L6
+      godot-nir-static-version: ${{ inputs.godot-nir-static-version || '25.3.1-3' }} # https://github.com/godotengine/godot/blob/5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88/misc/scripts/install_d3d12_sdk_windows.py#L36
+      pix-version: ${{ inputs.pix-version || '1.0.240308001' }} # https://github.com/godotengine/godot/blob/5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88/misc/scripts/install_d3d12_sdk_windows.py#L39
+      agility-version: ${{ inputs.agility-version || '1.618.5' }} # https://github.com/godotengine/godot/blob/5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88/misc/scripts/install_d3d12_sdk_windows.py#L46
 
     steps:
       - name: Placeholder step
