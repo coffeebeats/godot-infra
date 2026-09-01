@@ -1,5 +1,21 @@
 # Changelog
 
+## 5.0.0 (2026-09-01)
+
+## What's Changed
+* chore(deps): bump docker/login-action from 3.7.0 to 4.3.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/561
+* chore(deps): bump docker/setup-buildx-action from 3.12.0 to 4.2.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/560
+* chore(deps): bump actions/cache/save from 5.0.5 to 6.1.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/559
+* chore(deps): bump docker/build-push-action from 7.1.0 to 7.3.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/558
+* chore(deps): bump actions/cache from 5.0.5 to 6.1.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/557
+* chore(deps): bump actions/cache/restore from 5.0.5 to 6.1.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/565
+* chore(deps): bump docker/login-action from 4.3.0 to 4.6.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/564
+* chore(deps): bump actions/checkout from 6.0.2 to 7.0.1 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/563
+* chore!: upgrade to Godot `v4.7.2-stable` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/567
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v4.1.6...v5.0.0
+
 ## 4.1.6 (2026-06-01)
 
 ## What's Changed
