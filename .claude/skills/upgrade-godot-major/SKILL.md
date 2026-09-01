@@ -6,8 +6,9 @@ argument-hint: "<major.minor>"
 ---
 
 Upgrade this project to Godot version `$ARGUMENTS`. This is a **major version upgrade** affecting
-many files. It has three stages: boilerplate version bump, dependency version updates (researched
-from upstream), and internal action reference bumps.
+many files. It has four stages — boilerplate version bump, dependency version updates (researched
+from upstream), internal action reference bumps, and build validation — wrapped by a prepare step
+before and review/commit steps after. Work the sections below in order.
 
 The single biggest risk in this upgrade is that the images stop building. Stage 4 is not optional
 polish — a bad version pin produces a green diff and a red build, and CI's only fallback publishes
@@ -15,7 +16,7 @@ real image tags to ghcr.io, so a broken pin discovered there is already public.
 
 ## Steps
 
-### 1. Validate and prepare
+### Validate and prepare
 
 1. **Validate the argument.** Extract the version (e.g. `4.7`) from `$ARGUMENTS`. Strip a leading
    `v` if present. Verify the format is `major.minor` (exactly two numeric components, no patch).
@@ -41,7 +42,7 @@ real image tags to ghcr.io, so a broken pin discovered there is already public.
 4. **Create a new branch** named `chore/godot/upgrade` off the current branch (typically `main`)
    before making any edits. Do not commit the upgrade directly to `main`.
 
-### 2. Stage 1 — Boilerplate version bump
+### Stage 1 — Boilerplate version bump
 
 Replace all `major.minor` version references from old to new. Let `OLD` = old major.minor (e.g.
 `4.6`) and `NEW` = new major.minor (e.g. `4.7`). Let `OLD_TAG` = current release tag (e.g. `v4`)
@@ -73,7 +74,7 @@ and `NEW_TAG` = new release tag (e.g. `v5`).
      `godot-v<OLD>-` with `godot-v<NEW>-` throughout the file (in both `compile-godot-export-template`
      and `export-godot-project-preset` sections, including local build and local run commands).
 
-### 3. Stage 2 — Dependency version updates
+### Stage 2 — Dependency version updates
 
 Two workflow files contain dependency version defaults:
 
@@ -255,7 +256,7 @@ Classify every finding as exactly one of:
   osxcross commit. If so, update the submodule:
   `cd thirdparty/osxcross && git fetch origin && git checkout <NEW_COMMIT> && cd ../..`
 
-### 4. Stage 3 — Internal action version references
+### Stage 3 — Internal action version references
 
 Search all `.yml` and `.yaml` files for `coffeebeats/godot-infra/` followed by `@<OLD_TAG>` and
 replace with `@<NEW_TAG>`. Use `grep` to find all occurrences first, then apply edits.
@@ -269,7 +270,7 @@ Files that typically contain these references:
 - `package-addon/action.yaml`
 - `publish-project-itchio/action.yml`
 
-### 5. Review the diff
+### Review the diff
 
 Run `git diff --stat` to confirm changes look reasonable. Expect roughly:
 - 6 Docker image action files (1 change each)
@@ -281,7 +282,7 @@ Run `git diff --stat` to confirm changes look reasonable. Expect roughly:
 
 Present the diff summary to the user for review before validating.
 
-### 6. Stage 4 — Validate that the images still build
+### Stage 4 — Validate that the images still build
 
 Validation is two tiers. **Always run Tier 1. Run Tier 2 for the images whose pins actually
 changed.**
@@ -416,7 +417,7 @@ test -d thirdparty/moltenvk/macOS/lib/MoltenVK.xcframework
 State plainly which images were actually built and which were not, and why. An unbuilt image is an
 unvalidated one — do not describe the upgrade as verified on the strength of Tier 1 alone.
 
-### 7. Commit
+### Commit
 
 Create a single commit on the `chore/godot/upgrade` branch with the message:
 ```
