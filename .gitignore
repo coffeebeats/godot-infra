@@ -29,5 +29,5 @@ godot/
 .claude/*
 !.claude/skills
 
-# Local image-build validation logs (see .claude/skills/upgrade-godot-major)
+# Local image-build validation logs (see .claude/skills/upgrade-godot-minor)
 .build-logs/

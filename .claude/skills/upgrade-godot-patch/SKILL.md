@@ -51,8 +51,3 @@ Docker image tags and workflow variables use `major.minor` only.
 
 - `README.md` — badge (line 1) and version table
 - `package-addon/action.yaml` — `godot-editor-version` default value
-
-## Prior patch upgrades
-
-- `v4.4` → `v4.4.1`: commit `b379589` (PR #375)
-- `v4.5` → `v4.5.1`: commit `02b5552` (PR #452)

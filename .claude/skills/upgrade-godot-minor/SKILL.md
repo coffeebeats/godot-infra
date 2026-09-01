@@ -1,14 +1,15 @@
 ---
-name: upgrade-godot-major
+name: upgrade-godot-minor
 description: Upgrade the project to a new Godot minor release (e.g. 4.6 to 4.7). Updates boilerplate versions, researches upstream dependency versions, and bumps internal action references.
 disable-model-invocation: true
 argument-hint: "<major.minor>"
 ---
 
-Upgrade this project to Godot version `$ARGUMENTS`. This is a **major version upgrade** affecting
-many files. It has four stages — boilerplate version bump, dependency version updates (researched
-from upstream), internal action reference bumps, and build validation — wrapped by a prepare step
-before and review/commit steps after. Work the sections below in order.
+Upgrade this project to Godot version `$ARGUMENTS`. A Godot *minor* release forces a *major*
+`godot-infra` release tag (`v4` → `v5`), so it affects many files. It has four stages —
+boilerplate version bump, dependency version updates (researched from upstream), internal action
+reference bumps, and build validation — wrapped by a prepare step before and review/commit steps
+after. Work the sections below in order.
 
 The single biggest risk in this upgrade is that the images stop building. Stage 4 is not optional
 polish — a bad version pin produces a green diff and a red build, and CI's only fallback publishes
@@ -46,7 +47,24 @@ real image tags to ghcr.io, so a broken pin discovered there is already public.
 
 Replace all `major.minor` version references from old to new. Let `OLD` = old major.minor (e.g.
 `4.6`) and `NEW` = new major.minor (e.g. `4.7`). Let `OLD_TAG` = current release tag (e.g. `v4`)
-and `NEW_TAG` = new release tag (e.g. `v5`).
+and `NEW_TAG` = new release tag (e.g. `v5`). Let `OLD_FULL` and `NEW_FULL` be the corresponding
+full versions (e.g. `4.6.3`, `4.7.2`).
+
+> [!IMPORTANT]
+> **`NEW_FULL` is the newest released patch of `<NEW>`, which is rarely `<NEW>.0`.** Resolve it
+> rather than assuming the upgrade is happening on release day — 4.7 shipped in June and this repo
+> upgraded in September, by which point 4.7.2 was out.
+>
+> ```bash
+> gh api repos/godotengine/godot/tags --paginate -q '.[].name' \
+>   | grep -E "^<NEW>(\.[0-9]+)?-stable$" | sort -V | tail -1
+> ```
+>
+> Godot tags a minor's *first* release with no patch component, so `4.7-stable` **is** 4.7.0 and
+> there is no `4.7.0-stable`. Within this stage `NEW_FULL` belongs in steps 3 and 4 only; image
+> tags and `GODOT_MAJOR_MINOR_VERSION` take the bare `<NEW>`. Those three edits are also exactly
+> what `upgrade-godot-patch` does, so if a newer patch lands before this branch merges, run that
+> skill rather than editing by hand.
 
 1. **Docker image tags** — In each of these 6 files, replace `godot-v<OLD>-` with `godot-v<NEW>-`:
    - `compile-godot-export-template/macos/action.yml`
@@ -60,16 +78,15 @@ and `NEW_TAG` = new release tag (e.g. `v5`).
    update the env var value from `<OLD>` to `<NEW>`.
 
 3. **`package-addon/action.yaml`** — Update the `godot-editor-version` input default from the
-   current value (e.g. `"v4.6.1-stable"` or `"v4.6-stable"`) to `"v<NEW>-stable"`.
+   current value (e.g. `"v4.6.3-stable"`) to `"v<NEW_FULL>-stable"`.
 
 4. **`README.md`** — Three types of edits:
-   - **Badge (line 1):** Replace `godot-v<OLD_FULL>-478cbf` with `godot-v<NEW>.0-478cbf`
+   - **Badge (line 1):** Replace `godot-v<OLD_FULL>-478cbf` with `godot-v<NEW_FULL>-478cbf`
    - **Version table:** Add a new `main` entry and demote the previous one:
      ```
-     - `<NEW_TAG>` (`main`): `v<NEW>.0`
+     - `<NEW_TAG>` (`main`): `v<NEW_FULL>`
      - `<OLD_TAG>`: `v<OLD_FULL>`
      ```
-     where `OLD_FULL` is the complete old version (e.g. `4.6.1`).
    - **Docker build/run examples:** Replace ALL occurrences of image tags containing
      `godot-v<OLD>-` with `godot-v<NEW>-` throughout the file (in both `compile-godot-export-template`
      and `export-godot-project-preset` sections, including local build and local run commands).
@@ -94,8 +111,9 @@ on the new Godot version's branch. The upstream repos are:
   `.windows`)
 - `godotengine/godot-build-scripts` — check the **`<NEW>` release branch**, not `main`. Fetch via:
   `gh api repos/godotengine/godot-build-scripts/contents/build.sh?ref=<NEW>`
-- `godotengine/godot` — check the `<NEW>-stable` branch (e.g. `4.7-stable`). Fetch via:
-  `gh api repos/godotengine/godot/contents/misc/scripts/install_d3d12_sdk_windows.py?ref=<NEW>-stable`
+- `godotengine/godot` — check the `<NEW_FULL>-stable` **tag** (e.g. `4.7.2-stable`), which is the
+  release being pinned. The other two repos use a per-minor *branch*; this one does not. Fetch via:
+  `gh api repos/godotengine/godot/contents/misc/scripts/install_d3d12_sdk_windows.py?ref=<NEW_FULL>-stable`
 
 **Important:** The source URL in each comment is the ground truth for where to look. If a
 dependency's source has moved between versions, follow whatever URL is currently documented.
@@ -198,7 +216,7 @@ Run three diffs for `<OLD>` → `<NEW>`.
 
 2. **SCons option definitions** — whether a new option defaults to on, and what happens when its
    dependency is absent. Diff `SConstruct` and `platform/{macos,web,windows}/detect.py` between
-   `<OLD>-stable` and `<NEW>-stable` in `godotengine/godot`. Look for:
+   `<OLD_FULL>-stable` and `<NEW_FULL>-stable` in `godotengine/godot`. Look for:
 
    ```python
    BoolVariable("winrt", "Use WinRT API (OneCore TTS support).", True)   # on by default
@@ -294,9 +312,11 @@ Two checks. Both are a couple of shell commands; neither needs a script.
 1. **No stale version strings anywhere.** After Stage 3, nothing should still name the old version:
 
    ```bash
-   git grep -n "godot-v<OLD>"             -- '*.md' '*.yml' '*.yaml'
-   git grep -n "v<OLD>-stable"            -- '*.md' '*.yml' '*.yaml'
-   git grep -n "godot-infra/.*@<OLD_TAG>" -- '*.yml' '*.yaml'
+   SRC=(-- '*.md' '*.yml' '*.yaml' ':!CHANGELOG.md' ':!.claude')
+
+   git grep -n  "godot-v<OLD>"             "${SRC[@]}"
+   git grep -nE "v<OLD>(\.[0-9]+)?-stable" "${SRC[@]}"
+   git grep -n  "godot-infra/.*@<OLD_TAG>" -- '*.yml' '*.yaml'
    ```
 
    `git grep`, not `grep -r`: it searches tracked files only, so it skips the vendored trees under
@@ -304,9 +324,15 @@ Two checks. Both are a couple of shell commands; neither needs a script.
    should print nothing** — `git grep` exits 1 when there is no match, so a non-zero exit here is
    the pass, not a failure. Every hit is a missed edit.
 
-   The README version table is not an exception to sift through: it records history as `` `v4.6.3` ``,
-   which none of these patterns match. These values change only during this upgrade flow, so a scan
-   here is worth more than any standing CI check.
+   `CHANGELOG.md` and `.claude/` are excluded because both name old versions on purpose — one is
+   release history, the other is these skills' own worked examples. Without the exclusion the second
+   pattern returns six lines every time and the check stops meaning anything. The README version
+   table needs no exclusion: it records history as `` `v4.6.3` ``, which matches nothing here.
+
+   The `-stable` pattern allows an optional patch component because `package-addon` pins the full
+   version (`v4.6.3-stable`); matching only `v<OLD>-stable` would walk straight past a missed edit
+   there. These values change only during this upgrade flow, so a scan here is worth more than any
+   standing CI check.
 
 2. **Every pin agrees with its own source link.** Each default in the compile workflow's `outputs`
    block carries a `# https://github.com/<repo>/blob/<sha>/<path>#L<n>` comment. After re-pinning,
@@ -421,11 +447,12 @@ unvalidated one — do not describe the upgrade as verified on the strength of T
 
 Create a single commit on the `chore/godot/upgrade` branch with the message:
 ```
-chore!: upgrade to Godot `v<NEW>-stable`
+chore!: upgrade to Godot `v<NEW_FULL>-stable`
 ```
 
-where `<NEW>` is the major.minor version (e.g. `4.7`, not `4.7.0`). The `!` indicates a breaking
-change (new major release tag). That single line is the whole message — omit co-author trailers.
+naming the version actually pinned (e.g. `4.7.2`), since a squash merge makes this the release note.
+The `!` indicates a breaking change (new major release tag). That single line is the whole message —
+omit co-author trailers.
 
 ## Key reference files
 
@@ -438,9 +465,3 @@ change (new major release tag). That single line is the whole message — omit c
 - `export-godot-project-preset/{macos,web,windows}/action.yml` — Docker image tags
 - `thirdparty/osxcross` — osxcross submodule (may need updating for macOS builds)
 - `README.md` §"Building images locally" — the source of truth for local `docker build` commands
-
-## Prior major upgrades
-
-- `v4.4` → `v4.5` (`v2` → `v3`): commit `c7d5142` (PR #445)
-- `v4.5` → `v4.6` (`v3` → `v4`): commits `f11ad6b` + `4d14ef4` + `65e82c1` (PR #495)
-- `v4.6` → `v4.7` (`v4` → `v5`): commit `5136a9f`
