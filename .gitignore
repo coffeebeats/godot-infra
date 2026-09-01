@@ -28,3 +28,6 @@ godot/
 # Coding agent-related files
 .claude/*
 !.claude/skills
+
+# Local image-build validation logs (see .claude/skills/upgrade-godot/references/build-validation.md)
+.build-logs/
