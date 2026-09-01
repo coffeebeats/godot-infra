@@ -156,6 +156,92 @@ dependency's source has moved between versions, follow whatever URL is currently
    build example commands to match the new defaults (both `compile-godot-export-template` and
    `export-godot-project-preset` sections, including the `RUST_VERSION` build arg).
 
+#### Compare upstream build configuration and docs
+
+Version pins only catch dependencies we *already* know about. A minor release can also add a new
+optional dependency, or change how an existing one is linked. Godot's SCons scripts **warn and
+disable** rather than fail, so a dependency we do not supply produces a green build and a silently
+degraded export template. Nothing else in this skill catches that — not the pins, not a successful
+`docker build`, not a smoke test.
+
+Run three diffs for `<OLD>` → `<NEW>`.
+
+> [!IMPORTANT]
+> Fetch with `curl -f`. Without it curl exits 0 on a 404 and writes the body `404: Not Found` into
+> the stream — so when a path moves between releases, **two 404s diff clean** and this check reports
+> "nothing changed" on precisely the release that restructured things. Define once, use below:
+>
+> ```bash
+> fetch() { curl -fsSL "$1" || echo "MISSING: $1" >&2; }
+> ```
+>
+> A `MISSING:` line means the path moved; find where it went before trusting that diff.
+
+1. **Upstream build scripts** — what Godot's own official builds pass to SCons:
+   ```bash
+   for f in build.sh build-macos/build.sh build-windows/build.sh build-web/build.sh; do
+     echo "### $f"
+     diff -u \
+       <(fetch "https://raw.githubusercontent.com/godotengine/godot-build-scripts/<OLD>/$f") \
+       <(fetch "https://raw.githubusercontent.com/godotengine/godot-build-scripts/<NEW>/$f")
+   done
+   ```
+   The signal is new `deps/*` downloads and new entries in `OPTIONS=`. Compare the resulting
+   `OPTIONS` line for each platform against our `ENV SCONSFLAGS` in
+   `compile-godot-export-template/<platform>/Dockerfile`. **Anything upstream passes that we do not
+   is a capability we silently ship without.**
+
+2. **SCons option definitions** — whether a new option defaults to on, and what happens when its
+   dependency is absent. Diff `SConstruct` and `platform/{macos,web,windows}/detect.py` between
+   `<OLD>-stable` and `<NEW>-stable` in `godotengine/godot`. Look for:
+
+   ```python
+   BoolVariable("winrt", "Use WinRT API (OneCore TTS support).", True)   # on by default
+   ...
+   print_warning("... disable this driver by compiling with `winrt=no` explicitly.")
+   env["winrt"] = False                                                   # silently degrades
+   ```
+
+   That pairing — default `True` plus a warn-and-disable fallback — is the shape to hunt for.
+
+3. **Docs** — `godotengine/godot-docs` keeps a branch per minor version:
+   ```bash
+   for f in engine_details/development/compiling/compiling_for_{macos,web,windows}.rst \
+            tutorials/export/exporting_for_{macos,web,windows}.rst; do
+     echo "### $f"
+     diff -u <(fetch "https://raw.githubusercontent.com/godotengine/godot-docs/<OLD>/$f") \
+             <(fetch "https://raw.githubusercontent.com/godotengine/godot-docs/<NEW>/$f")
+   done
+   ```
+   Read the **Requirements** section of each compiling page for bumped minimums (Python, SCons,
+   compiler), and any new `Compiling with X support` section.
+
+Classify every finding as exactly one of:
+
+- **already covered** — we pass the flag / ship the dependency already;
+- **needs work** — add a pin, install the dependency, extend `SCONSFLAGS`;
+- **deliberately skipped** — then pass the explicit `<option>=no` SCons flag, so the build is
+  quiet by choice rather than by accident.
+
+> [!NOTE]
+> This step was added *after* the 4.7 upgrade because that upgrade missed two things while every
+> version pin was correct:
+>
+> - **AccessKit.** 4.6 linked it dynamically, so the option *looked* enabled with no SDK present —
+>   but the library still had to ship next to the binary, and ours never did. 4.7 removed that path:
+>   absent `accesskit_sdk_path`, it warns and sets `accesskit = False`. So this is **not** a
+>   regression — screen reader support was missing under both — 4.7 is just where the build stopped
+>   pretending otherwise. Upstream uses `godot-accesskit-c-static` with
+>   `accesskit_sdk_path=/root/accesskit/accesskit-c`. Tracked as #516.
+> - **WinRT.** New in 4.7 and on by default (OneCore TTS, HDR monitoring, emoji picker). Under
+>   MinGW it needs headers from `godotengine/winrt-mingw` at `winrt_path=`; absent, it warns and
+>   sets `winrt = False`. Tracked as #566.
+>
+> Both produced successful image builds and passing smoke tests. Both are currently *deferred*
+> rather than *deliberately skipped* — neither `accesskit=no` nor `winrt=no` is passed, so the
+> builds are still quiet by accident. Closing either issue means adding the dependency or adding
+> the explicit flag.
+
 #### Also check
 
 - **Runner OS versions** — In `.github/workflows/package-macos-sdk.yml` and
