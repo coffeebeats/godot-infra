@@ -206,7 +206,7 @@ jobs:
       # Extract macOS SDK
       - name: Download 'macOS' SDK artifact
         if: inputs.platform == 'macos'
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           key: ${{ needs.package-macos-sdk.outputs.cache-key }}
           path: ${{ needs.package-macos-sdk.outputs.cache-path }}
