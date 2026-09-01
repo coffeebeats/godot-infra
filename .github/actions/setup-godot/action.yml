@@ -51,17 +51,27 @@ runs:
 
         EDITOR="Godot_v${{ steps.version.outputs.value }}_${platform}"
 
-        GH_TOKEN=${{ github.token }} gh release download \
-          ${{ steps.version.outputs.value }} \
-          --repo godotengine/godot \
-          --pattern "$EDITOR.zip" \
-          --output godot.zip
+        # Download outside the workspace so the archive never lands in a
+        # project checkout that a later step commits wholesale.
+        DOWNLOAD_DIR="$(mktemp -d "${RUNNER_TEMP:-/tmp}/setup-godot.XXXXXX")"
 
-        unzip godot.zip
-        chmod +x $EDITOR
+        (
+          cd "$DOWNLOAD_DIR"
 
-        mkdir -p "$GODOT_HOME/bin"
-        mv $EDITOR "$GODOT_HOME/bin/godot"
+          GH_TOKEN=${{ github.token }} gh release download \
+            ${{ steps.version.outputs.value }} \
+            --repo godotengine/godot \
+            --pattern "$EDITOR.zip" \
+            --output godot.zip
+
+          unzip godot.zip
+          chmod +x $EDITOR
+
+          mkdir -p "$GODOT_HOME/bin"
+          mv $EDITOR "$GODOT_HOME/bin/godot"
+        )
+
+        rm -rf "$DOWNLOAD_DIR"
 
     - name: Update the 'PATH' environment variable
       if: inputs.modify-path == 'true'
