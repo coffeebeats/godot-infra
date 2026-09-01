@@ -425,7 +425,7 @@ chore!: upgrade to Godot `v<NEW>-stable`
 ```
 
 where `<NEW>` is the major.minor version (e.g. `4.7`, not `4.7.0`). The `!` indicates a breaking
-change (new major release tag).
+change (new major release tag). That single line is the whole message — omit co-author trailers.
 
 ## Key reference files
 
