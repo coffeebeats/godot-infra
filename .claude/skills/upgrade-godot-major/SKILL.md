@@ -443,3 +443,4 @@ change (new major release tag).
 
 - `v4.4` → `v4.5` (`v2` → `v3`): commit `c7d5142` (PR #445)
 - `v4.5` → `v4.6` (`v3` → `v4`): commits `f11ad6b` + `4d14ef4` + `65e82c1` (PR #495)
+- `v4.6` → `v4.7` (`v4` → `v5`): commit `5136a9f`
