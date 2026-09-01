@@ -16,9 +16,9 @@ Two checks. Both are a couple of shell commands; neither needs a script.
    ```bash
    SRC=(-- '*.md' '*.yml' '*.yaml' ':!CHANGELOG.md' ':!.claude')
 
-   git grep -n  "godot-v<OLD>"             "${SRC[@]}"
-   git grep -nE "v<OLD>(\.[0-9]+)?-stable" "${SRC[@]}"
-   git grep -n  "godot-infra/.*@<OLD_TAG>" -- '*.yml' '*.yaml'
+   git grep -n  "godot-v<OLD>"                         "${SRC[@]}"
+   git grep -nE "v<OLD>(\.[0-9]+)?-stable"             "${SRC[@]}"
+   git grep -n  "godot-infra/[a-z-]*@<OLD_TAG>"        "${SRC[@]}"
    ```
 
    `git grep`, not `grep -r`: it searches tracked files only, so it skips the vendored trees under
@@ -30,6 +30,12 @@ Two checks. Both are a couple of shell commands; neither needs a script.
    release history, the other is this skill's own worked examples. Without the exclusion the second
    pattern returns six lines every time and the check stops meaning anything. The README version
    table needs no exclusion: it records history as `` `v4.6.3` ``, which matches nothing here.
+
+   All three patterns take `${SRC[@]}`, so all three cover `*.md`. The third was scoped to
+   `'*.yml' '*.yaml'` — correct until `e2758f0` (#530) moved internal action references to local
+   paths, after which it matched nothing and passed while `README.md` still said `@v4`. It shared
+   the blind spot of the sweep it exists to backstop, and a check that can only pass is worse than
+   no check.
 
    The `-stable` pattern allows an optional patch component because `package-addon` pins the full
    version (`v4.6.3-stable`); matching only `v<OLD>-stable` would walk straight past a missed edit
@@ -73,6 +79,11 @@ Only rebuild what the changed defaults can actually break:
 | `emscripten-version` | `compile/web` |
 | `mingw-llvm-version`, `godot-nir-static-version`, `pix-version`, `agility-version` | `compile/windows` |
 | `rust-version` (export workflow) | `export/macos` |
+
+`export/web` and `export/windows` are absent by design, not by omission: only
+`export-godot-project-preset/macos/Dockerfile` carries a versioned `ARG`, so no dependency change
+can reach the other two. They appear in the tables below because the timings are measured and the
+smoke tests still apply on the rare occasion something else forces a rebuild.
 
 > [!IMPORTANT]
 > **Build one image at a time, platform by platform.** Each build saturates CPU, disk, and network;

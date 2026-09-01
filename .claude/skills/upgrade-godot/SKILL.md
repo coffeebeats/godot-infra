@@ -21,6 +21,10 @@ later by a second commit that resolving the version properly makes unnecessary.
    `#### Release tag: Godot version`. Its top row gives `OLD_FULL` (e.g. `4.7.2`) and `OLD_TAG`
    (e.g. `v5`). Derive `OLD` = that version's major.minor (e.g. `4.7`).
 
+   **Normalize `OLD_FULL` to three components**, treating a missing patch as `0`. The table carries
+   patchless rows — the `v1` row reads `v4.3`, and `v4.7` sat in the top row until 4.7.2 landed —
+   and step 3 compares patch numbers.
+
 2. **Resolve `NEW_FULL`.** Godot tags a minor's *first* release with no patch component, so
    `4.7-stable` **is** 4.7.0 and there is no `4.7.0-stable`. Never pin a bare `<minor>-stable`
    without checking for a later patch first.
@@ -39,6 +43,14 @@ later by a second commit that resolving the version properly makes unnecessary.
    `4.10-stable` above both. Do not rely on the API's own ordering. When `$ARGUMENTS` already names
    a full `major.minor.patch`, take it as given, stripping any leading `v`.
 
+   **Then confirm the tag exists**, whichever path produced it. An argument is taken on trust and
+   the patch route makes no upstream request that would fail later, so a typo gets pinned, passes
+   every check below, and commits.
+
+   ```bash
+   echo "$TAGS" | grep -qx "<NEW_FULL>-stable" || echo "no such Godot release"
+   ```
+
    Derive `NEW` = `NEW_FULL`'s major.minor.
 
 3. **Route on the two versions.**
@@ -46,11 +58,16 @@ later by a second commit that resolving the version properly makes unnecessary.
    | Condition | Route |
    | --- | --- |
    | `NEW` == `OLD`, and `NEW_FULL`'s patch > `OLD_FULL`'s patch | **patch** |
-   | `NEW`'s minor == `OLD`'s minor + 1 | **minor**; `NEW_TAG` = `OLD_TAG` + 1 |
+   | `NEW` is the next release, minor or major | **minor**; `NEW_TAG` = `OLD_TAG` + 1 |
    | `NEW_FULL` == `OLD_FULL` | stop — already current |
-   | anything lower, or a jump of more than one minor | stop and ask |
+   | anything lower, or a jump of more than one release | stop and ask |
 
-   A multi-minor jump means two releases of upstream drift to research at once, so it needs the
+   "The next release" is `4.7` → `4.8`, or `4.7` → `5.0`. Compare the major and minor together and
+   never the minor alone: `5.0` follows `4.7` even though `0 < 7`. A major bump has not happened yet
+   and takes the minor route unchanged — same files, same new release tag — so it gets no branch of
+   its own here.
+
+   A multi-release jump means two releases of upstream drift to research at once, so it needs the
    user's agreement on scope before starting. State the resolved route and version before editing.
 
 4. **Create the branch** `chore/godot/upgrade` off the current branch. Never edit `main` directly.
@@ -85,12 +102,19 @@ Everything here takes the bare `<OLD>` → `<NEW>` major.minor, never the full v
 3. **`README.md` Docker examples** — every image tag containing `godot-v<OLD>-`, across both the
    `compile-godot-export-template` and `export-godot-project-preset` sections, in the local build
    and local run commands alike.
-4. **Internal action references** — `grep` every `.yml`/`.yaml` for `coffeebeats/godot-infra/`
-   followed by `@<OLD_TAG>`, then replace with `@<NEW_TAG>`. Typically seven files:
-   `.github/actions/{check-code-formatting,install-godot-source}/action.yml`,
-   `check-godot-project/action.yaml`, `compile-godot-export-template/action.yml`,
-   `export-godot-project-preset/action.yaml`, `package-addon/action.yaml`, and
-   `publish-project-itchio/action.yml`.
+4. **Consumer action pins** — `README.md` §"Example usage" pins this repo's own actions at the
+   release tag. Replace `@<OLD_TAG>` with `@<NEW_TAG>`; two lines today, but find them rather than
+   trusting that count:
+
+   ```bash
+   git grep -n 'coffeebeats/godot-infra/[a-z-]*@v[0-9]' -- '*.md' '*.yml' '*.yaml'
+   ```
+
+   **Search `*.md`.** Seven action files carried these pins too, until `e2758f0` (#530) switched
+   internal references to local paths in March 2026. A sweep scoped to `.yml`/`.yaml` was right
+   until then and has matched nothing since, reporting itself done every time — which is how `v5`
+   shipped with the examples still reading `@v4`. Bump them here, in the upgrade commit;
+   `@<NEW_TAG>` dangles until release-please cuts the tag on merge, and that is expected.
 
 ## Dependency research — minor route only
 
@@ -101,13 +125,20 @@ WinRT while every version pin was correct.
 
 ## Review the diff
 
-**Patch route:** `git diff --stat` must show **exactly 2 files changed, 3 insertions, 3 deletions.**
-Every patch upgrade in this repo's history has hit that exactly, so treat a miss as a stop rather
-than a rounding error — it means an edit landed somewhere it should not have.
+**Patch route:** `git diff --stat` must show **exactly 2 files changed, 3 insertions, 3 deletions**,
+and all three added lines must name the resolved version:
+
+```bash
+git diff -U0 | grep -c "^+.*<NEW_FULL>"   # must print 3
+```
+
+Every patch upgrade in this repo's history has hit that stat exactly, so treat a miss as a stop
+rather than a rounding error — it means an edit landed somewhere it should not have. The stat alone
+cannot tell `4.7.2` from `4.7.1`, which is what the second check is for.
 
 **Minor route:** expect roughly six image action files at one line each, two or three workflow
-files, `package-addon/action.yaml`, `README.md` (many lines), five to seven files for the internal
-action references, and possibly the macOS SDK workflows and the `thirdparty/osxcross` submodule.
+files, `package-addon/action.yaml`, `README.md` (many lines, the two consumer action pins among
+them), and possibly the macOS SDK workflows and the `thirdparty/osxcross` submodule.
 
 Present the summary to the user before going further.
 
@@ -129,15 +160,3 @@ chore!: upgrade to Godot `v<NEW_FULL>-stable`    # minor route
 The `!` marks the breaking change of a new release tag, and release-please reads it to cut the major
 bump that `@<NEW_TAG>` depends on. A squash merge makes this line the release note, so it has to
 name the full version. That single line is the whole message — no body, no co-author trailers.
-
-## Key reference files
-
-- `README.md` — badge, version table, Docker build/run examples
-- `README.md` §"Building images locally" — the source of truth for local `docker build` commands
-- `package-addon/action.yaml` — `godot-editor-version` default
-- `.github/workflows/publish-image-godot-infra.yaml` — `GODOT_MAJOR_MINOR_VERSION`
-- `.github/workflows/publish-image-compile-godot-export-template.yaml` — compile dependency versions
-- `.github/workflows/publish-image-export-godot-project-preset.yaml` — `RUST_VERSION` default
-- `compile-godot-export-template/{macos,web,windows}/action.yml` — Docker image tags
-- `export-godot-project-preset/{macos,web,windows}/action.yml` — Docker image tags
-- `thirdparty/osxcross` — osxcross submodule (may need updating for macOS builds)
