@@ -73,8 +73,10 @@ and `NEW_TAG` = new release tag (e.g. `v5`).
 
 Two workflow files contain dependency version defaults:
 
-- `.github/workflows/publish-image-compile-godot-export-template.yaml` — the `outputs` section of
-  the `inputs` job (~lines 121-147). Each default has a source URL in a trailing comment.
+- `.github/workflows/publish-image-compile-godot-export-template.yaml` — the `outputs` block of
+  the `inputs` job. Locate it by shape, not line number: every entry is
+  `<key>: ${{ inputs.<key> || '<default>' }}` with a source URL in a trailing comment, which is what
+  distinguishes it from the bare `inputs:` declarations above it.
 - `.github/workflows/publish-image-export-godot-project-preset.yaml` — the `RUST_VERSION` env var
   (has a fallback default used when the caller doesn't pass `rust-version`).
 
@@ -82,15 +84,34 @@ For each dependency, **fetch the upstream source** to determine the correct new 
 default has a comment with a source URL — **follow that URL pattern** to find the equivalent file
 on the new Godot version's branch. The upstream repos are:
 
-- `godotengine/build-containers` — check the `main` branch (or latest tag). Fetch via:
-  `gh api repos/godotengine/build-containers/contents/Dockerfile.osx` (likewise `.web`, `.windows`)
-- `godotengine/godot-build-scripts` — check the `main` branch. Fetch via:
-  `gh api repos/godotengine/godot-build-scripts/contents/build.sh`
+- `godotengine/build-containers` — check the **`<NEW>` release branch**, not `main`. Fetch via:
+  `gh api repos/godotengine/build-containers/contents/Dockerfile.osx?ref=<NEW>` (likewise `.web`,
+  `.windows`)
+- `godotengine/godot-build-scripts` — check the **`<NEW>` release branch**, not `main`. Fetch via:
+  `gh api repos/godotengine/godot-build-scripts/contents/build.sh?ref=<NEW>`
 - `godotengine/godot` — check the `<NEW>-stable` branch (e.g. `4.7-stable`). Fetch via:
   `gh api repos/godotengine/godot/contents/misc/scripts/install_d3d12_sdk_windows.py?ref=<NEW>-stable`
 
 **Important:** The source URL in each comment is the ground truth for where to look. If a
 dependency's source has moved between versions, follow whatever URL is currently documented.
+
+> [!IMPORTANT]
+> **Read from the `<NEW>` release branch, never from `main`.** Upstream cuts a release branch and
+> then immediately moves `main` on to the *next* dev cycle. During the 4.7 upgrade, `main` already
+> carried 4.8-dev values (Emscripten 6.0.1, llvm-mingw 20260616) and had **deleted `Dockerfile.osx`
+> entirely** — following it would have pinned versions Godot 4.7 was never built with, and the
+> failure is silent because every value still looks plausible.
+>
+> List branches with `gh api repos/godotengine/build-containers/branches --paginate --jq '.[].name'`
+> — **without `--paginate` the release branch may not appear at all.**
+>
+> Pin the comment URLs to the resolved commit SHA, not the branch name, so a later reader can tell
+> exactly what was current.
+
+> [!NOTE]
+> A freshly-cut release branch is often identical to the previous one. It is normal and correct for
+> most versions to be unchanged — during the 4.7 upgrade only three values actually moved. Do not
+> manufacture bumps to make the diff look substantial.
 
 #### Dependencies to update
 
@@ -98,12 +119,20 @@ dependency's source has moved between versions, follow whatever URL is currently
 - `godot-angle-static-version` — source varies; follow the existing comment URL
 
 **macOS:**
-- `clang-version` — from `build-containers` `Dockerfile.osx` (`LLVM_VERSION` arg)
+- `clang-version` — from `build-containers` `Dockerfile.osx` (`LLVM_VERSION` arg). **Only the
+  major version matters**: `thirdparty/osxcross/build_clang.sh` maps each major to a hardcoded
+  `apple/llvm-project` stable branch. If the new major has no `case` entry there, the build fails
+  after osxcross has already compiled. Check the mapping by hand before pinning a new major.
 - `moltenvk-version` — from `godot-build-scripts` `build.sh`
 - `osx-version` — from `build-containers` `Dockerfile.osx` (`OSX_SDK` arg)
 - `osx-version-min` — from MoltenVK runtime requirements (check the MoltenVK docs for the
   version found above)
-- `osxcross-sdk` — from `godot-build-scripts` `build-macos/build.sh` (format: `darwin<XX.Y>`)
+  - **If `osx-version` changes, the macOS SDK tarball must be regenerated.** The build asserts on
+    `tarballs/MacOSX<osx-version>.sdk.tar.gz`, which is not in git; re-run the
+    `package-macos-sdk.yml` workflow. A stale tarball fails ~40 minutes into the build.
+- `osxcross-sdk` — from `godot-build-scripts` `build-macos/build.sh` (format: `darwin<XX.Y>`).
+  The Darwin major is always the macOS major minus one (macOS `26.1` → `darwin25.1`); bumping
+  `osx-version` without this is a classic miss.
 - `rust-version` — use the latest stable Rust version
 - `xcode-version` — from `build-containers` `Dockerfile.osx`
 
