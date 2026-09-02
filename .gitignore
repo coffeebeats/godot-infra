@@ -30,6 +30,9 @@ tests/project/*
 !tests/project/main.tscn
 !tests/project/project.godot
 
+# Python-related ignores
+__pycache__/
+
 # IDE-related ignores
 .vscode/*
 
