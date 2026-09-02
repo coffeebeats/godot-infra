@@ -184,7 +184,7 @@ local build under emulation could never have shown it; the published tag reprodu
 
 Once release-please has cut the tag and the publish workflow has pushed the images, run Tier 2's
 smoke tests and Tier 3 for **all three platforms** against the published tags,
-`REGISTRY="ghcr.io/coffeebeats/"` in the README commands. `upgrade-godot-chain` refuses to start
+`REGISTRY="ghcr.io/coffeebeats/"` in the README commands. `upgrade-godot-repos` refuses to start
 its first downstream stage until this has passed, because a failure here is a `godot-infra` fix and
 every downstream bump would inherit it.
 

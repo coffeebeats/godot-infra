@@ -28,7 +28,7 @@ dependents submodule.
    the user's call: show it, record the resolution, and stop if they need to look.
 
 3. **Run the script.** The `fork` route rewrites the three tokens in `publish.yaml`: the target
-   branch, the editor version, and the `package-addon` pin, which keeps its floating-major shape.
+   branch, the editor version, and the `package-addon` pin, written as the floating major.
 
    ```bash
    python3 scripts/upgrade_godot_project.py upgrade --project <repo> --godot-version "<NEW_TAG>" --output "${TMPDIR:-/tmp}/<name>-upgrade.json"
@@ -113,10 +113,12 @@ dependents submodule.
 
 7. **Guard against the recurring mistakes** before committing. Each one has shipped at least once:
 
-   - every `coffeebeats/godot-infra/...@` reference names `<INFRA_TAG>`'s major, comments
-     included (`git grep -n 'godot-infra/[^@ ]*@v' -- .github`). The script keeps each pin's
-     shape, so a floating `@v4` becomes `@v5` while Dependabot-managed `@v4.1.2` becomes
-     `@<INFRA_TAG>`. A summary warning names any workflow it could not re-pin;
+   - every `coffeebeats/godot-infra/...@` reference is the bare floating major of `<INFRA_TAG>`,
+     comments included (`git grep -n 'godot-infra/[^@ ]*@v' -- .github`). The script writes
+     `@v5` whether the pin was `@v4` or `@v4.1.2`: release-please moves the major tag on every
+     release, so a fix to an action definition reaches the project without another bump. An
+     exact pin that survives is a mistake, since Dependabot would keep it exact. A summary
+     warning names any workflow it could not re-pin;
    - the plugin README table gained a top row and demoted the old one, in the
      `- \`main\` / \`godot-v4.7\` (\`v5\`): \`v4.7\`` format;
    - the commit title is the summary's `commit_title`: `chore!:` on the minor route, because

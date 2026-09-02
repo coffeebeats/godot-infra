@@ -1,5 +1,5 @@
 ---
-name: upgrade-godot-chain
+name: upgrade-godot-repos
 description: Upgrades a set of local Godot repositories (addon forks, plugins, game projects) to the Godot release that godot-infra currently targets, one dependency at a time. Given repository paths, it orders them by dependency, writes a plan for approval, then bumps each repository and waits for it to publish before starting the ones that depend on it. Progress is recorded, so re-running resumes. Run /upgrade-godot on this repository first.
 disable-model-invocation: true
 argument-hint: "[<repo-path>...] [godot-version]"
@@ -26,7 +26,7 @@ what the repositories can say for themselves.
 
 ## The plan file
 
-`.claude/upgrade-godot-chain.md` in this repository, which `.gitignore` already excludes. Its
+`.claude/upgrade-godot-repos.md` in this repository, which `.gitignore` already excludes. Its
 format and the per-route checklist templates are in `references/plan-file.md`. What matters here
 is the authority rule, which the file's horizontal rule marks:
 

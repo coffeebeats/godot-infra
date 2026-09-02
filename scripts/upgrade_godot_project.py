@@ -202,14 +202,16 @@ def replace_in_file(path: Path, pattern: re.Pattern[str], replacement: str) -> i
 
 
 def repin(pin: str, infra_tag: str) -> str:
-    """Rewrite a pin to the new release, keeping its shape: 'v4' -> 'v5', 'v4.1.2'
-    -> 'v5.0.0'. A floating major keeps floating; an exact pin stays exact."""
-    depth = pin.count(".") + 1
-    return "v" + ".".join(infra_tag.removeprefix("v").split(".")[:depth])
+    """Rewrite a pin to the new release's floating major: 'v4' and 'v4.1.2' both
+    become 'v5'. release-please moves that tag on every release, so action fixes
+    reach the project without another bump."""
+    del pin
+    return "v" + infra_tag.removeprefix("v").split(".")[0]
 
 
 def upgrade_infra_pins(project: Path, infra_tag: str, summary: Summary) -> None:
-    """Re-pin every 'coffeebeats/godot-infra/<path>@vN[.x.y]' under '.github'."""
+    """Re-pin every 'coffeebeats/godot-infra/<path>@vN[.x.y]' under '.github' to
+    the new floating major."""
     workflows = project / ".github"
     if not workflows.is_dir():
         return
@@ -235,7 +237,9 @@ def upgrade_infra_pins(project: Path, infra_tag: str, summary: Summary) -> None:
                 " version tag; left as is"
             )
     if count:
-        summary.changes.append(f".github: {count} godot-infra pins -> {infra_tag}")
+        summary.changes.append(
+            f".github: {count} godot-infra pins -> {repin('', infra_tag)}"
+        )
 
 
 def fork_publish_workflow(project: Path) -> Path | None:
