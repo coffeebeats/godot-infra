@@ -220,6 +220,9 @@ mv godot/bin/godot_macos.zip build/
   "$EXPORT macos /github/workspace/dist/Game.app.zip"
 ```
 
+> [!NOTE]
+> The macOS exporter prints `No export template found at the expected path` before it finds the custom template. That line is noise; only the errors after it fail the export.
+
 </details>
 
 <details>
@@ -252,7 +255,7 @@ mv godot/bin/godot.windows.template_release.x86_64.llvm.exe build/
 
 #### What passing looks like
 
-Each compile ends with `scons: done building targets.` and each export with `[ DONE ] export`, leaving `Game.app.zip`, `Game.html` with `Game.wasm`, and `Game.exe` in `dist/`. A broken toolchain fails within seconds of `scons: Building targets ...`. Two editor messages are noise: `Unable to load fontconfig`, and the macOS exporter's `No export template found at the expected path`, which reports the official template before it finds the custom one. Only the errors after it fail the export.
+Each compile ends with `scons: done building targets.` and each export with `[ DONE ] export`, leaving `Game.app.zip`, `Game.html` with `Game.wasm`, and `Game.exe` in `dist/`. A broken toolchain fails within seconds of `scons: Building targets ...`. The editor's `Unable to load fontconfig` errors are noise.
 
 The `release` profile enables link-time optimization, so compiles are slow under emulation on an M-series Mac (the web template takes about 23 minutes; an export takes seconds). `.scons/` caches object files between runs. `godot/`, `build/`, `dist/`, `.godot-editor/`, and `.scons/` are gitignored.
 
