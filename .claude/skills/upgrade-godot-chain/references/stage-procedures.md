@@ -13,10 +13,15 @@ dependents submodule.
 1. **Preflight:** clean tree, on `<default>`, `git pull --ff-only`.
 
 2. **Merge upstream, never rebase.** The `upstream` remote is already configured and may live
-   outside GitHub.
+   outside GitHub. Merge the upstream branch that carries the target Godot line: `<default>`
+   usually, but an upstream that stages a release on a version branch (`git branch -r` lists
+   something like `upstream/godot_4_7`) is merged from that branch instead, and `<default>` is
+   left alone until upstream folds the branch back. A plain merge keeps the shared history, so the
+   later merge of `<default>` sees those commits as already present; a squash would replay every
+   one of them as a conflict.
 
    ```bash
-   git fetch upstream && git merge upstream/<default>
+   git fetch upstream && git merge upstream/<branch>
    ```
 
    Resolve conflicts inside `.github/` in favor of the fork's workflow. A conflict anywhere else is

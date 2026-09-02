@@ -88,9 +88,10 @@ accepted cost of not committing the file anywhere.
    git -C <repo> ls-remote --heads origin "godot-v<NEW>"
    ```
 
-   For each fork also fetch `upstream` and count
-   `git -C <repo> rev-list --count origin/<default>..upstream/<default>`; a large number is worth a
-   note for approval.
+   For each fork also fetch `upstream`, check `git -C <repo> branch -r` for a version branch that
+   carries the target (`upstream/godot_4_7`), and count
+   `git -C <repo> rev-list --count origin/<default>..upstream/<branch>`; a large number is worth a
+   note for approval, and a version branch is recorded on the merge line of the checklist.
 
 6. **Write the plan file** and stop. Each repository gets the checklist template for its kind and
    route. Under "Notes for approval" put anything the user should rule on: a multi-release jump, a

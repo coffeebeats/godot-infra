@@ -60,7 +60,7 @@ line, so the next run does not re-enter it.
 **Fork** (the `fork` route):
 
 ```markdown
-- [ ] merge upstream/<default>
+- [ ] merge upstream/<branch>          (<default>, or upstream's version branch for the target)
 - [ ] fork route: publish.yaml → godot-v<NEW>, v<NEW>-stable, package-addon@<INFRA major>
 - [ ] import with <NEW_TAG>; fix what it reports          (only when the fork has a project.godot)
 - [ ] commit; push <default>; confirm origin/godot-v<NEW>
