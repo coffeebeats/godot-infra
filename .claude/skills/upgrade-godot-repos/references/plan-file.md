@@ -1,6 +1,6 @@
 # The plan file
 
-`.claude/upgrade-godot-chain.md`. Everything above the horizontal rule is derived and rebuilt on
+`.claude/upgrade-godot-repos.md`. Everything above the horizontal rule is derived and rebuilt on
 every run; everything below it is recorded and exists nowhere else.
 
 ## At approval time
@@ -95,5 +95,5 @@ status: complete 2026-09-04
 
 ## Follow-ups
 - [ ] phantom-camera 1.1.0 renamed follow_target → target: audit the template for the same call
-- [ ] next patch release: /upgrade-godot-chain with no arguments after /upgrade-godot moves main
+- [ ] next patch release: /upgrade-godot-repos with no arguments after /upgrade-godot moves main
 ```
