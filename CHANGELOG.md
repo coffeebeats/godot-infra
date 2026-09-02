@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.2.0 (2026-09-02)
+
+## What's Changed
+* docs: add an end-to-end compile and export check for the toolchain images by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/571
+* feat(scripts): pin `godot-infra` actions to the floating major when upgrading by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/573
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.1.0...v5.2.0
+
 ## 5.1.0 (2026-09-02)
 
 ## What's Changed
