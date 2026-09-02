@@ -17,10 +17,18 @@ mono_crash.*.json
 thirdparty/moltenvk/*
 !thirdparty/moltenvk/.gitkeep
 
-# Testing-related ignores
-# ...
+# Testing-related ignores (see "Testing the toolchain end to end" in README.md)
+.godot-editor/
 .scons/
+build/
+dist/
 godot/
+# Everything the editor generates inside the sample project; only its sources are tracked.
+tests/project/*
+!tests/project/.godot-version
+!tests/project/export_presets.cfg
+!tests/project/main.tscn
+!tests/project/project.godot
 
 # IDE-related ignores
 .vscode/*

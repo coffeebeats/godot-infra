@@ -54,6 +54,16 @@ accepted cost of not committing the file anywhere.
    (`INFRA_TAG`, e.g. `v5.0.0`). An `infra: none` line means stage zero is not done; stop and say
    which of `/upgrade-godot`, its merge, or its release is missing.
 
+   A tag alone does not finish stage zero either. The images CI published for it have to compile
+   and export a project: `README.md` §"Testing the toolchain end to end" with
+   `REGISTRY="ghcr.io/coffeebeats/"`, all three platforms, as described in
+   `.claude/skills/upgrade-godot/references/build-validation.md` §"After CI publishes". Run it
+   during this phase if the plan file does not already record it as passed for `INFRA_TAG`, and
+   record the result under "Notes for approval". A failure is a `godot-infra` fix, not a downstream
+   one: stop here, because every bump below would inherit it. The 4.7 chain learned this from
+   `godot-project-template`, whose macOS compile crashed on a `godot-infra` image that had passed
+   every local check.
+
 2. **Read the existing plan file**, if there is one. When no paths were given, take them from its
    table; when paths were given, they replace the table's.
 

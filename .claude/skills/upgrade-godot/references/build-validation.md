@@ -3,8 +3,10 @@
 Read by `upgrade-godot` on the **minor** route only, after the diff has been reviewed. A patch
 upgrade changes no image inputs, so its verification is the three-line diff assertion in `SKILL.md`.
 
-Validation is two tiers. **Always run Tier 1. Run Tier 2 for the images whose pins actually
-changed.**
+Validation is three tiers before the merge and one check after it. **Always run Tier 1. Run
+Tier 2 for the images whose pins actually changed, and Tier 3 for the platforms those images
+serve.** Then, once CI has published the images, run the post-publish check against the published
+tags; an image that builds and passes locally can still ship broken.
 
 ## Tier 1 — Static checks (always; ~1 minute)
 
@@ -14,7 +16,7 @@ Two checks. Both are a couple of shell commands; neither needs a script.
    the old version:
 
    ```bash
-   SRC=(-- '*.md' '*.yml' '*.yaml' ':!CHANGELOG.md' ':!.claude')
+   SRC=(-- '*.md' '*.yml' '*.yaml' '*.godot-version' ':!CHANGELOG.md' ':!.claude')
 
    git grep -n  "godot-v<OLD>"                         "${SRC[@]}"
    git grep -nE "v<OLD>(\.[0-9]+)?-stable"             "${SRC[@]}"
@@ -37,9 +39,9 @@ Two checks. Both are a couple of shell commands; neither needs a script.
    the blind spot of the sweep it exists to backstop, and a check that can only pass is worse than
    no check.
 
-   The `-stable` pattern allows an optional patch component because `package-addon` pins the full
-   version (`v4.6.3-stable`); matching only `v<OLD>-stable` would walk straight past a missed edit
-   there. These values change only during this upgrade flow, so a scan here is worth more than any
+   The `-stable` pattern allows an optional patch component because `package-addon` and
+   `tests/project/.godot-version` pin the full version (`v4.6.3-stable`); matching only
+   `v<OLD>-stable` would walk straight past a missed edit there. These values change only during this upgrade flow, so a scan here is worth more than any
    standing CI check.
 
 2. **Every pin agrees with its own source link.** Each default in the compile workflow's `outputs`
@@ -99,19 +101,23 @@ For each affected image, in turn:
    (`.build-logs/` is gitignored; create it first.)
 2. Wait for it to finish — poll the log rather than blocking, and do not start another build.
 3. Smoke-test the toolchain inside the image. A build can succeed while a copied-in SDK is empty,
-   so check the tools actually run and report the expected version:
+   so check the tools actually run and report the expected version, **and that the compilers
+   compile something**. `--version` is not enough: the macOS image CI published on 2026-09-01
+   printed its version fine and then died with `Illegal instruction` on every source file.
 
    | Image | Smoke test |
    | --- | --- |
-   | `compile/macos` | `"$OSXCROSS_ROOT/target/bin/"*-apple-darwin*-clang --version`, `test -d /opt/angle`, `test -d "$VULKAN_SDK_ROOT/macOS/lib/MoltenVK.xcframework"` |
-   | `compile/web` | `emcc --version` (must match `emscripten-version`), `scons --version` |
-   | `compile/windows` | `clang --version`, `test -d /opt/mesa /opt/agility /opt/pix /opt/angle`, `scons --version` |
+   | `compile/macos` | `for a in x86_64 arm64; do echo 'int main(){}' \| "$OSXCROSS_ROOT"/target/bin/$a-apple-darwin*-clang++ -x c++ -c - -o /dev/null; done`, `test -d /opt/angle`, `test -d "$VULKAN_SDK_ROOT/macOS/lib/MoltenVK.xcframework"` |
+   | `compile/web` | `emcc --version` (must match `emscripten-version`), `echo 'int main(){}' \| emcc -x c++ -c - -o /dev/null`, `scons --version` |
+   | `compile/windows` | `echo 'int main(){}' \| x86_64-w64-mingw32-clang++ -x c++ -c - -o /dev/null`, `test -d /opt/mesa /opt/agility /opt/pix /opt/angle`, `scons --version` |
    | `export/macos` | `rcodesign --version` |
    | `export/windows` | `command -v osslsigncode` |
 
    ```bash
-   docker run --rm --entrypoint /bin/bash <tag> -c 'emcc --version && scons --version'
+   docker run --rm --platform linux/amd64 --entrypoint /bin/bash <tag> -c 'emcc --version && scons --version'
    ```
+
+   Pass `--platform linux/amd64` on Apple Silicon so the image runs the way CI runs it.
 
 Measured cold-cache times on an M-series Mac building `linux/amd64` under emulation (4.7 upgrade):
 
@@ -151,7 +157,40 @@ test -d thirdparty/moltenvk/macOS/lib/MoltenVK.xcframework
 > only as an `x86_64` Linux tarball — so it is always emulated on Apple Silicon. Emulation is
 > cheaper than it sounds (see the times above); prefer measuring over assuming.
 
+## Tier 3 — Compile and export a project (for affected platforms)
+
+A toolchain that installs and answers `--version` has still not compiled Godot, and a template that
+compiles has still not been fed to the editor. `README.md` §"Testing the toolchain end to end" runs
+both halves the way the actions run them in CI, against the sample project in `tests/project`.
+**Use those commands verbatim** with `REGISTRY=""` so they pick up the images Tier 2 just built,
+for every platform whose compile or export image was rebuilt.
+
+Each platform is one compile (two for macOS, which is universal) and one export. The compiles
+run one at a time for the same reason the image builds do, and the release profile's link-time
+optimization makes them the slow part; the README carries measured times. Log them under
+`.build-logs/` like the image builds.
+
+The result is pass or fail per platform; there is nothing to interpret. A compile that dies within
+seconds of `scons: Building targets ...` is the toolchain, not Godot.
+
+## After CI publishes
+
+The merge is not the end of validation. `publish-image-godot-infra.yaml` rebuilds every image on
+GitHub's runners, and the result can differ from the local build of the same Dockerfile: the
+`godot-v4.7-macos` image CI published on 2026-09-01 was compiled with `-march=native` on a runner
+whose CPU had instructions that other runners and local emulation lack, so it crashed with
+`Illegal instruction` on every compile on some runners while the same image passed on others. A
+local build under emulation could never have shown it; the published tag reproduced it in seconds.
+
+Once release-please has cut the tag and the publish workflow has pushed the images, run Tier 2's
+smoke tests and Tier 3 for **all three platforms** against the published tags,
+`REGISTRY="ghcr.io/coffeebeats/"` in the README commands. `upgrade-godot-chain` refuses to start
+its first downstream stage until this has passed, because a failure here is a `godot-infra` fix and
+every downstream bump would inherit it.
+
 ## Reporting
 
-State plainly which images were actually built and which were not, and why. An unbuilt image is an
-unvalidated one — do not describe the upgrade as verified on the strength of Tier 1 alone.
+State plainly which images were actually built and which were not, which platforms went through
+Tier 3, and whether the post-publish check has run. An unbuilt image is an unvalidated one, and an
+image that only passed locally is an unpublished one — do not describe the upgrade as verified on
+the strength of Tier 1 alone, or as finished before the published tags have passed.

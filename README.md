@@ -174,26 +174,54 @@ docker build \
 
 </details>
 
-### Compiling export templates locally
+### Testing the toolchain end to end
 
-You can test building export templates locally using the above images. First, vendor the Godot source code using [gdenv](https://github.com/coffeebeats/gdenv) by running:
+A successful image build only proves that the toolchain installs. The steps below compile a Godot export template with each `compile-godot-export-template` image and export the sample project in [`tests/project`](./tests/project) with each `export-godot-project-preset` image, using the same commands the actions run in CI. Run them from the repository root, against the published images once CI has pushed them and against local images while developing.
+
+#### Setup
+
+`gdenv` resolves the Godot version from `tests/project/.godot-version`. `GDENV_OS` and `GDENV_ARCH` make it fetch the Linux editor that the export images run.
 
 ```sh
-gdenv vendor
+# Leave empty to test images built locally (see "Building images locally").
+REGISTRY="ghcr.io/coffeebeats/"
+
+# Vendor the Godot source code into './godot'.
+gdenv vendor -p tests/project
+
+# Install the Linux editor and copy it into the workspace.
+mkdir -p .godot-editor .scons build dist
+GDENV_OS=linux GDENV_ARCH=x86_64 gdenv install -p tests/project
+cp "$(GDENV_OS=linux GDENV_ARCH=x86_64 gdenv which -p tests/project 2>&1)" .godot-editor/godot
+
+# Shared arguments. The repository root is the container's workspace, as in CI.
+RUN=(docker run --rm --platform linux/amd64 -v "$PWD:/github/workspace" -w /github/workspace)
+SCONS='scons -j$(nproc) -C godot cache_path=/github/workspace/.scons verbose=yes warnings=extra werror=yes'
+EXPORT='.godot-editor/godot --path tests/project --headless --export-release'
 ```
 
-This will download and extract the Godot source code into the `godot/` directory. Then, use the Docker commands below to build export templates for each platform.
+The `scons` arguments below are the ones `compile-godot-export-template/*/action.yml` passes for the `release` profile, and `tests/project/export_presets.cfg` expects the templates under `build/` with the names CI gives them. Keep both in sync with the actions.
 
 <details>
 <summary><strong>macOS</strong></summary>
 
+CI compiles `x86_64` first, then `arm64` with `generate_bundle=yes`, which merges both into a universal `godot_macos.zip`.
+
 ```sh
-docker run --rm -it \
-  -v "$(pwd)/godot:/github/workspace" \
-  -v "$(pwd)/.scons:/github/workspace/.scons" \
-  compile-godot-export-template:godot-v4.7-macos \
-  /bin/bash -c -O extglob "scons -j\$(nproc) -C /github/workspace cache_path=/github/workspace/.scons verbose=yes warnings=extra werror=yes arch=arm64 target=template_debug debug_symbols=yes optimize=debug ccflags='-Wno-ordered-compare-function-pointers -Wno-c99-designator'"
+CCFLAGS="-Wno-ordered-compare-function-pointers -Wno-c99-designator"
+
+"${RUN[@]}" "${REGISTRY}compile-godot-export-template:godot-v4.7-macos" /bin/bash -c \
+  "$SCONS arch=x86_64 target=template_release production=yes optimize=speed ccflags='$CCFLAGS'"
+"${RUN[@]}" "${REGISTRY}compile-godot-export-template:godot-v4.7-macos" /bin/bash -c \
+  "$SCONS arch=arm64 target=template_release production=yes optimize=speed generate_bundle=yes ccflags='$CCFLAGS'"
+mv godot/bin/godot_macos.zip build/
+
+"${RUN[@]}" "${REGISTRY}export-godot-project-preset:godot-v4.7-macos" /bin/bash -c \
+  "$EXPORT macos /github/workspace/dist/Game.app.zip"
 ```
+
+> [!NOTE]
+> The macOS exporter prints `No export template found at the expected path` before it finds the custom template. That line is noise; only the errors after it fail the export.
 
 </details>
 
@@ -201,11 +229,12 @@ docker run --rm -it \
 <summary><strong>Web</strong></summary>
 
 ```sh
-docker run --rm -it \
-  -v "$(pwd)/godot:/github/workspace" \
-  -v "$(pwd)/.scons:/github/workspace/.scons" \
-  compile-godot-export-template:godot-v4.7-web \
-  /bin/bash -c "scons -j\$(nproc) -C /github/workspace cache_path=/github/workspace/.scons verbose=yes warnings=extra werror=yes arch=wasm32 target=template_debug debug_symbols=yes optimize=debug"
+"${RUN[@]}" "${REGISTRY}compile-godot-export-template:godot-v4.7-web" /bin/bash -c \
+  "$SCONS arch=wasm32 target=template_release production=yes optimize=speed javascript_eval=no threads=yes"
+mv godot/bin/godot.web.template_release.wasm32.zip build/web_release.zip
+
+"${RUN[@]}" "${REGISTRY}export-godot-project-preset:godot-v4.7-web" /bin/bash -c \
+  "$EXPORT web /github/workspace/dist/Game.html"
 ```
 
 </details>
@@ -214,14 +243,21 @@ docker run --rm -it \
 <summary><strong>Windows</strong></summary>
 
 ```sh
-docker run --rm -it \
-  -v "$(pwd)/godot:/github/workspace" \
-  -v "$(pwd)/.scons:/github/workspace/.scons" \
-  compile-godot-export-template:godot-v4.7-windows \
-  /bin/bash -c "scons -j\$(nproc) -C /github/workspace cache_path=/github/workspace/.scons verbose=yes warnings=extra werror=yes arch=x86_64 target=template_debug debug_symbols=yes optimize=debug"
+"${RUN[@]}" "${REGISTRY}compile-godot-export-template:godot-v4.7-windows" /bin/bash -c \
+  "$SCONS arch=x86_64 target=template_release production=yes optimize=speed"
+mv godot/bin/godot.windows.template_release.x86_64.llvm.exe build/
+
+"${RUN[@]}" "${REGISTRY}export-godot-project-preset:godot-v4.7-windows" /bin/bash -c \
+  "$EXPORT windows /github/workspace/dist/Game.exe"
 ```
 
 </details>
+
+#### What passing looks like
+
+Each compile ends with `scons: done building targets.` and each export with `[ DONE ] export`, leaving `Game.app.zip`, `Game.html` with `Game.wasm`, and `Game.exe` in `dist/`. A broken toolchain fails within seconds of `scons: Building targets ...`. The editor's `Unable to load fontconfig` errors are noise.
+
+The `release` profile enables link-time optimization, so compiles are slow under emulation on an M-series Mac (the web template takes about 23 minutes; an export takes seconds). `.scons/` caches object files between runs. `godot/`, `build/`, `dist/`, `.godot-editor/`, and `.scons/` are gitignored.
 
 ## **Contributing**
 
