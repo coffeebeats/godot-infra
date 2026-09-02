@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.1.0 (2026-09-02)
+
+## What's Changed
+* feat(scripts): add a script and skill that upgrade downstream repositories to a new Godot release by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/568
+* fix(macos): build Apple clang portably so the compile image runs on any runner by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/570
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.0.0...v5.1.0
+
 ## 5.0.0 (2026-09-01)
 
 ## What's Changed
