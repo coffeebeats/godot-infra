@@ -7,14 +7,18 @@ pin, resolves the target release upstream, and picks one route:
   none   the pin is already current; nothing changes
   patch  '.godot-version' only
   minor  patch, plus 'godot-vX.Y' submodule branches and gitlinks,
-         'config/features', and a plugin README's version table
+         'coffeebeats/godot-infra' action pins, 'config/features', and a
+         plugin README's version table
+  fork   an addon fork with no pin: the 'godot-vX.Y' target branch, editor
+         version and action pin in its publish workflow
 
-The pin is written by 'gdenv pin'. A minor route fails before writing anything
-when a submodule branch is not published yet. 'godot-infra' action tags are
-left to dependabot.
+The pin is written by 'gdenv pin'. A minor or fork route fails before writing
+anything when a submodule branch is not published yet or no 'godot-infra'
+release targets the new minor.
 
 What changed is written as JSON to '--output'. Reimporting and committing are
-the caller's job. 'prune-settings' drops named 'project.godot' keys.
+the caller's job. 'resolve' prints the target release and 'godot-infra' tag
+without touching the project; 'prune-settings' drops named 'project.godot' keys.
 """
 
 from __future__ import annotations
@@ -25,11 +29,18 @@ import re
 import shutil
 import subprocess
 import sys
+import urllib.request
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 GODOT_REPOSITORY = "https://github.com/godotengine/godot"
 STABLE_TAG = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?-stable$")
+
+INFRA_REPOSITORY = "https://github.com/coffeebeats/godot-infra"
+INFRA_README = "https://raw.githubusercontent.com/coffeebeats/godot-infra/main/README.md"
+# "- `v5` (`main`): `v4.7.2`" in the README's version table.
+INFRA_ROW = re.compile(r"^- `(v\d+)`(?: \(`main`\))?: `v(\d+\.\d+)", re.MULTILINE)
+INFRA_PIN = re.compile(r"(coffeebeats/godot-infra/[^\s@'\"]+@)(v\d+(?:\.\d+){0,2})\b")
 
 
 # ---------------------------------------------------------------------------- #
@@ -95,13 +106,18 @@ def list_stable_releases() -> list[Version]:
 
 
 def resolve_target(requested: str, releases: list[Version]) -> Version:
-    """Resolve '' (newest), 'X.Y' (newest patch of X.Y) or 'X.Y.Z' (as given)."""
-    requested = requested.strip().removeprefix("v").removesuffix("-stable")
+    """Resolve '' (newest), 'X.Y' (newest patch of X.Y) or 'X.Y.Z' (as given).
+
+    A full tag is taken as given too: 'X.Y-stable' is how Godot names X.Y.0.
+    """
+    requested = requested.strip().removeprefix("v")
+    is_tag = requested.endswith("-stable")
+    requested = requested.removesuffix("-stable")
     if not requested:
         return releases[-1]
 
     parts = requested.split(".")
-    if len(parts) == 2:
+    if len(parts) == 2 and not is_tag:
         major, minor = int(parts[0]), int(parts[1])
         candidates = [r for r in releases if (r.major, r.minor) == (major, minor)]
         if not candidates:
@@ -118,6 +134,31 @@ def to_https(url: str) -> str:
     """Rewrite an SSH GitHub URL so it can be queried without an SSH key."""
     match = re.match(r"^(?:ssh://)?git@github\.com[:/](.+?)(?:\.git)?$", url)
     return f"https://github.com/{match.group(1)}" if match else url
+
+
+def resolve_infra_tag(new: Version) -> str:
+    """The newest 'godot-infra' release whose major targets the new minor.
+
+    The README on 'main' is the only record of which release major supports
+    which Godot minor.
+    """
+    with urllib.request.urlopen(INFRA_README) as response:
+        readme = response.read().decode()
+    majors = [
+        major for major, godot in INFRA_ROW.findall(readme) if godot == new.major_minor
+    ]
+    if not majors:
+        raise RuntimeError(f"no godot-infra release targets Godot {new.major_minor} yet")
+
+    output = run("git", "ls-remote", "--tags", "--refs", INFRA_REPOSITORY)
+    releases = []
+    for line in output.splitlines():
+        tag = line.partition("\t")[2].removeprefix("refs/tags/")
+        if re.fullmatch(rf"{majors[0]}\.\d+\.\d+", tag):
+            releases.append(tuple(int(part) for part in tag[1:].split(".")))
+    if not releases:
+        raise RuntimeError(f"godot-infra has no {majors[0]}.x.y release yet")
+    return "v" + ".".join(str(part) for part in max(releases))
 
 
 # ---------------------------------------------------------------------------- #
@@ -146,6 +187,73 @@ def replace_in_file(path: Path, pattern: re.Pattern[str], replacement: str) -> i
     if count:
         path.write_text(updated)
     return count
+
+
+def repin(pin: str, infra_tag: str) -> str:
+    """Rewrite a pin to the new release, keeping its shape: 'v4' -> 'v5', 'v4.1.2'
+    -> 'v5.0.0'. A floating major keeps floating; an exact pin stays exact."""
+    depth = pin.count(".") + 1
+    return "v" + ".".join(infra_tag.removeprefix("v").split(".")[:depth])
+
+
+def upgrade_infra_pins(project: Path, infra_tag: str, summary: Summary) -> None:
+    """Re-pin every 'coffeebeats/godot-infra/<path>@vN[.x.y]' under '.github'."""
+    workflows = project / ".github"
+    if not workflows.is_dir():
+        return
+    count = 0
+    for path in sorted(workflows.rglob("*.y*ml")):
+        text = path.read_text()
+        changed = 0
+
+        def replace(match: re.Match[str]) -> str:
+            nonlocal changed
+            new_pin = repin(match.group(2), infra_tag)
+            changed += new_pin != match.group(2)
+            return match.group(1) + new_pin
+
+        updated = INFRA_PIN.sub(replace, text)
+        if changed:
+            path.write_text(updated)
+            count += changed
+        elif "coffeebeats/godot-infra/" in text:
+            # A SHA pin, or a shape this script does not know; do not guess.
+            summary.warnings.append(
+                f"{path.relative_to(project)}: references godot-infra without a"
+                " version tag; left as is"
+            )
+    if count:
+        summary.changes.append(f".github: {count} godot-infra pins -> {infra_tag}")
+
+
+def fork_publish_workflow(project: Path) -> Path | None:
+    """The publish workflow of an addon fork, which is bumped in place of a pin."""
+    path = project / ".github" / "workflows" / "publish.yaml"
+    if path.is_file() and "godot-infra/package-addon@" in path.read_text():
+        return path
+    return None
+
+
+def upgrade_fork(workflow: Path, new: Version, summary: Summary) -> None:
+    """Retarget the fork's published branch; precedent pins the bare minor."""
+    text = workflow.read_text()
+    text = re.sub(
+        r'^(\s*target-branch:\s*"?)godot-v\d+\.\d+',
+        rf"\g<1>godot-v{new.major_minor}",
+        text,
+        flags=re.MULTILINE,
+    )
+    text = re.sub(
+        r'^(\s*godot-editor-version:\s*"?)v\d+\.\d+(?:\.\d+)?-stable',
+        rf"\g<1>v{new.major_minor}-stable",
+        text,
+        flags=re.MULTILINE,
+    )
+    workflow.write_text(text)
+    summary.changes.append(
+        f"publish.yaml: target-branch godot-v{new.major_minor},"
+        f" godot-editor-version v{new.major_minor}-stable"
+    )
 
 
 def upgrade_pin(project: Path, new: Version, summary: Summary) -> None:
@@ -282,50 +390,88 @@ def upgrade_readme(project: Path, old: Version, new: Version, summary: Summary) 
             )
         return
     release = match.group(1)
+    new_release, new_branch = bump_release_tag(release), f"godot-v{new.major_minor}"
     rows = (
-        f"- `main` / `godot-v{new.major_minor}` (`{bump_release_tag(release)}`): `v{new.major_minor}`\n"
+        f"- `main` / `{new_branch}` (`{new_release}`): `v{new.major_minor}`\n"
         f"- `godot-v{old.major_minor}` (`{release}`): `v{old.major_minor}`"
     )
     path.write_text(text[: match.start()] + rows + text[match.end() :])
     summary.changes.append(f"README.md: version table gains godot-v{new.major_minor}")
 
 
+def run_resolve(args: argparse.Namespace) -> int:
+    new = resolve_target(args.godot_version, list_stable_releases())
+    print(f"godot: v{new.tag}")
+    try:
+        print(f"infra: {resolve_infra_tag(new)}")
+    except RuntimeError as error:
+        print(f"infra: none ({error})")
+    return 0
+
+
 def run_upgrade(args: argparse.Namespace) -> int:
     project = Path(args.project).resolve()
     pin_path = project / ".godot-version"
-    if not pin_path.is_file():
-        print(f"error: {pin_path} not found", file=sys.stderr)
+    publish = fork_publish_workflow(project)
+    if pin_path.is_file():
+        old = Version.parse(pin_path.read_text())
+    elif publish:
+        match = re.search(
+            r'target-branch:\s*"?godot-v(\d+\.\d+)', publish.read_text()
+        )
+        if not match:
+            print(
+                f"error: {publish} names no 'godot-vX.Y' target branch",
+                file=sys.stderr,
+            )
+            return 1
+        old = Version.parse(match.group(1))
+    else:
+        print(
+            f"error: {project} has neither a .godot-version nor a publish workflow",
+            file=sys.stderr,
+        )
         return 1
 
-    if shutil.which("gdenv") is None:
+    new = resolve_target(args.godot_version, list_stable_releases())
+    is_fork = publish is not None and not pin_path.is_file()
+
+    older = (new.major, new.minor) < (old.major, old.minor)
+    if older or (not is_fork and new < old):
+        print(f"error: {new.tag} is older than the pinned {old.tag}", file=sys.stderr)
+        return 1
+    if (new.major, new.minor) == (old.major, old.minor):
+        # A fork tracks a minor, so a patch release changes nothing there.
+        route = "none" if is_fork or new == old else "patch"
+    else:
+        route = "fork" if is_fork else "minor"
+
+    if route in ("patch", "minor") and shutil.which("gdenv") is None:
         print("error: 'gdenv' is not installed", file=sys.stderr)
         return 1
 
-    old = Version.parse(pin_path.read_text())
-    new = resolve_target(args.godot_version, list_stable_releases())
-
-    if new == old:
-        route = "none"
-    elif new < old:
-        print(f"error: {new.tag} is older than the pinned {old.tag}", file=sys.stderr)
-        return 1
-    elif (new.major, new.minor) == (old.major, old.minor):
-        route = "patch"
-    else:
-        route = "minor"
-
     if route == "minor":
         title = f"chore!: update to Godot `v{new.major_minor}`"
+    elif route == "fork":
+        title = f"chore: target Godot `v{new.major_minor}`"
     else:
         title = f"chore: upgrade Godot to `v{new.tag}`"
     summary = Summary(title, new.tag, old.tag, route)
     print(f"route: {route} (v{old.tag} -> v{new.tag})")
 
+    # Every remote lookup that can fail happens before the first write.
+    if route in ("minor", "fork"):
+        infra_tag = resolve_infra_tag(new)
+
+    if route == "fork":
+        upgrade_fork(publish, new, summary)
+        upgrade_infra_pins(project, infra_tag, summary)
     if route == "minor":
         upgrade_submodules(project, old, new, summary)
-    if route != "none":
+    if route in ("patch", "minor"):
         upgrade_pin(project, new, summary)
     if route == "minor":
+        upgrade_infra_pins(project, infra_tag, summary)
         upgrade_features(project, old, new, summary)
         upgrade_readme(project, old, new, summary)
 
@@ -394,6 +540,16 @@ def run_prune_settings(args: argparse.Namespace) -> int:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    resolve = subparsers.add_parser(
+        "resolve", help="print the target release and matching godot-infra tag"
+    )
+    resolve.add_argument(
+        "--godot-version",
+        default="",
+        help="'X.Y.Z', 'X.Y' (newest patch), or empty (newest stable)",
+    )
+    resolve.set_defaults(func=run_resolve)
 
     upgrade = subparsers.add_parser(
         "upgrade", help="rewrite the project's version pins"
