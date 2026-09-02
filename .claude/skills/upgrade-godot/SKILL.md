@@ -78,7 +78,7 @@ later by a second commit that resolving the version properly makes unnecessary.
 
 ## Version pins — both routes
 
-Three lines in two files. These are the whole patch route.
+Four lines in three files. These are the whole patch route.
 
 1. **`README.md` badge (line 1)** — `godot-v<OLD_FULL>-478cbf` → `godot-v<NEW_FULL>-478cbf`
 2. **`README.md` version table** — on the patch route, replace the version in the existing top
@@ -88,6 +88,8 @@ Three lines in two files. These are the whole patch route.
    - `<OLD_TAG>`: `v<OLD_FULL>`
    ```
 3. **`package-addon/action.yaml`** — `godot-editor-version` default → `"v<NEW_FULL>-stable"`
+4. **`tests/project/.godot-version`** — the whole file is `v<NEW_FULL>-stable`; the end-to-end
+   validation vendors the source and installs the editor from this pin.
 
 **On the patch route, stop here and go to Review.** Nothing else in the repo names a patch version;
 image tags and workflow variables carry `major.minor` only.
@@ -125,20 +127,22 @@ WinRT while every version pin was correct.
 
 ## Review the diff
 
-**Patch route:** `git diff --stat` must show **exactly 2 files changed, 3 insertions, 3 deletions**,
-and all three added lines must name the resolved version:
+**Patch route:** `git diff --stat` must show **exactly 3 files changed, 4 insertions, 4 deletions**,
+and all four added lines must name the resolved version:
 
 ```bash
-git diff -U0 | grep -c "^+.*<NEW_FULL>"   # must print 3
+git diff -U0 | grep -c "^+.*<NEW_FULL>"   # must print 4
 ```
 
-Every patch upgrade in this repo's history has hit that stat exactly, so treat a miss as a stop
-rather than a rounding error — it means an edit landed somewhere it should not have. The stat alone
+Every patch upgrade in this repo's history hit the previous stat (three lines in two files, before
+`tests/project/.godot-version` existed) exactly, so treat a miss as a stop rather than a rounding
+error — it means an edit landed somewhere it should not have. The stat alone
 cannot tell `4.7.2` from `4.7.1`, which is what the second check is for.
 
 **Minor route:** expect roughly six image action files at one line each, two or three workflow
-files, `package-addon/action.yaml`, `README.md` (many lines, the two consumer action pins among
-them), and possibly the macOS SDK workflows and the `thirdparty/osxcross` submodule.
+files, `package-addon/action.yaml`, `tests/project/.godot-version`, `README.md` (many lines, the
+two consumer action pins among them), and possibly the macOS SDK workflows and the
+`thirdparty/osxcross` submodule.
 
 Present the summary to the user before going further.
 
@@ -147,6 +151,10 @@ Present the summary to the user before going further.
 Read `references/build-validation.md` and work it in full. The biggest risk in a minor upgrade is
 that the images stop building, and a bad pin produces a green diff with a red build. CI's only
 fallback hardcodes `push: true`, so a broken pin discovered there is already public on ghcr.io.
+
+An image that builds is not yet an image that works: Tier 3 there compiles a template and exports
+a project with it, and the post-publish check repeats that against the tags CI actually pushed,
+which is where the 4.7 macOS image failed after passing every local build.
 
 ## Commit
 
