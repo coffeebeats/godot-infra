@@ -2,7 +2,8 @@
 """Rewrite a Godot project's version pins for a new Godot release.
 
 The mechanical half of an upgrade. 'upgrade' reads the project's '.godot-version'
-pin, resolves the target release upstream, and picks one route:
+pin, resolves the target release (by default the one 'godot-infra' currently
+targets, from its README on 'main'), and picks one route:
 
   none   the pin is already current; nothing changes
   patch  '.godot-version' only
@@ -24,6 +25,7 @@ without touching the project; 'prune-settings' drops named 'project.godot' keys.
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import re
 import shutil
@@ -40,6 +42,7 @@ INFRA_REPOSITORY = "https://github.com/coffeebeats/godot-infra"
 INFRA_README = "https://raw.githubusercontent.com/coffeebeats/godot-infra/main/README.md"
 # "- `v5` (`main`): `v4.7.2`" in the README's version table.
 INFRA_ROW = re.compile(r"^- `(v\d+)`(?: \(`main`\))?: `v(\d+\.\d+)", re.MULTILINE)
+INFRA_MAIN_ROW = re.compile(r"^- `v\d+` \(`main`\): `v([\d.]+)`", re.MULTILINE)
 INFRA_PIN = re.compile(r"(coffeebeats/godot-infra/[^\s@'\"]+@)(v\d+(?:\.\d+){0,2})\b")
 
 
@@ -106,15 +109,13 @@ def list_stable_releases() -> list[Version]:
 
 
 def resolve_target(requested: str, releases: list[Version]) -> Version:
-    """Resolve '' (newest), 'X.Y' (newest patch of X.Y) or 'X.Y.Z' (as given).
+    """Resolve 'X.Y' (newest patch of X.Y) or 'X.Y.Z' (as given).
 
     A full tag is taken as given too: 'X.Y-stable' is how Godot names X.Y.0.
     """
     requested = requested.strip().removeprefix("v")
     is_tag = requested.endswith("-stable")
     requested = requested.removesuffix("-stable")
-    if not requested:
-        return releases[-1]
 
     parts = requested.split(".")
     if len(parts) == 2 and not is_tag:
@@ -136,14 +137,25 @@ def to_https(url: str) -> str:
     return f"https://github.com/{match.group(1)}" if match else url
 
 
-def resolve_infra_tag(new: Version) -> str:
-    """The newest 'godot-infra' release whose major targets the new minor.
-
-    The README on 'main' is the only record of which release major supports
-    which Godot minor.
-    """
+@functools.cache
+def fetch_infra_readme() -> str:
+    """The README on 'main' is the only record of which release major supports
+    which Godot version."""
     with urllib.request.urlopen(INFRA_README) as response:
-        readme = response.read().decode()
+        return response.read().decode()
+
+
+def infra_godot_version() -> str:
+    """The Godot version 'godot-infra' currently targets, e.g. '4.7.2'."""
+    match = INFRA_MAIN_ROW.search(fetch_infra_readme())
+    if not match:
+        raise RuntimeError("the godot-infra README names no Godot version for main")
+    return match.group(1)
+
+
+def resolve_infra_tag(new: Version) -> str:
+    """The newest 'godot-infra' release whose major targets the new minor."""
+    readme = fetch_infra_readme()
     majors = [
         major for major, godot in INFRA_ROW.findall(readme) if godot == new.major_minor
     ]
@@ -399,8 +411,15 @@ def upgrade_readme(project: Path, old: Version, new: Version, summary: Summary) 
     summary.changes.append(f"README.md: version table gains godot-v{new.major_minor}")
 
 
+def resolve_requested(requested: str) -> Version:
+    """The '--godot-version' given, or the release 'godot-infra' targets."""
+    return resolve_target(
+        requested or infra_godot_version(), list_stable_releases()
+    )
+
+
 def run_resolve(args: argparse.Namespace) -> int:
-    new = resolve_target(args.godot_version, list_stable_releases())
+    new = resolve_requested(args.godot_version)
     print(f"godot: v{new.tag}")
     try:
         print(f"infra: {resolve_infra_tag(new)}")
@@ -433,7 +452,7 @@ def run_upgrade(args: argparse.Namespace) -> int:
         )
         return 1
 
-    new = resolve_target(args.godot_version, list_stable_releases())
+    new = resolve_requested(args.godot_version)
     is_fork = publish is not None and not pin_path.is_file()
 
     older = (new.major, new.minor) < (old.major, old.minor)
@@ -547,7 +566,7 @@ def main(argv: list[str]) -> int:
     resolve.add_argument(
         "--godot-version",
         default="",
-        help="'X.Y.Z', 'X.Y' (newest patch), or empty (newest stable)",
+        help="'X.Y.Z' or 'X.Y' (newest patch); default: what godot-infra targets",
     )
     resolve.set_defaults(func=run_resolve)
 
@@ -558,7 +577,7 @@ def main(argv: list[str]) -> int:
     upgrade.add_argument(
         "--godot-version",
         default="",
-        help="'X.Y.Z', 'X.Y' (newest patch), or empty (newest stable)",
+        help="'X.Y.Z' or 'X.Y' (newest patch); default: what godot-infra targets",
     )
     upgrade.add_argument("--output", default="upgrade-summary.json")
     upgrade.set_defaults(func=run_upgrade)
