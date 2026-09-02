@@ -157,6 +157,11 @@ RUN \
     CLANG_VERSION=$CLANG_VERSION \
     ENABLE_CLANG_INSTALL=1 \
     INSTALLPREFIX=/opt/clang \
+    # NOTE: Without 'PORTABLE', osxcross compiles clang with '-march=native',
+    # tuning it to whichever CPU built the image. A compiler built on a runner
+    # with AVX-512 then dies with "Illegal instruction" on every host without
+    # it, including other GitHub runners and emulated local builds.
+    PORTABLE=1 \
     ./build_apple_clang.sh
 
 # Run the build script
