@@ -11,9 +11,9 @@ inputs:
     required: false
     default: false
   line-length-max:
-    description: "The maximum allow line length for '.gd' files."
+    description: "Overrides the max line length; defaults to the project's 'gdformatrc'."
     required: false
-    default: 88
+    default: ""
 
 runs:
   using: "composite"
@@ -43,18 +43,19 @@ runs:
 
     - uses: "./.godot-infra/.github/actions/check-code-formatting"
       with:
-        check-command: "gdformat -l ${{ inputs.line-length-max }} --check ${{ inputs.path }}/**/*.gd"
-        fix-command: "gdformat -l ${{ inputs.line-length-max }} ${{ inputs.path }}/**/*.gd"
+        check-command: >-
+          gdformat
+          ${{ inputs.line-length-max != '' && format('-l {0}', inputs.line-length-max) || '' }}
+          --check ${{ inputs.path }}
+        fix-command: >-
+          gdformat
+          ${{ inputs.line-length-max != '' && format('-l {0}', inputs.line-length-max) || '' }}
+          ${{ inputs.path }}
 
     - name: Lint project
       shell: bash
       continue-on-error: ${{ fromJson(inputs.ignore-lint-errors) }}
-      run: |
-        # Set options to enable more extensive globbing.
-        shopt -s extglob
-        shopt -s globstar
-
-        gdlint ${{ inputs.path }}/**/*.gd
+      run: gdlint ${{ inputs.path }}
 
     - name: Remove godot-infra workspace link
       if: always() && steps.godot-infra-init.outputs.created == 'true'
