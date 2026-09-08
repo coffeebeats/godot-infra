@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.3.0 (2026-09-08)
+
+## What's Changed
+* feat(check-godot-project): drive gdtoolkit from the project's config files by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/574
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.2.0...v5.3.0
+
 ## 5.2.0 (2026-09-02)
 
 ## What's Changed
