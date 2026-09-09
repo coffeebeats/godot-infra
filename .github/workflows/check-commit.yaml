@@ -34,3 +34,19 @@ jobs:
 
       - name: Lint Python source code
         run: uv run ruff check .
+
+  # Used to ensure all branch protection requirements are met. This is a workaround until
+  # https://github.com/github-community/community/discussions/4324 is addressed.
+  branch_protection:
+    needs: ["check-python"]
+    if: ${{ always() }}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+
+    steps:
+      - name: Verify status of dependencies
+        if: |
+          always() &&
+          (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+        run: exit 1
