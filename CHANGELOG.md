@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.4.0 (2026-09-09)
+
+## What's Changed
+* feat(check-godot-project): resolve gdtoolkit from the project's lockfile by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/576
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.3.0...v5.4.0
+
 ## 5.3.0 (2026-09-08)
 
 ## What's Changed
