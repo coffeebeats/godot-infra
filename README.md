@@ -72,6 +72,31 @@ These can be instantiated with recommended repository settings using the [instan
 
 ## **Development**
 
+### Setup
+
+[Install `uv`](https://docs.astral.sh/uv/getting-started/installation/), then run `uv sync`. That installs the Python tooling below at the version in `uv.lock`, and downloads the interpreter named by [`.python-version`](./.python-version) if the machine has none.
+
+#### Dependencies managed by `uv`
+
+Installed by `uv sync` and invoked with `uv run <tool>`. Don't reach for `pip`; `uv.lock` is what keeps a contributor and a CI runner on the same versions.
+
+| Tool | Used by |
+| --- | --- |
+| `ruff` | Lints [`scripts/`](./scripts); enforced by [`check-python.yaml`](./.github/workflows/check-python.yaml) |
+
+`gdtoolkit` is absent on purpose. [`check-godot-project`](./check-godot-project/action.yaml) installs it into the consuming repository's checkout, from that repository's own lockfile, so a consumer without a `pyproject.toml` fails the check rather than silently resolving a different version.
+
+#### System dependencies
+
+What `uv` will never supply. Each has to be visible from the shell the commands run in:
+
+| Tool | Needed for |
+| --- | --- |
+| `gh` | [`scripts/instantiate-template-repository.sh`](./scripts/instantiate-template-repository.sh) |
+| `git` | everything |
+
+Godot is not required; the actions bring their own. Building images locally needs Docker — see below.
+
 ### Building images locally
 
 During development, you may want to build the infrastructure images locally rather than relying on CI/CD workflows. This section provides commands for building images on your local machine.
