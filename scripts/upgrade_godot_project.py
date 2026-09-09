@@ -160,7 +160,9 @@ def resolve_infra_tag(new: Version) -> str:
         major for major, godot in INFRA_ROW.findall(readme) if godot == new.major_minor
     ]
     if not majors:
-        raise RuntimeError(f"no godot-infra release targets Godot {new.major_minor} yet")
+        raise RuntimeError(
+            f"no godot-infra release targets Godot {new.major_minor} yet"
+        )
 
     output = run("git", "ls-remote", "--tags", "--refs", INFRA_REPOSITORY)
     releases = []
@@ -294,7 +296,8 @@ def upgrade_features(
         )
     else:
         summary.warnings.append(
-            f"project.godot: config/features does not name {old.major_minor}; left as is"
+            f"project.godot: config/features does not name {old.major_minor}; "
+            "left as is"
         )
 
 
