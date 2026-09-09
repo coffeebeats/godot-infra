@@ -33,8 +33,13 @@ tests/project/*
 # Python-related ignores
 __pycache__/
 
+# Python tooling
+.venv/
+.ruff_cache/
+
 # IDE-related ignores
 .vscode/*
+!.vscode/extensions.json
 
 # Coding agent-related files
 .claude/*

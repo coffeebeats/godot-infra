@@ -72,6 +72,14 @@ These can be instantiated with recommended repository settings using the [instan
 
 ## **Development**
 
+### Setup
+
+[Install `uv`](https://docs.astral.sh/uv/getting-started/installation/), then run `uv sync`. That installs the Python tooling from [`uv.lock`](./uv.lock), and downloads the interpreter named by [`.python-version`](./.python-version) if the machine has none. Invoke each tool as `uv run <tool>`.
+
+#### System dependencies
+
+Installed by hand, and each has to be on the `PATH` of the shell that runs the scripts: `git`, `gh` for [`scripts/instantiate-template-repository.sh`](./scripts/instantiate-template-repository.sh), and Docker to build images locally (see below). Godot is not among them, since the actions bring their own.
+
 ### Building images locally
 
 During development, you may want to build the infrastructure images locally rather than relying on CI/CD workflows. This section provides commands for building images on your local machine.
