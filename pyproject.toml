@@ -1,0 +1,23 @@
+# pyproject.toml
+#
+# Python tooling for this repository's scripts and CI.
+#
+# NOTE: `gdtoolkit` is absent on purpose. `check-godot-project` installs it into the
+# consuming repository, from that repository's own lockfile.
+
+[project]
+name = "tooling"
+version = "0.0.0"
+requires-python = ">=3.13"
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = ["ruff>=0.16.0"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
