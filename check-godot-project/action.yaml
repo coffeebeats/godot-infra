@@ -33,29 +33,35 @@ runs:
         ln -sfn "$(cd "${{ github.action_path }}/.." && pwd)" "$GITHUB_WORKSPACE/.godot-infra"
         echo "created=true" >> "$GITHUB_OUTPUT"
 
-    - uses: actions/setup-python@v5
+    # NOTE: The consuming repository must declare its tooling in a 'pyproject.toml';
+    # there is no fallback.
+    - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
       with:
-        cache: pip
+        enable-cache: true
+
+    - name: Verify the lockfile is up to date
+      shell: bash
+      run: uv lock --check
 
     - name: Set up 'gdtoolkit'
       shell: bash
-      run: pip install "gdtoolkit==4.*"
+      run: uv sync
 
     - uses: "./.godot-infra/.github/actions/check-code-formatting"
       with:
         check-command: >-
-          gdformat
+          uv run gdformat
           ${{ inputs.line-length-max != '' && format('-l {0}', inputs.line-length-max) || '' }}
           --check ${{ inputs.path }}
         fix-command: >-
-          gdformat
+          uv run gdformat
           ${{ inputs.line-length-max != '' && format('-l {0}', inputs.line-length-max) || '' }}
           ${{ inputs.path }}
 
     - name: Lint project
       shell: bash
       continue-on-error: ${{ fromJson(inputs.ignore-lint-errors) }}
-      run: gdlint ${{ inputs.path }}
+      run: uv run gdlint ${{ inputs.path }}
 
     - name: Remove godot-infra workspace link
       if: always() && steps.godot-infra-init.outputs.created == 'true'
