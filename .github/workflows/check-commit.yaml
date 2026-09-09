@@ -1,4 +1,4 @@
-name: "🔎 Check: Python source code"
+name: "🔎 Check: Source code"
 
 on:
   pull_request:
