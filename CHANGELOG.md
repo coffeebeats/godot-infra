@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.5.1 (2026-09-10)
+
+## What's Changed
+* fix(actions): support strict Godot projects by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/581
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.5.0...v5.5.1
+
 ## 5.5.0 (2026-09-10)
 
 ## What's Changed
