@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -47,6 +48,8 @@ GITHUB_ACTIONS_APP_ID = 15368
 # 'release-please' manifest, the files it keeps in sync, and the initial tag, so
 # the three cannot disagree.
 INITIAL_VERSION = "0.1.0"
+
+DEFAULT_DESCRIPTION = "A new Godot 4+ project."
 
 RELEASE_PLEASE_CONFIG = Path(".release-please/config.json")
 RELEASE_PLEASE_MANIFEST = Path(".release-please/manifest.json")
@@ -139,10 +142,46 @@ def resolve_gh() -> str:
 
 
 GH = ""
+DRY_RUN = False
 
 
 def gh(*args: str, check: bool = True, stdin: str | None = None) -> str:
+    """A read-only 'gh' invocation, issued even under '--dry-run'."""
     return run(GH, *args, check=check, stdin=stdin)
+
+
+def gh_write(*args: str, stdin: str | None = None) -> str:
+    """A mutating 'gh' invocation, the one place '--dry-run' intercepts.
+
+    Every change this script makes passes through here or 'gh_api', so dry-run
+    is one branch rather than a flag threaded through each call site.
+    """
+    if DRY_RUN:
+        print(f"dry-run: gh {shlex.join(args)}")
+        if stdin:
+            print(indent(stdin))
+        return ""
+
+    return run(GH, *args, stdin=stdin)
+
+
+def gh_json(*args: str, default: object = None) -> object:
+    """A read whose result shapes a later write.
+
+    Under '--dry-run' on a creating run the repository does not exist, so these
+    reads cannot succeed; the default stands in for what would have been read.
+    """
+    result = subprocess.run([GH, *args], capture_output=True, text=True)
+    if result.returncode != 0:
+        if DRY_RUN:
+            return default
+        raise RuntimeError(f"'gh {shlex.join(args)}' failed: {result.stderr.strip()}")
+
+    return json.loads(result.stdout) if result.stdout.strip() else default
+
+
+def indent(text: str, prefix: str = "  ") -> str:
+    return "\n".join(prefix + line for line in text.splitlines())
 
 
 def gh_api(
@@ -164,7 +203,11 @@ def gh_api(
         args += ["--input", "-"]
     args.append(path)
 
-    return gh(*args, check=check, stdin=json.dumps(payload) if payload else None)
+    body = json.dumps(payload, indent=2) if payload is not None else None
+    if method == "GET":
+        return gh(*args, check=check, stdin=body)
+
+    return gh_write(*args, stdin=body)
 
 
 # ---------------------------------------------------------------------------- #
@@ -213,10 +256,15 @@ def check_gh_scopes(required: tuple[str, ...]) -> None:
         )
 
 
-def preflight() -> None:
+def preflight(bootstrapping: bool) -> None:
     check_gh_version()
-    check_gh_scopes(("repo", "workflow"))
-    need_cmd("git")
+
+    # Pushing a commit that carries '.github/workflows/' needs 'workflow'; an
+    # '--existing' run pushes nothing.
+    check_gh_scopes(("repo", "workflow") if bootstrapping else ("repo",))
+
+    if bootstrapping:
+        need_cmd("git")
 
 
 def qualify(repository: str, default_owner: str) -> str:
@@ -256,6 +304,7 @@ def git_identity() -> tuple[str, str]:
 
 
 def create_repository(args: argparse.Namespace, source: str, target: str) -> None:
+    """Create the repository. Everything reconfigurable lives in Configure."""
     info("Creating repository from template.")
 
     create = [
@@ -266,27 +315,12 @@ def create_repository(args: argparse.Namespace, source: str, target: str) -> Non
         source,
         "--description",
         args.description,
-        "--disable-wiki",
         "--public" if args.public else "--private",
     ]
     if args.branch != "main":
         create.append("--include-all-branches")
 
-    gh(*create)
-
-    info("Updating repository settings.")
-    gh(
-        "repo",
-        "edit",
-        target,
-        "--allow-update-branch",
-        "--delete-branch-on-merge",
-        "--enable-auto-merge",
-        "--enable-squash-merge",
-        "--enable-merge-commit=false",
-        "--enable-rebase-merge=false",
-        "--enable-projects=false",
-    )
+    gh_write(*create)
 
 
 def wait_for_population(target: str) -> None:
@@ -561,12 +595,30 @@ def initialize_releases(repo: Path) -> None:
 # ---------------------------------------------------------------------------- #
 
 
-def create_rule_sets(target: str, status_checks: list[str]) -> None:
-    info("Creating repository rule sets.")
+def put_rule_set(target: str, payload: dict) -> None:
+    """Create the named rule set, or update the one already carrying that name.
 
-    gh_api(
-        "POST",
-        f"repos/{target}/rulesets",
+    The rule-set endpoint is not idempotent: a second POST creates a duplicate
+    rather than replacing the original.
+    """
+    existing = gh_json("api", f"repos/{target}/rulesets", default=[])
+    match = next(
+        (rule for rule in existing if rule.get("name") == payload["name"]), None
+    )
+
+    if match:
+        info(f"Updating existing rule set: {payload['name']}")
+        gh_api("PUT", f"repos/{target}/rulesets/{match['id']}", payload)
+    else:
+        info(f"Creating rule set: {payload['name']}")
+        gh_api("POST", f"repos/{target}/rulesets", payload)
+
+
+def apply_rule_sets(target: str, status_checks: list[str]) -> None:
+    info("Applying repository rule sets.")
+
+    put_rule_set(
+        target,
         {
             "name": "main",
             "enforcement": "active",
@@ -617,9 +669,8 @@ def create_rule_sets(target: str, status_checks: list[str]) -> None:
         },
     )
 
-    gh_api(
-        "POST",
-        f"repos/{target}/rulesets",
+    put_rule_set(
+        target,
         {
             "name": "push",
             "enforcement": "active",
@@ -629,6 +680,51 @@ def create_rule_sets(target: str, status_checks: list[str]) -> None:
             "rules": [{"type": "non_fast_forward"}],
         },
     )
+
+
+def apply_repository_settings(target: str) -> None:
+    info("Updating repository settings.")
+
+    gh_write(
+        "repo",
+        "edit",
+        target,
+        "--allow-update-branch",
+        "--delete-branch-on-merge",
+        "--enable-auto-merge",
+        "--enable-squash-merge",
+        "--enable-merge-commit=false",
+        "--enable-rebase-merge=false",
+        "--enable-projects=false",
+        "--enable-wiki=false",
+    )
+
+
+def check_visibility(args: argparse.Namespace, target: str) -> None:
+    """Report, never change, a visibility that disagrees with the flag.
+
+    Configure runs against repositories it did not create, where flipping
+    visibility is never what the operator meant to ask for.
+    """
+    view = gh_json("repo", "view", target, "--json", "isPrivate", default=None)
+    if view is None:
+        return
+
+    private = view["isPrivate"]
+    if private == (not args.public):
+        return
+
+    actual = "private" if private else "public"
+    wanted = "public" if args.public else "private"
+    warn(f"repository is {actual}, but '{wanted}' was requested; leaving it alone")
+
+
+def configure(args: argparse.Namespace, target: str) -> None:
+    """Everything that can be re-applied to an existing repository."""
+    check_visibility(args, target)
+    apply_repository_settings(target)
+    update_gha_permissions(target)
+    apply_rule_sets(target, args.status_check)
 
 
 # ---------------------------------------------------------------------------- #
@@ -652,13 +748,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     target.add_argument(
         "-d",
         "--description",
-        default="A new Godot 4+ project.",
-        help="a description for the new repository",
+        help=f"a description for the new repository (default={DEFAULT_DESCRIPTION!r})",
     )
     target.add_argument(
         "-t",
         "--template",
-        required=True,
         help=(
             "the template repository, as 'name' or 'owner/name' "
             f"(default owner={DEFAULT_TEMPLATE_OWNER})"
@@ -667,7 +761,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     target.add_argument(
         "-b",
         "--branch",
-        default="main",
         help="the template's branch or commit to instantiate (default=main)",
     )
     target.add_argument(
@@ -688,7 +781,18 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         ),
     )
 
-    parser.add_argument(
+    mode = parser.add_argument_group("mode")
+    mode.add_argument(
+        "--existing",
+        action="store_true",
+        help="skip creation and content bootstrap; apply settings only",
+    )
+    mode.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print every mutating call without issuing it",
+    )
+    mode.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -701,56 +805,97 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     # here rather than seeded into the option.
     args.status_check = args.status_check or [DEFAULT_STATUS_CHECK]
 
+    if args.existing:
+        # Being past creation means being past the content stage, so nothing
+        # naming content is accepted. '--description' matters most: it carries
+        # a default, and writing it here would replace a live repository's own
+        # description with this script's placeholder.
+        for option, value in (
+            ("--description", args.description),
+            ("--branch", args.branch),
+            ("--template", args.template),
+        ):
+            if value is not None:
+                parser.error(f"argument {option}: not allowed with argument --existing")
+    elif not args.template:
+        parser.error("argument -t/--template: required unless --existing is given")
+
+    args.description = args.description or DEFAULT_DESCRIPTION
+    args.branch = args.branch or "main"
+
     return args
 
 
+def repository_exists(target: str) -> bool:
+    return (
+        subprocess.run(
+            [GH, "repo", "view", target], capture_output=True, text=True
+        ).returncode
+        == 0
+    )
+
+
+def bootstrap(args: argparse.Namespace, source: str, target: str, name: str) -> None:
+    """Everything that happens exactly once, at creation."""
+    if repository_exists(target):
+        raise RuntimeError(
+            "repository already exists; pass '--existing' to apply settings to it"
+        )
+
+    info("Verified repository doesn't exist yet.")
+
+    identity = git_identity()
+    create_repository(args, source, target)
+
+    if DRY_RUN:
+        info("Skipping content bootstrap: there is no repository to clone.")
+        return
+
+    wait_for_population(target)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        repo = Path(tmpdir) / name
+        clone_repository(args, target, repo, identity)
+        delete_other_branches(repo)
+        update_contents(args, repo, source, target, name)
+        initialize_releases(repo)
+
+
 def main(argv: list[str]) -> int:
-    global GH, VERBOSE
+    global GH, VERBOSE, DRY_RUN
 
     args = parse_args(argv)
     VERBOSE = args.verbose
+    DRY_RUN = args.dry_run
 
     try:
         GH = resolve_gh()
-        preflight()
-        identity = git_identity()
 
-        source = qualify(args.template, DEFAULT_TEMPLATE_OWNER)
+        # Nothing is pushed on an '--existing' run, so it needs no 'workflow'
+        # scope and no git at all.
+        preflight(bootstrapping=not args.existing)
+
         target = qualify(args.name, current_user())
         name = target.rpartition("/")[2]
+        source = qualify(args.template, DEFAULT_TEMPLATE_OWNER) if args.template else ""
 
         info("Executing command with the following parameters:")
-        print(f"  template (source): {source}")
-        print(f"  branch (source): {args.branch}")
+        if source:
+            print(f"  template (source): {source}")
+            print(f"  branch (source): {args.branch}")
         print(f"  repository (target): {target}")
-        print(f"  description (target): {args.description}")
+        if not args.existing:
+            print(f"  description (target): {args.description}")
 
-        exists = subprocess.run(
-            [GH, "repo", "view", target],
-            capture_output=True,
-            text=True,
-        )
-        if exists.returncode == 0:
-            raise RuntimeError(
-                "repository already exists; exiting without making changes"
-            )
+        if args.existing:
+            if not repository_exists(target):
+                raise RuntimeError(f"repository does not exist: {target}")
+        else:
+            bootstrap(args, source, target, name)
 
-        info("Verified repository doesn't exist yet.")
+        configure(args, target)
 
-        create_repository(args, source, target)
-        wait_for_population(target)
-        update_gha_permissions(target)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            repo = Path(tmpdir) / name
-            clone_repository(args, target, repo, identity)
-            delete_other_branches(repo)
-            update_contents(args, repo, source, target, name)
-            initialize_releases(repo)
-
-        create_rule_sets(target, args.status_check)
-
-        info(f"Created repository: https://github.com/{target}")
+        info(f"Configured repository: https://github.com/{target}")
         return 0
     except (ValueError, RuntimeError, OSError, subprocess.CalledProcessError) as error:
         detail = getattr(error, "stderr", "") or ""
