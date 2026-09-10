@@ -844,8 +844,11 @@ def set_secret(target: str, name: str) -> None:
         )
 
     if DRY_RUN:
-        # Only the name is printed; the value is read below and never rendered.
-        # codeql[py/clear-text-logging-sensitive-data]
+        # The name, never the value. CodeQL flags this and the '--existing'
+        # summary that lists configured secrets, because a name that keys a
+        # secret is tainted by the same heuristic that catches a real leak.
+        # Both are dismissed upstream as false positives: a secret's name is
+        # not a secret, and 'gh secret list' prints names too.
         print(f"dry-run: gh secret set {name} --repo {target} (value from ${name})")
         return
 
