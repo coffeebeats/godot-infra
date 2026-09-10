@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shlex
 import shutil
@@ -150,16 +151,17 @@ def gh(*args: str, check: bool = True, stdin: str | None = None) -> str:
     return run(GH, *args, check=check, stdin=stdin)
 
 
-def gh_write(*args: str, stdin: str | None = None) -> str:
+def gh_write(*args: str, stdin: str | None = None, redact: bool = False) -> str:
     """A mutating 'gh' invocation, the one place '--dry-run' intercepts.
 
     Every change this script makes passes through here or 'gh_api', so dry-run
-    is one branch rather than a flag threaded through each call site.
+    is one branch rather than a flag threaded through each call site. 'redact'
+    keeps a secret's value out of the printed payload.
     """
     if DRY_RUN:
         print(f"dry-run: gh {shlex.join(args)}")
         if stdin:
-            print(indent(stdin))
+            print(indent("<redacted>" if redact else stdin))
         return ""
 
     return run(GH, *args, stdin=stdin)
@@ -347,28 +349,6 @@ def wait_for_population(target: str) -> None:
     raise RuntimeError(
         f"repository '{target}' was not populated within "
         f"{POPULATE_TIMEOUT_SECONDS}s; retry once generation finishes"
-    )
-
-
-def update_gha_permissions(target: str) -> None:
-    info("Updating repository's GitHub Actions permissions.")
-
-    gh_api(
-        "PUT",
-        f"repos/{target}/actions/permissions",
-        {
-            "enabled": True,
-            "allowed_actions": "all",
-            "sha_pinning_required": True,
-        },
-    )
-    gh_api(
-        "PUT",
-        f"repos/{target}/actions/permissions/workflow",
-        {
-            "default_workflow_permissions": "write",
-            "can_approve_pull_request_reviews": True,
-        },
     )
 
 
@@ -614,8 +594,75 @@ def put_rule_set(target: str, payload: dict) -> None:
         gh_api("POST", f"repos/{target}/rulesets", payload)
 
 
-def apply_rule_sets(target: str, status_checks: list[str]) -> None:
+def main_branch_rules(args: argparse.Namespace) -> list[dict]:
+    rules: list[dict] = [
+        {"type": "creation"},
+        {"type": "deletion"},
+        {"type": "required_linear_history"},
+    ]
+
+    if not args.allow_direct_push:
+        rules.append(
+            {
+                "type": "pull_request",
+                "parameters": {
+                    "allowed_merge_methods": ["squash"],
+                    "dismiss_stale_reviews_on_push": True,
+                    "require_code_owner_review": True,
+                    "require_last_push_approval": False,
+                    "required_approving_review_count": 0,
+                    "required_review_thread_resolution": True,
+                    "required_reviewers": [],
+                    "require_extra_approval_for_unattributed_changes": True,
+                },
+            }
+        )
+        rules.append(
+            {
+                "type": "required_status_checks",
+                "parameters": {
+                    "do_not_enforce_on_create": True,
+                    "strict_required_status_checks_policy": True,
+                    "required_status_checks": [
+                        {
+                            "context": context,
+                            "integration_id": GITHUB_ACTIONS_APP_ID,
+                        }
+                        for context in args.status_check
+                    ],
+                },
+            }
+        )
+
+    # Code scanning needs Advanced Security on a private repository, and a rule
+    # with no tool reporting blocks every merge.
+    if args.public:
+        rules.append(
+            {
+                "type": "code_scanning",
+                "parameters": {
+                    "code_scanning_tools": [
+                        {
+                            "tool": "CodeQL",
+                            "security_alerts_threshold": "all",
+                            "alerts_threshold": "all",
+                        }
+                    ]
+                },
+            }
+        )
+
+    return rules
+
+
+def apply_rule_sets(args: argparse.Namespace, target: str) -> None:
     info("Applying repository rule sets.")
+
+    if args.allow_direct_push:
+        # Both rules go, not just the first: GitHub applies the status-check
+        # rule to direct pushes as well as merges, so keeping it would block
+        # every push for checks that never ran.
+        info("Allowing direct pushes: omitting the pull-request and check rules.")
 
     put_rule_set(
         target,
@@ -623,49 +670,18 @@ def apply_rule_sets(target: str, status_checks: list[str]) -> None:
             "name": "main",
             "enforcement": "active",
             "target": "branch",
+            # One entry, matching the family. Id 2 is a repository role; the
+            # mapping is undocumented, so confirm it grants the intended bypass
+            # before relying on it.
             "bypass_actors": [
                 {
                     "actor_id": 2,
                     "actor_type": "RepositoryRole",
                     "bypass_mode": "pull_request",
                 },
-                {
-                    "actor_id": 4,
-                    "actor_type": "RepositoryRole",
-                    "bypass_mode": "pull_request",
-                },
             ],
             "conditions": {"ref_name": {"exclude": [], "include": ["~DEFAULT_BRANCH"]}},
-            "rules": [
-                {"type": "creation"},
-                {"type": "deletion"},
-                {"type": "required_linear_history"},
-                {
-                    "type": "pull_request",
-                    "parameters": {
-                        "allowed_merge_methods": ["squash"],
-                        "dismiss_stale_reviews_on_push": True,
-                        "require_code_owner_review": True,
-                        "require_last_push_approval": False,
-                        "required_approving_review_count": 0,
-                        "required_review_thread_resolution": True,
-                    },
-                },
-                {
-                    "type": "required_status_checks",
-                    "parameters": {
-                        "do_not_enforce_on_create": True,
-                        "strict_required_status_checks_policy": True,
-                        "required_status_checks": [
-                            {
-                                "context": context,
-                                "integration_id": GITHUB_ACTIONS_APP_ID,
-                            }
-                            for context in status_checks
-                        ],
-                    },
-                },
-            ],
+            "rules": main_branch_rules(args),
         },
     )
 
@@ -699,6 +715,125 @@ def apply_repository_settings(target: str) -> None:
         "--enable-wiki=false",
     )
 
+    # Not exposed by 'gh repo edit'. 'release-please' parses the squashed
+    # commit's title, so it must be the pull request's.
+    gh_api(
+        "PATCH",
+        f"repos/{target}",
+        {
+            "squash_merge_commit_title": "PR_TITLE",
+            "squash_merge_commit_message": "COMMIT_MESSAGES",
+            "merge_commit_title": "MERGE_MESSAGE",
+            "merge_commit_message": "PR_TITLE",
+        },
+    )
+
+
+def apply_security_settings(args: argparse.Namespace, target: str) -> None:
+    info("Updating repository security settings.")
+
+    gh_api("PUT", f"repos/{target}/vulnerability-alerts")
+    gh_api("PUT", f"repos/{target}/automated-security-fixes")
+
+    # Secret scanning and code scanning both need Advanced Security on a
+    # private repository, so both are public-only. A 'code_scanning' rule with
+    # no tool reporting blocks every merge, which is what would otherwise make
+    # a private repository unmergeable the moment it was created.
+    if not args.public:
+        info("Skipping secret and code scanning: private repository.")
+        return
+
+    gh_write(
+        "repo",
+        "edit",
+        target,
+        "--enable-secret-scanning",
+        "--enable-secret-scanning-push-protection",
+    )
+    gh_api(
+        "PUT", f"repos/{target}/code-scanning/default-setup", {"state": "configured"}
+    )
+
+
+def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
+    info("Updating repository's GitHub Actions permissions.")
+
+    current = gh_json("api", f"repos/{target}/actions/permissions", default={}) or {}
+
+    # SHA pinning is deliberately off. godot-infra's own actions are consumed by
+    # floating major tag ('@v5') across many dependent repositories, so
+    # repository-level enforcement would mean churn in every dependent on every
+    # infra release. Workflows pin third-party actions by hand instead.
+    permissions = {"enabled": True, "sha_pinning_required": False}
+
+    if current.get("allowed_actions") == "all" and not args.allow_action:
+        # Narrowing an allow-list is a manual act. A repository on 'all' has no
+        # pattern list to union with, so reconciling one without '--allow-action'
+        # would empty it and break every workflow using a third-party action.
+        warn(
+            "actions are unrestricted and no '--allow-action' was given; "
+            "leaving 'allowed_actions' alone"
+        )
+    else:
+        permissions["allowed_actions"] = "selected"
+
+    gh_api("PUT", f"repos/{target}/actions/permissions", permissions)
+
+    if permissions.get("allowed_actions") == "selected":
+        selected = (
+            gh_json(
+                "api",
+                f"repos/{target}/actions/permissions/selected-actions",
+                default={},
+            )
+            or {}
+        )
+        # Additive: a reconcile run that forgot a pattern must not silently
+        # narrow what the repository already allows.
+        patterns = sorted(
+            set(selected.get("patterns_allowed", [])) | set(args.allow_action)
+        )
+        gh_api(
+            "PUT",
+            f"repos/{target}/actions/permissions/selected-actions",
+            {
+                "github_owned_allowed": True,
+                "verified_allowed": True,
+                "patterns_allowed": patterns,
+            },
+        )
+
+    gh_api(
+        "PUT",
+        f"repos/{target}/actions/permissions/workflow",
+        {
+            "default_workflow_permissions": args.workflow_permissions,
+            # GitHub's default is off, and its hardening guidance is to leave it
+            # off unless a workflow needs it. None here approves pull requests.
+            "can_approve_pull_request_reviews": False,
+        },
+    )
+
+
+def apply_secrets(args: argparse.Namespace, target: str) -> None:
+    """Set each named secret from the environment variable of the same name."""
+    if not args.secret:
+        return
+
+    info("Setting repository secrets.")
+
+    for name in args.secret:
+        value = os.environ.get(name)
+        if not value:
+            raise RuntimeError(
+                f"'--secret {name}' was given, but ${name} is unset or empty"
+            )
+
+        # 'gh secret set' reads the value from stdin when '--body' is omitted,
+        # so nothing sensitive reaches the process list.
+        info(f"Setting secret: {name}")
+        gh_write("secret", "set", name, "--repo", target, stdin=value, redact=True)
+
 
 def check_visibility(args: argparse.Namespace, target: str) -> None:
     """Report, never change, a visibility that disagrees with the flag.
@@ -723,8 +858,10 @@ def configure(args: argparse.Namespace, target: str) -> None:
     """Everything that can be re-applied to an existing repository."""
     check_visibility(args, target)
     apply_repository_settings(target)
-    update_gha_permissions(target)
-    apply_rule_sets(target, args.status_check)
+    apply_security_settings(args, target)
+    apply_actions_permissions(args, target)
+    apply_secrets(args, target)
+    apply_rule_sets(args, target)
 
 
 # ---------------------------------------------------------------------------- #
@@ -778,6 +915,44 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help=(
             "a status check required to merge into the default branch; "
             f"repeatable (default={DEFAULT_STATUS_CHECK})"
+        ),
+    )
+    policy.add_argument(
+        "--allow-action",
+        action="append",
+        default=[],
+        metavar="PATTERN",
+        help=(
+            "permit a third-party action pattern, in addition to those already "
+            "allowed; repeatable"
+        ),
+    )
+    policy.add_argument(
+        "--allow-direct-push",
+        action="store_true",
+        help="drop the pull-request and status-check rules from the 'main' rule set",
+    )
+    policy.add_argument(
+        "--workflow-permissions",
+        choices=("read", "write"),
+        default="read",
+        help="the default GITHUB_TOKEN permissions (default=read)",
+    )
+    policy.add_argument(
+        "--no-release",
+        action="store_true",
+        help="skip 'release-please' seeding and the initial tag",
+    )
+
+    secrets = parser.add_argument_group("secrets")
+    secrets.add_argument(
+        "--secret",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help=(
+            "set a repository secret from the environment variable of the same "
+            "name; repeatable"
         ),
     )
 
@@ -858,7 +1033,12 @@ def bootstrap(args: argparse.Namespace, source: str, target: str, name: str) -> 
         clone_repository(args, target, repo, identity)
         delete_other_branches(repo)
         update_contents(args, repo, source, target, name)
-        initialize_releases(repo)
+
+        if args.no_release:
+            info("Skipping release setup; pushing 'main'.")
+            run("git", "push", "-f", "origin", "main", cwd=repo)
+        else:
+            initialize_releases(repo)
 
 
 def main(argv: list[str]) -> int:
