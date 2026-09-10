@@ -772,10 +772,15 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
     # infra release. Workflows pin third-party actions by hand instead.
     permissions = {"enabled": True, "sha_pinning_required": False}
 
-    if current.get("allowed_actions") == "all" and not args.allow_action:
-        # Narrowing an allow-list is a manual act. A repository on 'all' has no
-        # pattern list to union with, so reconciling one without '--allow-action'
-        # would empty it and break every workflow using a third-party action.
+    unrestricted = current.get("allowed_actions") == "all"
+    if args.existing and unrestricted and not args.allow_action:
+        # Narrowing an existing repository's allow-list is a manual act. One on
+        # 'all' has no pattern list to union with, so reconciling it without
+        # '--allow-action' would empty the list and break every workflow that
+        # uses a third-party action. A repository being created has no workflow
+        # runs to break, and 'selected' is the setting the family holds, so
+        # Bootstrap always narrows and the closing checklist names whatever the
+        # patterns do not cover.
         warn(
             "actions are unrestricted and no '--allow-action' was given; "
             "leaving 'allowed_actions' alone"
