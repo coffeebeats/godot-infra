@@ -777,7 +777,7 @@ def apply_security_settings(args: argparse.Namespace, target: str) -> None:
         "--enable-secret-scanning-push-protection",
     )
     gh_api(
-        "PUT", f"repos/{target}/code-scanning/default-setup", {"state": "configured"}
+        "PATCH", f"repos/{target}/code-scanning/default-setup", {"state": "configured"}
     )
 
 
