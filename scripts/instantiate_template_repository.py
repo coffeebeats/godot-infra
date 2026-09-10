@@ -157,17 +157,18 @@ def gh(*args: str, check: bool = True, stdin: str | None = None) -> str:
     return run(GH, *args, check=check, stdin=stdin)
 
 
-def gh_write(*args: str, stdin: str | None = None, redact: bool = False) -> str:
+def gh_write(*args: str, stdin: str | None = None) -> str:
     """A mutating 'gh' invocation, the one place '--dry-run' intercepts.
 
     Every change this script makes passes through here or 'gh_api', so dry-run
-    is one branch rather than a flag threaded through each call site. 'redact'
-    keeps a secret's value out of the printed payload.
+    is one branch rather than a flag threaded through each call site. It prints
+    whatever it is handed, so a secret value must never reach it; 'set_secret'
+    exists to keep that true by construction.
     """
     if DRY_RUN:
         print(f"dry-run: gh {shlex.join(args)}")
         if stdin:
-            print(indent("<redacted>" if redact else stdin))
+            print(indent(stdin))
         return ""
 
     return run(GH, *args, stdin=stdin)
@@ -826,24 +827,34 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
     )
 
 
+def set_secret(target: str, name: str) -> None:
+    """Set one repository secret from the environment variable of that name.
+
+    The value is read and used here and nowhere else. It never passes through
+    'gh_write', which prints what it is given, and never reaches the process
+    list: 'gh secret set' reads stdin when '--body' is omitted.
+    """
+    if not os.environ.get(name):
+        raise RuntimeError(
+            f"'--secret {name}' was given, but ${name} is unset or empty"
+        )
+
+    if DRY_RUN:
+        print(f"dry-run: gh secret set {name} --repo {target} (value from ${name})")
+        return
+
+    run(GH, "secret", "set", name, "--repo", target, stdin=os.environ[name])
+
+
 def apply_secrets(args: argparse.Namespace, target: str) -> None:
-    """Set each named secret from the environment variable of the same name."""
-    if not args.secret:
+    if not args.secret_names:
         return
 
     info("Setting repository secrets.")
 
-    for name in args.secret:
-        value = os.environ.get(name)
-        if not value:
-            raise RuntimeError(
-                f"'--secret {name}' was given, but ${name} is unset or empty"
-            )
-
-        # 'gh secret set' reads the value from stdin when '--body' is omitted,
-        # so nothing sensitive reaches the process list.
+    for name in args.secret_names:
         info(f"Setting secret: {name}")
-        gh_write("secret", "set", name, "--repo", target, stdin=value, redact=True)
+        set_secret(target, name)
 
 
 def check_visibility(args: argparse.Namespace, target: str) -> None:
@@ -1137,6 +1148,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     secrets = parser.add_argument_group("secrets")
     secrets.add_argument(
         "--secret",
+        # The values are secret; these are names, and the distinction is worth
+        # keeping in the identifier, since the names are printed and the values
+        # never are.
+        dest="secret_names",
         action="append",
         default=[],
         metavar="NAME",
