@@ -35,6 +35,9 @@ jobs:
       - name: Lint Python source code
         run: uv run ruff check .
 
+      - name: Verify Python source code is formatted
+        run: uv run ruff format --check .
+
   # Used to ensure all branch protection requirements are met. This is a workaround until
   # https://github.com/github-community/community/discussions/4324 is addressed.
   branch_protection:

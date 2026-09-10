@@ -39,7 +39,9 @@ GODOT_REPOSITORY = "https://github.com/godotengine/godot"
 STABLE_TAG = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?-stable$")
 
 INFRA_REPOSITORY = "https://github.com/coffeebeats/godot-infra"
-INFRA_README = "https://raw.githubusercontent.com/coffeebeats/godot-infra/main/README.md"
+INFRA_README = (
+    "https://raw.githubusercontent.com/coffeebeats/godot-infra/main/README.md"
+)
 # "- `v5` (`main`): `v4.7.2`" in the README's version table.
 INFRA_ROW = re.compile(r"^- `(v\d+)`(?: \(`main`\))?: `v(\d+\.\d+)", re.MULTILINE)
 INFRA_MAIN_ROW = re.compile(r"^- `v\d+` \(`main`\): `v([\d.]+)`", re.MULTILINE)
@@ -420,9 +422,7 @@ def upgrade_readme(project: Path, old: Version, new: Version, summary: Summary) 
 
 def resolve_requested(requested: str) -> Version:
     """The '--godot-version' given, or the release 'godot-infra' targets."""
-    return resolve_target(
-        requested or infra_godot_version(), list_stable_releases()
-    )
+    return resolve_target(requested or infra_godot_version(), list_stable_releases())
 
 
 def run_resolve(args: argparse.Namespace) -> int:
@@ -442,9 +442,7 @@ def run_upgrade(args: argparse.Namespace) -> int:
     if pin_path.is_file():
         old = Version.parse(pin_path.read_text())
     elif publish:
-        match = re.search(
-            r'target-branch:\s*"?godot-v(\d+\.\d+)', publish.read_text()
-        )
+        match = re.search(r'target-branch:\s*"?godot-v(\d+\.\d+)', publish.read_text())
         if not match:
             print(
                 f"error: {publish} names no 'godot-vX.Y' target branch",

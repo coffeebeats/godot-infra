@@ -128,10 +128,10 @@ Run three diffs for `<OLD>` → `<NEW>`.
    `<OLD_FULL>-stable` and `<NEW_FULL>-stable` in `godotengine/godot`. Look for:
 
    ```python
-   BoolVariable("winrt", "Use WinRT API (OneCore TTS support).", True)   # on by default
+   BoolVariable("winrt", "Use WinRT API (OneCore TTS support).", True)  # on by default
    ...
    print_warning("... disable this driver by compiling with `winrt=no` explicitly.")
-   env["winrt"] = False                                                   # silently degrades
+   env["winrt"] = False  # silently degrades
    ```
 
    That pairing — default `True` plus a warn-and-disable fallback — is the shape to hunt for.
