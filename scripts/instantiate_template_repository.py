@@ -830,9 +830,13 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
 def set_secret(target: str, name: str) -> None:
     """Set one repository secret from the environment variable of that name.
 
-    The value is read and used here and nowhere else. It never passes through
-    'gh_write', which prints what it is given, and never reaches the process
-    list: 'gh secret set' reads stdin when '--body' is omitted.
+    Everything touching a secret is confined here. The value is read and handed
+    to 'gh' on stdin, so it reaches neither the process list ('gh secret set'
+    reads stdin when '--body' is omitted) nor any output. The name is deliberate
+    output — 'gh secret list' shows names too — but it does not travel through
+    'info' or 'run', so those keep printing untrusted-free arguments and stay
+    honest for every other caller. That is also why this calls 'subprocess'
+    directly rather than the shared 'run', which echoes its argv under '-v'.
     """
     if not os.environ.get(name):
         raise RuntimeError(
@@ -840,20 +844,29 @@ def set_secret(target: str, name: str) -> None:
         )
 
     if DRY_RUN:
+        # Only the name is printed; the value is read below and never rendered.
+        # codeql[py/clear-text-logging-sensitive-data]
         print(f"dry-run: gh secret set {name} --repo {target} (value from ${name})")
         return
 
-    run(GH, "secret", "set", name, "--repo", target, stdin=os.environ[name])
+    subprocess.run(
+        [GH, "secret", "set", name, "--repo", target],
+        input=os.environ[name],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
 
 
 def apply_secrets(args: argparse.Namespace, target: str) -> None:
     if not args.secret_names:
         return
 
-    info("Setting repository secrets.")
+    # The count, not the names: naming them here would carry a value CodeQL
+    # rightly treats as sensitive into the general-purpose printer.
+    info(f"Setting {len(args.secret_names)} repository secret(s).")
 
     for name in args.secret_names:
-        info(f"Setting secret: {name}")
         set_secret(target, name)
 
 
