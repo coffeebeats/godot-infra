@@ -58,17 +58,32 @@ The [@coffeebeats](https://github.com/coffeebeats) user has a few template repos
 
 - [godot-project-template](https://github.com/coffeebeats/godot-project-template)
 - [godot-plugin-template](https://github.com/coffeebeats/godot-plugin-template)
-- [godot-prototype-template](https://github.com/coffeebeats/godot-prototype-template)
 
-These can be instantiated with recommended repository settings using the [instantiate-template-repository](./scripts/instantiate-template-repository.sh) script. Run the following command (requires a Unix shell):
+These can be instantiated with recommended repository settings using the [instantiate_template_repository.py](./scripts/instantiate_template_repository.py) script:
 
 ```sh
-./scripts/instantiate-template-repository.sh \
+uv run scripts/instantiate_template_repository.py \
   --name <NEW REPO NAME> \
   --template <TEMPLATE REPO NAME> \
-  --branch main \
   --description "A new Godot 4+ project."
 ```
+
+The run creates the repository, rewrites the generated contents for their new home, seeds `release-please` at `v0.1.0`, applies every repository setting and both branch rule sets, and closes with a checklist of what it could not do for itself: secrets a workflow reads but nobody has set, actions the allow-list does not cover, and template links the rewrite did not reach.
+
+Pass `--dry-run` first. It prints every mutating call with its payload and issues none. `--existing` skips creation and applies settings alone, which both resumes a failed run and re-converges a repository created before a setting existed; it touches no content and never changes visibility.
+
+`--name` and `--template` each take `owner/name`, or a bare name under a default owner — `@coffeebeats` for the template, the authenticated user for the new repository. `--branch` takes a branch or a commit; template generation copies no tags, so pin by commit.
+
+| Option | Purpose |
+| --- | --- |
+| `--public` | Create a public repository. Secret and code scanning are applied to public repositories only, since both need Advanced Security on a private one. |
+| `--allow-action PATTERN` | Permit a third-party action. Repeatable, and additive: it never narrows an allow-list the repository already has. |
+| `--allow-direct-push` | Drop the pull-request and status-check rules, for a repository that commits straight to `main`. Force-pushing stays blocked. |
+| `--no-release` | Skip `release-please` seeding and the initial tag. |
+| `--secret NAME` | Set a repository secret from the environment variable of the same name. Repeatable; for many at once, `gh secret set -f` is simpler. |
+| `--workflow-permissions` | The default `GITHUB_TOKEN` permissions (default `read`). |
+
+SHA pinning is deliberately left off: godot-infra's own actions are consumed by floating major tag across many dependent repositories, so enforcing it here would churn every dependent on every release. Workflows pin third-party actions by hand instead.
 
 ## **Development**
 
@@ -78,7 +93,7 @@ These can be instantiated with recommended repository settings using the [instan
 
 #### System dependencies
 
-Installed by hand, and each has to be on the `PATH` of the shell that runs the scripts: `git`, `gh` for [`scripts/instantiate-template-repository.sh`](./scripts/instantiate-template-repository.sh), and Docker to build images locally (see below). Godot is not among them, since the actions bring their own.
+Installed by hand, and each has to be on the `PATH` of the shell that runs the scripts: `git`, `gh` for [`scripts/instantiate_template_repository.py`](./scripts/instantiate_template_repository.py), and Docker to build images locally (see below). Godot is not among them, since the actions bring their own.
 
 ### Building images locally
 

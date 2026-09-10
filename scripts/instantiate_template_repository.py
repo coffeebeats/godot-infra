@@ -31,6 +31,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # The owner assumed for a '--template' given as a bare name, so the documented
@@ -82,6 +83,11 @@ RELEASE_MARKER = re.compile(
 # 'release-please' substitutes only the version, so a 'v' written into the file
 # is the file's own text and survives every release.
 VERSION_PREFIX = re.compile(r"^(?P<prefix>\D*)\d+\.\d+\.\d+$")
+
+SECRET_REFERENCE = re.compile(r"secrets\.([A-Za-z_][A-Za-z0-9_]*)")
+USES_REFERENCE = re.compile(r"uses:\s*['\"]?([^\s@'\"]+)@")
+JOB_ID = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
+TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:", re.MULTILINE)
 
 
 # ---------------------------------------------------------------------------- #
@@ -865,6 +871,175 @@ def configure(args: argparse.Namespace, target: str) -> None:
 
 
 # ---------------------------------------------------------------------------- #
+#                                    Checks                                    #
+# ---------------------------------------------------------------------------- #
+
+
+@dataclass
+class Checklist:
+    """What the run could not do for itself, reported rather than enforced."""
+
+    items: list[str] = field(default_factory=list)
+
+    def add(self, item: str) -> None:
+        self.items.append(item)
+
+    def report(self) -> None:
+        if not self.items:
+            info("Nothing left to do by hand.")
+            return
+
+        print("\nStill to do by hand:")
+        for item in self.items:
+            print(f"  - {item}")
+
+
+def workflow_files(repo: Path) -> list[Path]:
+    workflows = repo / ".github" / "workflows"
+    if not workflows.is_dir():
+        return []
+
+    return sorted(p for p in workflows.iterdir() if p.suffix in (".yml", ".yaml"))
+
+
+def configured_secrets(target: str) -> set[str]:
+    secrets = gh_json("secret", "list", "--repo", target, "--json", "name", default=[])
+    return {secret["name"] for secret in secrets or []}
+
+
+def check_secrets(target: str, workflows: list[Path], checklist: Checklist) -> None:
+    """Diff the secrets the workflows read against the ones that are set.
+
+    This is the check that would have caught 'godot-project-template' storing a
+    bot token under a name none of its workflows read: both token secrets are
+    consumed as '${{ secrets.X || github.token }}', so a missing one degrades
+    the pipeline silently instead of failing it.
+    """
+    wanted: set[str] = set()
+    for workflow in workflows:
+        wanted |= set(SECRET_REFERENCE.findall(workflow.read_text(encoding="utf-8")))
+
+    wanted -= {"GITHUB_TOKEN"}
+    missing = sorted(wanted - configured_secrets(target))
+    for name in missing:
+        checklist.add(f"set the '{name}' secret, which a workflow reads")
+
+
+def check_third_party_actions(
+    args: argparse.Namespace, target: str, workflows: list[Path], checklist: Checklist
+) -> None:
+    """Name third-party actions the allow-list does not cover.
+
+    Reported only: deriving the allow-list from content would widen it
+    silently, which is the opposite of what an allow-list is for.
+    """
+    owner = target.partition("/")[0]
+    allowed = {pattern.partition("@")[0] for pattern in args.allow_action}
+
+    uncovered: set[str] = set()
+    for workflow in workflows:
+        for action in USES_REFERENCE.findall(workflow.read_text(encoding="utf-8")):
+            action_owner = action.partition("/")[0]
+            if action_owner in ("actions", "github", owner) or action.startswith("./"):
+                continue
+            if action in allowed or f"{action_owner}/*" in allowed:
+                continue
+
+            uncovered.add(action)
+
+    for action in sorted(uncovered):
+        checklist.add(
+            f"confirm '{action}' runs: no '--allow-action' pattern covers it, so "
+            "it is permitted only if its creator is verified"
+        )
+
+
+def check_status_checks(
+    args: argparse.Namespace, workflows: list[Path], checklist: Checklist
+) -> None:
+    defined: set[str] = set()
+    for workflow in workflows:
+        defined |= set(JOB_ID.findall(workflow.read_text(encoding="utf-8")))
+
+    for context in args.status_check:
+        if context not in defined:
+            checklist.add(
+                f"no workflow defines a job named '{context}', so the required "
+                "status check can never report"
+            )
+
+
+def check_workflow_permissions(workflows: list[Path], checklist: Checklist) -> None:
+    """A default of 'read' is only safe while every workflow declares its own."""
+    for workflow in workflows:
+        text = workflow.read_text(encoding="utf-8")
+        if not TOP_LEVEL_PERMISSIONS.search(text):
+            checklist.add(
+                f"'{workflow.name}' declares no top-level 'permissions:' block, "
+                "so it inherits the repository default"
+            )
+
+
+def check_code_owners(
+    args: argparse.Namespace, repo: Path, checklist: Checklist
+) -> None:
+    if args.allow_direct_push:
+        return
+
+    locations = (
+        repo / "CODEOWNERS",
+        repo / ".github/CODEOWNERS",
+        repo / "docs/CODEOWNERS",
+    )
+    if any(path.is_file() for path in locations):
+        return
+
+    checklist.add(
+        "the 'main' rule set requires code-owner review, but there is no "
+        "CODEOWNERS file, so the rule is inert until someone adds one"
+    )
+
+
+def check_template_links(repo: Path, source: str, checklist: Checklist) -> None:
+    """Catch references to the template that the rewrite did not reach."""
+    survivors = []
+    for path in sorted(repo.rglob("*")):
+        if not path.is_file() or ".git" in path.parts:
+            continue
+
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+
+        if source in text:
+            survivors.append(path.relative_to(repo).as_posix())
+
+    for path in survivors:
+        checklist.add(f"'{path}' still refers to '{source}'")
+
+
+def run_checks(
+    args: argparse.Namespace,
+    repo: Path,
+    source: str,
+    target: str,
+    checklist: Checklist,
+) -> None:
+    """Content-derived checks, possible only while the checkout is in hand."""
+    workflows = workflow_files(repo)
+    if not workflows:
+        return
+
+    check_secrets(target, workflows, checklist)
+    check_third_party_actions(args, target, workflows, checklist)
+    check_status_checks(args, workflows, checklist)
+    check_workflow_permissions(workflows, checklist)
+    check_code_owners(args, repo, checklist)
+    check_template_links(repo, source, checklist)
+
+
+# ---------------------------------------------------------------------------- #
 #                                      CLI                                     #
 # ---------------------------------------------------------------------------- #
 
@@ -1010,7 +1185,13 @@ def repository_exists(target: str) -> bool:
     )
 
 
-def bootstrap(args: argparse.Namespace, source: str, target: str, name: str) -> None:
+def bootstrap(
+    args: argparse.Namespace,
+    source: str,
+    target: str,
+    name: str,
+    checklist: Checklist,
+) -> None:
     """Everything that happens exactly once, at creation."""
     if repository_exists(target):
         raise RuntimeError(
@@ -1040,6 +1221,8 @@ def bootstrap(args: argparse.Namespace, source: str, target: str, name: str) -> 
         else:
             initialize_releases(repo)
 
+        run_checks(args, repo, source, target, checklist)
+
 
 def main(argv: list[str]) -> int:
     global GH, VERBOSE, DRY_RUN
@@ -1047,6 +1230,7 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     VERBOSE = args.verbose
     DRY_RUN = args.dry_run
+    checklist = Checklist()
 
     try:
         GH = resolve_gh()
@@ -1071,11 +1255,16 @@ def main(argv: list[str]) -> int:
             if not repository_exists(target):
                 raise RuntimeError(f"repository does not exist: {target}")
         else:
-            bootstrap(args, source, target, name)
+            bootstrap(args, source, target, name, checklist)
 
         configure(args, target)
 
+        if args.existing:
+            names = sorted(configured_secrets(target))
+            info(f"Secrets currently set: {', '.join(names) if names else 'none'}")
+
         info(f"Configured repository: https://github.com/{target}")
+        checklist.report()
         return 0
     except (ValueError, RuntimeError, OSError, subprocess.CalledProcessError) as error:
         detail = getattr(error, "stderr", "") or ""
