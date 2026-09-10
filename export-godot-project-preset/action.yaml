@@ -90,21 +90,6 @@ runs:
   using: composite
 
   steps:
-    # TODO(https://github.com/actions/runner/issues/1348): Replace this workaround
-    # with the `$/` syntax once GitHub ships native self-referencing support.
-    - name: Link godot-infra actions into workspace
-      id: godot-infra-init
-      shell: bash
-      env:
-        MSYS: winsymlinks:nativestrict
-      run: |
-        if [ -e "$GITHUB_WORKSPACE/.godot-infra" ]; then
-          exit 0
-        fi
-
-        ln -sfn "$(cd "${{ github.action_path }}/.." && pwd)" "$GITHUB_WORKSPACE/.godot-infra"
-        echo "created=true" >> "$GITHUB_OUTPUT"
-
     # ----------------------------- Set up Godot ----------------------------- #
 
     - name: Determine Godot editor path
@@ -114,14 +99,14 @@ runs:
         EDITOR_PATH=$(mktemp -d -p ${{ github.workspace }})
         echo "path=${EDITOR_PATH#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
 
-    - uses: ./.godot-infra/.github/actions/setup-godot
+    - uses: $/.github/actions/setup-godot
       with:
         version: ${{ inputs.godot-editor-version }}
         install-dir: ${{ steps.editor.outputs.path }}
 
     # TODO: Consider removing this and using the input editor version instead.
     - name: Parse Godot editor version
-      uses: "./.godot-infra/.github/actions/parse-godot-version"
+      uses: "$/.github/actions/parse-godot-version"
       id: godot-version
       with:
         editor-path: ${{ steps.editor.outputs.path }}/bin/godot
@@ -169,7 +154,7 @@ runs:
         echo "path=${TARGET#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
 
     - name: Set path to export template in 'export_presets.cfg'
-      uses: ./.godot-infra/inspect-godot-export-presets
+      uses: $/inspect-godot-export-presets
       with:
         project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
         operation: "set"
@@ -180,7 +165,7 @@ runs:
     # ---------------------- Configure export properties --------------------- #
 
     - name: Get the configured preset platform
-      uses: ./.godot-infra/inspect-godot-export-presets
+      uses: $/inspect-godot-export-presets
       id: preset-platform
       with:
         project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
@@ -206,7 +191,7 @@ runs:
         echo "Determined platform for preset '${{ inputs.preset-name }}': $PLATFORM"
 
     - name: Get the configured preset export path
-      uses: ./.godot-infra/inspect-godot-export-presets
+      uses: $/inspect-godot-export-presets
       id: preset-export-path
       with:
         project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
@@ -248,7 +233,7 @@ runs:
 
     - name: Export the Godot project preset (MacOS)
       if: steps.platform.outputs.value == 'macos'
-      uses: "./.godot-infra/export-godot-project-preset/macos"
+      uses: "$/export-godot-project-preset/macos"
       with:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
@@ -274,7 +259,7 @@ runs:
 
     - name: Export the Godot project preset (Web)
       if: steps.platform.outputs.value == 'web'
-      uses: "./.godot-infra/export-godot-project-preset/web"
+      uses: "$/export-godot-project-preset/web"
       with:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
@@ -290,7 +275,7 @@ runs:
 
     - name: Export the Godot project preset (Windows)
       if: steps.platform.outputs.value == 'windows'
-      uses: "./.godot-infra/export-godot-project-preset/windows"
+      uses: "$/export-godot-project-preset/windows"
       with:
         pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
         preset-name: ${{ inputs.preset-name }}
@@ -354,8 +339,3 @@ runs:
         # which generated folders or multiple files are supported.
         path: ${{ github.workspace }}/dist
         if-no-files-found: error
-
-    - name: Remove godot-infra workspace link
-      if: always() && steps.godot-infra-init.outputs.created == 'true'
-      shell: bash
-      run: rm -rf "$GITHUB_WORKSPACE/.godot-infra"

@@ -23,11 +23,6 @@ inputs:
     description: "The path to the Godot editor."
     required: false
     default: godot
-  godot-infra-path:
-    description: "The path to the 'godot-infra' repository containing the inspect script."
-    required: false
-    default: ${{ github.workspace }}/godot-infra
-
 outputs:
   value:
     description: "The output of the command."
@@ -36,15 +31,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout out 'godot-infra' repository
-      if: hashFiles(inputs.godot-infra-path) == ''
-      uses: actions/checkout@v4
-      with:
-        path: ${{ inputs.godot-infra-path }}
-        ref: main
-        repository: coffeebeats/godot-infra
-        submodules: false
-
     - name: Execute specified command
       id: execute
       shell: bash
@@ -54,7 +40,7 @@ runs:
             --path ${{ inputs.project-path }} \
             --headless \
             --quit \
-            -s ${{ inputs.godot-infra-path }}/inspect-godot-export-presets/export-presets.gd -- \
+            -s ${{ github.action_path }}/export-presets.gd -- \
               ${{ inputs.operation }} \
               ${{ inputs.preset }} \
               ${{ inputs.key }} \

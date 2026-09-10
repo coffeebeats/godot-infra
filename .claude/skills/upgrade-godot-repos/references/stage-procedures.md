@@ -123,7 +123,6 @@ dependents submodule.
      `- \`main\` / \`godot-v4.7\` (\`v5\`): \`v4.7\`` format;
    - the commit title is the summary's `commit_title`: `chore!:` on the minor route, because
      release-please reads the `!` to cut the major that publishes `godot-v<NEW>`;
-   - no `.godot-infra` symlink is staged;
    - `.godot-version` names a patch, not a bare minor, unless the minor has no patch yet.
 
 8. **Commit, push, open the pull request** with `gh pr create`, title from `commit_title`, body

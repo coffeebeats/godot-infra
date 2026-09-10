@@ -61,13 +61,6 @@ runs:
 
         git add --all ${{ inputs.path-expression }}
 
-        # Never commit the '.godot-infra' self-reference symlink. It's a
-        # runtime-only artifact each action creates so it can reference itself
-        # at a pinned hash (see actions/runner#1348); 'git add --all' would
-        # otherwise sweep it into the commit before the creating action's
-        # cleanup step removes it.
-        git reset -q -- .godot-infra 2>/dev/null || true
-
         git status
 
         git commit -m "chore: ${{ inputs.description }} (on behalf of @${{ github.triggering_actor }})"
