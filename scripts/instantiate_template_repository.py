@@ -885,11 +885,19 @@ class Checklist:
     """What the run could not do for itself, reported rather than enforced."""
 
     items: list[str] = field(default_factory=list)
+    ran: bool = False
 
     def add(self, item: str) -> None:
         self.items.append(item)
 
     def report(self) -> None:
+        if not self.ran:
+            # The content-derived checks need a checkout, which only a creating
+            # run has. Saying nothing is left to do would claim more than was
+            # looked at.
+            info("Settings applied. Content checks need a checkout; none was made.")
+            return
+
         if not self.items:
             info("Nothing left to do by hand.")
             return
@@ -1032,6 +1040,8 @@ def run_checks(
     checklist: Checklist,
 ) -> None:
     """Content-derived checks, possible only while the checkout is in hand."""
+    checklist.ran = True
+
     workflows = workflow_files(repo)
     if not workflows:
         return
