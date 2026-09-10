@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Instantiate a @coffeebeats Godot-flavored template repository.
+"""Instantiate a Godot-flavored template repository.
 
-Creates a repository from one of the template repositories below, applies the
-recommended repository settings, rewrites the generated contents for their new
-home, seeds 'release-please' at an initial version, and installs the branch
-rule sets:
+Creates a repository from a template, applies the recommended repository
+settings, rewrites the generated contents for their new home, seeds
+'release-please' at an initial version, and installs the branch rule sets.
+
+'--template' and '--name' each take 'owner/name', or a bare name under a
+default owner — @coffeebeats for the template, the authenticated user for the
+new repository. The templates this was written against:
 
   - https://github.com/coffeebeats/godot-project-template
   - https://github.com/coffeebeats/godot-plugin-template
@@ -28,7 +31,17 @@ import tempfile
 import time
 from pathlib import Path
 
-TEMPLATE_OWNER = "coffeebeats"
+# The owner assumed for a '--template' given as a bare name, so the documented
+# usage keeps working. Any 'owner/name' is honored as written.
+DEFAULT_TEMPLATE_OWNER = "coffeebeats"
+
+# The aggregate job @coffeebeats' workflows use to satisfy branch protection.
+# A house convention rather than a universal one, hence '--status-check'.
+DEFAULT_STATUS_CHECK = "branch_protection"
+
+# GitHub's own Actions application, which reports every workflow job's status.
+# Not an account-specific identifier.
+GITHUB_ACTIONS_APP_ID = 15368
 
 # The version a newly instantiated repository starts at. One constant feeds the
 # 'release-please' manifest, the files it keeps in sync, and the initial tag, so
@@ -204,6 +217,25 @@ def preflight() -> None:
     check_gh_version()
     check_gh_scopes(("repo", "workflow"))
     need_cmd("git")
+
+
+def qualify(repository: str, default_owner: str) -> str:
+    """'owner/name' as given, or 'name' under 'default_owner'."""
+    owner, separator, name = repository.rpartition("/")
+    if separator and not owner:
+        raise ValueError(f"invalid repository: '{repository}'")
+    if not name:
+        raise ValueError(f"invalid repository: '{repository}'")
+
+    return f"{owner or default_owner}/{name}"
+
+
+def current_user() -> str:
+    user = gh("api", "user", "-q", ".login").strip()
+    if not user:
+        raise RuntimeError("failed to identify current GitHub user")
+
+    return user
 
 
 def git_identity() -> tuple[str, str]:
@@ -529,7 +561,7 @@ def initialize_releases(repo: Path) -> None:
 # ---------------------------------------------------------------------------- #
 
 
-def create_rule_sets(target: str) -> None:
+def create_rule_sets(target: str, status_checks: list[str]) -> None:
     info("Creating repository rule sets.")
 
     gh_api(
@@ -574,9 +606,10 @@ def create_rule_sets(target: str) -> None:
                         "strict_required_status_checks_policy": True,
                         "required_status_checks": [
                             {
-                                "context": "branch_protection",
-                                "integration_id": 15368,
+                                "context": context,
+                                "integration_id": GITHUB_ACTIONS_APP_ID,
                             }
+                            for context in status_checks
                         ],
                     },
                 },
@@ -610,7 +643,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
 
     target = parser.add_argument_group("target")
-    target.add_argument("-n", "--name", required=True, help="the new repository's name")
+    target.add_argument(
+        "-n",
+        "--name",
+        required=True,
+        help="the new repository's name, or 'owner/name' to target another owner",
+    )
     target.add_argument(
         "-d",
         "--description",
@@ -621,7 +659,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "-t",
         "--template",
         required=True,
-        help=f"the name of the @{TEMPLATE_OWNER} template repository",
+        help=(
+            "the template repository, as 'name' or 'owner/name' "
+            f"(default owner={DEFAULT_TEMPLATE_OWNER})"
+        ),
     )
     target.add_argument(
         "-b",
@@ -635,6 +676,18 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="make the repository public (default=false)",
     )
 
+    policy = parser.add_argument_group("policy")
+    policy.add_argument(
+        "--status-check",
+        action="append",
+        default=[],
+        metavar="CONTEXT",
+        help=(
+            "a status check required to merge into the default branch; "
+            f"repeatable (default={DEFAULT_STATUS_CHECK})"
+        ),
+    )
+
     parser.add_argument(
         "-v",
         "--verbose",
@@ -642,7 +695,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="print each command before running it",
     )
 
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+
+    # 'append' adds to whatever default it is given, so the default is applied
+    # here rather than seeded into the option.
+    args.status_check = args.status_check or [DEFAULT_STATUS_CHECK]
+
+    return args
 
 
 def main(argv: list[str]) -> int:
@@ -656,12 +715,9 @@ def main(argv: list[str]) -> int:
         preflight()
         identity = git_identity()
 
-        source = f"{TEMPLATE_OWNER}/{args.template.removeprefix(TEMPLATE_OWNER + '/')}"
-        user = gh("api", "user", "-q", ".login").strip()
-        if not user:
-            raise RuntimeError("failed to identify current GitHub user")
-
-        target = f"{user}/{args.name}"
+        source = qualify(args.template, DEFAULT_TEMPLATE_OWNER)
+        target = qualify(args.name, current_user())
+        name = target.rpartition("/")[2]
 
         info("Executing command with the following parameters:")
         print(f"  template (source): {source}")
@@ -686,13 +742,13 @@ def main(argv: list[str]) -> int:
         update_gha_permissions(target)
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            repo = Path(tmpdir) / args.name
+            repo = Path(tmpdir) / name
             clone_repository(args, target, repo, identity)
             delete_other_branches(repo)
-            update_contents(args, repo, source, target, args.name)
+            update_contents(args, repo, source, target, name)
             initialize_releases(repo)
 
-        create_rule_sets(target)
+        create_rule_sets(target, args.status_check)
 
         info(f"Created repository: https://github.com/{target}")
         return 0
