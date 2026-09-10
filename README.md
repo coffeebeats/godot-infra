@@ -54,12 +54,12 @@ The `godot-infra` repository does not need to be installed. Simply add the actio
 
 ## **Template repositories**
 
-The [@coffeebeats](https://github.com/coffeebeats) user has a few template repositories useful for various types of Godot projects. These include:
+The [@coffeebeats](https://github.com/coffeebeats) user has two template repositories for Godot projects:
 
 - [godot-project-template](https://github.com/coffeebeats/godot-project-template)
 - [godot-plugin-template](https://github.com/coffeebeats/godot-plugin-template)
 
-These can be instantiated with recommended repository settings using the [instantiate_template_repository.py](./scripts/instantiate_template_repository.py) script:
+The [instantiate_template_repository.py](./scripts/instantiate_template_repository.py) script creates a repository from either one, with the recommended settings:
 
 ```sh
 uv run scripts/instantiate_template_repository.py \
@@ -68,22 +68,22 @@ uv run scripts/instantiate_template_repository.py \
   --description "A new Godot 4+ project."
 ```
 
-The run creates the repository, rewrites the generated contents for their new home, seeds `release-please` at `v0.1.0`, applies every repository setting and both branch rule sets, and closes with a checklist of what it could not do for itself: secrets a workflow reads but nobody has set, actions the allow-list does not cover, and template links the rewrite did not reach.
+A run creates the repository, rewrites the generated contents for their new home, seeds `release-please` at `v0.1.0`, and applies every repository setting and both branch rule sets. It closes with a checklist of what it could not do for itself: secrets a workflow reads but nobody has set, actions the allow-list does not cover, and template links the rewrite did not reach.
 
-Pass `--dry-run` first. It prints every mutating call with its payload and issues none. `--existing` skips creation and applies settings alone, which both resumes a failed run and re-converges a repository created before a setting existed; it touches no content and never changes visibility.
+Pass `--dry-run` first; it prints every mutating call with its payload and issues none. `--existing` applies settings alone, which resumes a failed run and re-converges a repository created before a setting existed. It touches no content and never changes visibility.
 
 `--name` and `--template` each take `owner/name`, or a bare name under a default owner — `@coffeebeats` for the template, the authenticated user for the new repository. `--branch` takes a branch or a commit; template generation copies no tags, so pin by commit.
 
 | Option | Purpose |
 | --- | --- |
-| `--public` | Create a public repository. Secret and code scanning are applied to public repositories only, since both need Advanced Security on a private one. |
-| `--allow-action PATTERN` | Permit a third-party action. Repeatable, and additive: it never narrows an allow-list the repository already has. |
+| `--public` | Create a public repository. The script enables secret and code scanning on public repositories only, since both need Advanced Security on a private one. |
+| `--allow-action PATTERN` | Permit a third-party action. Repeatable and additive; it never narrows an allow-list the repository already has. |
 | `--allow-direct-push` | Drop the pull-request and status-check rules, for a repository that commits straight to `main`. Force-pushing stays blocked. |
 | `--no-release` | Skip `release-please` seeding and the initial tag. |
 | `--secret NAME` | Set a repository secret from the environment variable of the same name. Repeatable; for many at once, `gh secret set -f` is simpler. |
 | `--workflow-permissions` | The default `GITHUB_TOKEN` permissions (default `read`). |
 
-SHA pinning is deliberately left off: godot-infra's own actions are consumed by floating major tag across many dependent repositories, so enforcing it here would churn every dependent on every release. Workflows pin third-party actions by hand instead.
+The script deliberately leaves SHA pinning off. Dependent repositories consume godot-infra's actions by floating major tag, so enforcing it here would churn every dependent on every release. Workflows pin third-party actions by hand instead.
 
 ## **Development**
 
