@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.5.0 (2026-09-10)
+
+## What's Changed
+* feat(scripts): instantiate template repositories with no manual settings pass by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/578
+* fix(scripts): grant the rule-set bypass to the admin role, not Maintain by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/580
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.4.0...v5.5.0
+
 ## 5.4.0 (2026-09-09)
 
 ## What's Changed
