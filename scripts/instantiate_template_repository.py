@@ -45,6 +45,11 @@ DEFAULT_STATUS_CHECK = "branch_protection"
 # Not an account-specific identifier.
 GITHUB_ACTIONS_APP_ID = 15368
 
+# The 'Repository admin' role. Under 'bypass_mode: pull_request' this lets an
+# admin merge a pull request the status-check and code-scanning rules refused,
+# which is the only override a solo maintainer has when CI wedges.
+REPOSITORY_ADMIN_ROLE_ID = 5
+
 # The version a newly instantiated repository starts at. One constant feeds the
 # 'release-please' manifest, the files it keeps in sync, and the initial tag, so
 # the three cannot disagree.
@@ -671,12 +676,9 @@ def apply_rule_sets(args: argparse.Namespace, target: str) -> None:
             "name": "main",
             "enforcement": "active",
             "target": "branch",
-            # One entry, matching the other coffeebeats repositories. Id 2 is
-            # a repository role; the mapping is undocumented, so confirm it
-            # grants the intended bypass before relying on it.
             "bypass_actors": [
                 {
-                    "actor_id": 2,
+                    "actor_id": REPOSITORY_ADMIN_ROLE_ID,
                     "actor_type": "RepositoryRole",
                     "bypass_mode": "pull_request",
                 },
