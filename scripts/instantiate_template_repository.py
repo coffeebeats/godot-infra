@@ -34,8 +34,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# The owner assumed for a '--template' given as a bare name, so the documented
-# usage keeps working. Any 'owner/name' is honored as written.
+# The owner assumed for a '--template' given as a bare name.
 DEFAULT_TEMPLATE_OWNER = "coffeebeats"
 
 # The aggregate job @coffeebeats' workflows use to satisfy branch protection.
@@ -79,9 +78,7 @@ RELEASE_MARKER = re.compile(
     r"x-release-please-(?P<kind>version|major|minor|patch)\b.*)$"
 )
 
-# Everything ahead of the version in a literal such as "v5.2.0". Kept as-is:
-# 'release-please' substitutes only the version, so a 'v' written into the file
-# is the file's own text and survives every release.
+# Everything ahead of the version in a literal such as "v5.2.0".
 VERSION_PREFIX = re.compile(r"^(?P<prefix>\D*)\d+\.\d+\.\d+$")
 
 SECRET_REFERENCE = re.compile(r"secrets\.([A-Za-z_][A-Za-z0-9_]*)")
@@ -161,9 +158,10 @@ def gh_write(*args: str, stdin: str | None = None) -> str:
     """A mutating 'gh' invocation, the one place '--dry-run' intercepts.
 
     Every change this script makes passes through here or 'gh_api', so dry-run
-    is one branch rather than a flag threaded through each call site. It prints
-    whatever it is handed, so a secret value must never reach it; 'set_secret'
-    exists to keep that true by construction.
+    is one branch rather than a flag threaded through each call site.
+
+    NOTE: This prints whatever it is handed, so a secret value must never reach
+    it.
     """
     if DRY_RUN:
         print(f"dry-run: gh {shlex.join(args)}")
@@ -237,11 +235,7 @@ def check_gh_version() -> None:
 
 
 def check_gh_scopes(required: tuple[str, ...]) -> None:
-    """Authority, which 'gh auth status' alone does not prove.
-
-    Pushing a commit that carries '.github/workflows/' needs 'workflow'; rule
-    sets and repository settings need 'repo'.
-    """
+    """Authority, which 'gh auth status' alone does not prove."""
     status = subprocess.run(
         [GH, "auth", "status"],
         capture_output=True,
@@ -313,7 +307,7 @@ def git_identity() -> tuple[str, str]:
 
 
 def create_repository(args: argparse.Namespace, source: str, target: str) -> None:
-    """Create the repository. Everything reconfigurable lives in Configure."""
+    """Create the repository; everything reconfigurable is left to 'configure'."""
     info("Creating repository from template.")
 
     create = [
@@ -398,10 +392,10 @@ def clone_repository(
 
 
 def delete_other_branches(repo: Path) -> None:
-    """Drop every generated branch but 'main', read from the remote.
+    """Drop every generated branch but 'main'.
 
-    A fresh clone has one local branch, so the local ref list this replaces
-    could never name a branch worth deleting.
+    A fresh clone has one local branch, so the remote is the only place the
+    generated branches appear.
     """
     for line in run("git", "ls-remote", "--heads", "origin", cwd=repo).splitlines():
         _, _, ref = line.partition("\t")
@@ -552,8 +546,8 @@ def initialize_releases(repo: Path) -> None:
     write_text(manifest, json.dumps({".": INITIAL_VERSION}, indent=2) + "\n")
     staged = [RELEASE_PLEASE_MANIFEST.as_posix()]
 
-    # The manifest alone leaves the repository inconsistent: 'extra-files' still
-    # carry the template's own version until they are rewritten too.
+    # The manifest alone leaves the repository inconsistent, since 'extra-files'
+    # still carry the template's own version until they are rewritten too.
     for entry in release_extra_files(repo):
         path = repo / entry
         if not path.is_file():
@@ -666,9 +660,9 @@ def apply_rule_sets(args: argparse.Namespace, target: str) -> None:
     info("Applying repository rule sets.")
 
     if args.allow_direct_push:
-        # Both rules go, not just the first: GitHub applies the status-check
-        # rule to direct pushes as well as merges, so keeping it would block
-        # every push for checks that never ran.
+        # GitHub applies the status-check rule to direct pushes as well as
+        # merges, so keeping it would block every push for checks that never
+        # ran.
         info("Allowing direct pushes: omitting the pull-request and check rules.")
 
     put_rule_set(
@@ -677,9 +671,9 @@ def apply_rule_sets(args: argparse.Namespace, target: str) -> None:
             "name": "main",
             "enforcement": "active",
             "target": "branch",
-            # One entry, matching the family. Id 2 is a repository role; the
-            # mapping is undocumented, so confirm it grants the intended bypass
-            # before relying on it.
+            # One entry, matching the other coffeebeats repositories. Id 2 is
+            # a repository role; the mapping is undocumented, so confirm it
+            # grants the intended bypass before relying on it.
             "bypass_actors": [
                 {
                     "actor_id": 2,
@@ -743,9 +737,7 @@ def apply_security_settings(args: argparse.Namespace, target: str) -> None:
     gh_api("PUT", f"repos/{target}/automated-security-fixes")
 
     # Secret scanning and code scanning both need Advanced Security on a
-    # private repository, so both are public-only. A 'code_scanning' rule with
-    # no tool reporting blocks every merge, which is what would otherwise make
-    # a private repository unmergeable the moment it was created.
+    # private repository, so both are public-only.
     if not args.public:
         info("Skipping secret and code scanning: private repository.")
         return
@@ -775,13 +767,10 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
 
     unrestricted = current.get("allowed_actions") == "all"
     if args.existing and unrestricted and not args.allow_action:
-        # Narrowing an existing repository's allow-list is a manual act. One on
-        # 'all' has no pattern list to union with, so reconciling it without
-        # '--allow-action' would empty the list and break every workflow that
-        # uses a third-party action. A repository being created has no workflow
-        # runs to break, and 'selected' is the setting the family holds, so
-        # Bootstrap always narrows and the closing checklist names whatever the
-        # patterns do not cover.
+        # A repository on 'all' has no pattern list to union with, so
+        # reconciling it without '--allow-action' would empty the list and
+        # break every workflow that uses a third-party action. A repository
+        # being created has no runs to break, so creation always narrows.
         warn(
             "actions are unrestricted and no '--allow-action' was given; "
             "leaving 'allowed_actions' alone"
@@ -800,8 +789,8 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
             )
             or {}
         )
-        # Additive: a reconcile run that forgot a pattern must not silently
-        # narrow what the repository already allows.
+        # The union is additive, since a reconcile run that forgot a pattern
+        # must not silently narrow what the repository already allows.
         patterns = sorted(
             set(selected.get("patterns_allowed", [])) | set(args.allow_action)
         )
@@ -830,13 +819,12 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
 def set_secret(target: str, name: str) -> None:
     """Set one repository secret from the environment variable of that name.
 
-    Everything touching a secret is confined here. The value is read and handed
-    to 'gh' on stdin, so it reaches neither the process list ('gh secret set'
-    reads stdin when '--body' is omitted) nor any output. The name is deliberate
-    output — 'gh secret list' shows names too — but it does not travel through
-    'info' or 'run', so those keep printing untrusted-free arguments and stay
-    honest for every other caller. That is also why this calls 'subprocess'
-    directly rather than the shared 'run', which echoes its argv under '-v'.
+    Every flow carrying a secret value is confined here. The value goes to 'gh'
+    on stdin, which reads it when '--body' is omitted, so it reaches neither the
+    process list nor any output.
+
+    NOTE: This calls 'subprocess' directly because the shared 'run' echoes its
+    argv under '-v'.
     """
     if not os.environ.get(name):
         raise RuntimeError(
@@ -844,11 +832,9 @@ def set_secret(target: str, name: str) -> None:
         )
 
     if DRY_RUN:
-        # The name, never the value. CodeQL flags this and the '--existing'
-        # summary that lists configured secrets, because a name that keys a
-        # secret is tainted by the same heuristic that catches a real leak.
-        # Both are dismissed upstream as false positives: a secret's name is
-        # not a secret, and 'gh secret list' prints names too.
+        # The name, never the value. CodeQL taints a name that keys a secret
+        # and flags this line; the alert is dismissed as a false positive,
+        # since 'gh secret list' prints names too.
         print(f"dry-run: gh secret set {name} --repo {target} (value from ${name})")
         return
 
@@ -865,8 +851,8 @@ def apply_secrets(args: argparse.Namespace, target: str) -> None:
     if not args.secret_names:
         return
 
-    # The count, not the names: naming them here would carry a value CodeQL
-    # rightly treats as sensitive into the general-purpose printer.
+    # Printing the names here would route a CodeQL-tainted value through the
+    # general-purpose printer, so print only how many there are.
     info(f"Setting {len(args.secret_names)} repository secret(s).")
 
     for name in args.secret_names:
@@ -919,9 +905,8 @@ class Checklist:
 
     def report(self) -> None:
         if not self.ran:
-            # The content-derived checks need a checkout, which only a creating
-            # run has. Saying nothing is left to do would claim more than was
-            # looked at.
+            # The content checks need a checkout, which only a creating run
+            # has, so a clean report would claim more than was looked at.
             info("Settings applied. Content checks need a checkout; none was made.")
             return
 
@@ -950,10 +935,9 @@ def configured_secrets(target: str) -> set[str]:
 def check_secrets(target: str, workflows: list[Path], checklist: Checklist) -> None:
     """Diff the secrets the workflows read against the ones that are set.
 
-    This is the check that would have caught 'godot-project-template' storing a
-    bot token under a name none of its workflows read: both token secrets are
-    consumed as '${{ secrets.X || github.token }}', so a missing one degrades
-    the pipeline silently instead of failing it.
+    A token secret is consumed as '${{ secrets.X || github.token }}', so one
+    stored under a name no workflow reads degrades the pipeline silently
+    instead of failing it.
     """
     wanted: set[str] = set()
     for workflow in workflows:
@@ -970,8 +954,8 @@ def check_third_party_actions(
 ) -> None:
     """Name third-party actions the allow-list does not cover.
 
-    Reported only: deriving the allow-list from content would widen it
-    silently, which is the opposite of what an allow-list is for.
+    These are reported rather than added, since deriving an allow-list from
+    content would widen it silently.
     """
     owner = target.partition("/")[0]
     allowed = {pattern.partition("@")[0] for pattern in args.allow_action}
@@ -1164,9 +1148,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     secrets = parser.add_argument_group("secrets")
     secrets.add_argument(
         "--secret",
-        # The values are secret; these are names, and the distinction is worth
-        # keeping in the identifier, since the names are printed and the values
-        # never are.
+        # Names, not values. The distinction stays in the identifier because
+        # the names are printed and the values never are.
         dest="secret_names",
         action="append",
         default=[],
@@ -1203,9 +1186,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
     if args.existing:
         # Being past creation means being past the content stage, so nothing
-        # naming content is accepted. '--description' matters most: it carries
-        # a default, and writing it here would replace a live repository's own
-        # description with this script's placeholder.
+        # naming content is accepted. '--description' carries a default, so
+        # writing it here would replace a live repository's own description
+        # with this script's placeholder.
         for option, value in (
             ("--description", args.description),
             ("--branch", args.branch),
@@ -1281,8 +1264,6 @@ def main(argv: list[str]) -> int:
     try:
         GH = resolve_gh()
 
-        # Nothing is pushed on an '--existing' run, so it needs no 'workflow'
-        # scope and no git at all.
         preflight(bootstrapping=not args.existing)
 
         target = qualify(args.name, current_user())
