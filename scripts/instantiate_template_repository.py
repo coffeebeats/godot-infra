@@ -407,8 +407,9 @@ def clone_repository(
         gh("repo", "clone", source, str(repo))
         commit = resolve_ref(repo, args.branch)
         run("git", "checkout", "--detach", commit, cwd=repo)
+        run("git", "branch", "-D", "main", cwd=repo)
         run("git", "switch", "--orphan", "main", cwd=repo)
-        run("git", "reset", cwd=repo)
+        run("git", "read-tree", "--reset", "-u", commit, cwd=repo)
         run(
             "git",
             "remote",
