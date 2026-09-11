@@ -313,23 +313,25 @@ def git_identity() -> tuple[str, str]:
 
 
 def create_repository(args: argparse.Namespace, source: str, target: str) -> None:
-    """create_repository generates `target` from `source` using the requested
-    visibility and description. Dry runs print the creation command.
-    """
-    info("Creating repository from template.")
+    """create_repository creates `target` with the requested visibility and description.
 
-    create = [
-        "repo",
-        "create",
-        target,
-        "--template",
-        source,
+    The template API is used for `main`; other refs are copied from a source clone so a
+    commit or branch pin is honored. Dry runs print the creation command.
+    """
+    info(
+        "Creating repository from template."
+        if args.branch == "main"
+        else "Creating repository."
+    )
+
+    create = ["repo", "create", target]
+    if args.branch == "main":
+        create += ["--template", source]
+    create += [
         "--description",
         args.description,
         "--public" if args.public else "--private",
     ]
-    if args.branch != "main":
-        create.append("--include-all-branches")
 
     gh_write(*create)
 
@@ -367,8 +369,8 @@ def resolve_ref(repo: Path, ref: str) -> str:
     """resolve_ref returns a commit hash from `repo`, preferring the remote-
     tracking branch over the bare `ref`. It raises if neither resolves.
 
-    NOTE: Template generation copies no tags; callers must pass a branch or
-    commit.
+    NOTE: The template API copies no history, so non-default refs are resolved
+    in a source clone before its tree is pushed to the new repository.
     """
     for candidate in (f"origin/{ref}", ref):
         result = subprocess.run(
@@ -387,21 +389,44 @@ def resolve_ref(repo: Path, ref: str) -> str:
 
 
 def clone_repository(
-    args: argparse.Namespace, target: str, repo: Path, identity: tuple[str, str]
+    args: argparse.Namespace,
+    source: str,
+    target: str,
+    repo: Path,
+    identity: tuple[str, str],
 ) -> None:
-    """clone_repository clones `target` into `repo`, sets the local Git identity,
-    and resets the checkout to the requested template ref.
+    """clone_repository prepares `repo` from the generated target or a pinned source
+    tree.
+
+    The checkout is configured with `identity` and points its origin at `target`.
     """
     info(f"Cloning new repository to directory: {repo}")
-    gh("repo", "clone", target, str(repo))
+    if args.branch == "main":
+        gh("repo", "clone", target, str(repo))
+    else:
+        gh("repo", "clone", source, str(repo))
+        commit = resolve_ref(repo, args.branch)
+        run("git", "checkout", "--detach", commit, cwd=repo)
+        run("git", "branch", "-D", "main", cwd=repo)
+        run("git", "switch", "--orphan", "main", cwd=repo)
+        run("git", "read-tree", "--reset", "-u", commit, cwd=repo)
+        run(
+            "git",
+            "remote",
+            "set-url",
+            "origin",
+            f"https://github.com/{target}.git",
+            cwd=repo,
+        )
+        run("git", "add", "-A", cwd=repo)
+        run("git", "commit", "-m", "chore: initialize repository", cwd=repo)
 
     name, email = identity
     run("git", "config", "--local", "user.name", name, cwd=repo)
     run("git", "config", "--local", "user.email", email, cwd=repo)
 
-    commit = resolve_ref(repo, args.branch)
-    info(f"Resetting 'main' to ref: {args.branch} ({commit[:7]})")
-    run("git", "reset", "--hard", commit, cwd=repo)
+    if args.branch == "main":
+        info("Using the generated template commit.")
 
 
 def delete_other_branches(repo: Path) -> None:
@@ -502,7 +527,22 @@ def update_contents(
     write_text(readme, read_text(readme).replace(f"/{source}", f"/{target}"))
 
     run("git", "add", "-A", "--", *staged, cwd=repo)
-    run("git", "commit", "--amend", "--no-edit", cwd=repo)
+    run("git", "commit", "--amend", "-m", "chore: initialize repository", cwd=repo)
+
+    if args.no_release:
+        removed = []
+        for relative in (
+            ".github/workflows/release-please.yaml",
+            ".release-please/config.json",
+            ".release-please/manifest.json",
+        ):
+            path = repo / relative
+            if path.is_file():
+                path.unlink()
+                removed.append(relative)
+        if removed:
+            run("git", "add", "-A", "--", *removed, cwd=repo)
+            run("git", "commit", "--amend", "--no-edit", cwd=repo)
 
 
 # ---------------------------------------------------------------------------- #
@@ -1278,11 +1318,12 @@ def bootstrap(
         info("Skipping content bootstrap: there is no repository to clone.")
         return
 
-    wait_for_population(target)
+    if args.branch == "main":
+        wait_for_population(target)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         repo = Path(tmpdir) / name
-        clone_repository(args, target, repo, identity)
+        clone_repository(args, source, target, repo, identity)
         delete_other_branches(repo)
         update_contents(args, repo, source, target, name)
 

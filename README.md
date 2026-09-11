@@ -68,11 +68,11 @@ uv run scripts/instantiate_template_repository.py \
   --description "A new Godot 4+ project."
 ```
 
-A run creates the repository, rewrites the generated contents for their new home, seeds `release-please` at `v0.1.0`, and applies every repository setting and both branch rule sets. It closes with a checklist of what it could not do for itself: secrets a workflow reads but nobody has set, actions the allow-list does not cover, and template links the rewrite did not reach.
+A run creates the repository, rewrites the generated contents for their new home, applies every repository setting and both branch rule sets, and reports what still needs attention. By default it seeds `release-please` at `v0.1.0`; `--no-release` removes the release workflow and configuration as well as skipping the tag.
 
 Pass `--dry-run` first; it prints every mutating call with its payload and issues none. `--existing` applies settings alone, which resumes a failed run and re-converges a repository created before a setting existed. It touches no content and never changes visibility.
 
-`--name` and `--template` each take `owner/name`, or a bare name under a default owner — `@coffeebeats` for the template, the authenticated user for the new repository. `--branch` takes a branch or a commit; template generation copies no tags, so pin by commit.
+`--name` and `--template` each take `owner/name`, or a bare name under a default owner — `@coffeebeats` for the template, the authenticated user for the new repository. `--branch` takes a branch or a commit. The default branch uses GitHub's template generation; a pinned or non-default ref is cloned from the source and pushed as a new initial commit, so the pin is honored even though template generation squashes history.
 
 | Option | Purpose |
 | --- | --- |
