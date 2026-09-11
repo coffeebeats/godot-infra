@@ -1,22 +1,8 @@
 #!/usr/bin/env python3
 """Instantiate a Godot-flavored template repository.
 
-Creates a repository from a template, applies the recommended repository
-settings, rewrites the generated contents for their new home, seeds
-'release-please' at an initial version, and installs the branch rule sets.
-
-'--template' and '--name' each take 'owner/name', or a bare name under a
-default owner — @coffeebeats for the template, the authenticated user for the
-new repository. The templates this was written against:
-
-  - https://github.com/coffeebeats/godot-project-template
-  - https://github.com/coffeebeats/godot-plugin-template
-
-'--branch' takes a branch, or a commit in the default branch's history.
-Template generation copies no tags, so a tag is not a valid target; pin by
-commit instead.
-
-Requires 'gh' (authenticated, with the 'repo' and 'workflow' scopes) and 'git'.
+NOTE: Bootstrap requires Git and an authenticated `gh` with repo and workflow scopes.
+Reconciliation requires only `gh` and repo scope; CLI help lists the available modes.
 """
 
 from __future__ import annotations
@@ -34,25 +20,19 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# The owner assumed for a '--template' given as a bare name.
+# DEFAULT_TEMPLATE_OWNER supplies the owner for a bare template name.
 DEFAULT_TEMPLATE_OWNER = "coffeebeats"
 
-# The aggregate job @coffeebeats' workflows use to satisfy branch protection.
-# A house convention rather than a universal one, hence '--status-check'.
+# DEFAULT_STATUS_CHECK names the family's aggregate job; `--status-check` overrides it.
 DEFAULT_STATUS_CHECK = "branch_protection"
 
-# GitHub's own Actions application, which reports every workflow job's status.
-# Not an account-specific identifier.
+# GITHUB_ACTIONS_APP_ID identifies GitHub Actions as the required-check provider.
 GITHUB_ACTIONS_APP_ID = 15368
 
-# The 'Repository admin' role. Under 'bypass_mode: pull_request' this lets an
-# admin merge a pull request the status-check and code-scanning rules refused,
-# which is the only override a solo maintainer has when CI wedges.
+# REPOSITORY_ADMIN_ROLE_ID grants admins a bypass when merging pull requests.
 REPOSITORY_ADMIN_ROLE_ID = 5
 
-# The version a newly instantiated repository starts at. One constant feeds the
-# 'release-please' manifest, the files it keeps in sync, and the initial tag, so
-# the three cannot disagree.
+# INITIAL_VERSION keeps the initial manifest, annotated files and tag in sync.
 INITIAL_VERSION = "0.1.0"
 
 DEFAULT_DESCRIPTION = "A new Godot 4+ project."
@@ -60,13 +40,12 @@ DEFAULT_DESCRIPTION = "A new Godot 4+ project."
 RELEASE_PLEASE_CONFIG = Path(".release-please/config.json")
 RELEASE_PLEASE_MANIFEST = Path(".release-please/manifest.json")
 
-# 'gh repo edit' gained the merge-setting flags used below in v2.40.0.
+# MIN_GH_VERSION requires support for the merge-setting flags in `gh repo edit`.
 MIN_GH_VERSION = (2, 40, 0)
 
-# How long to wait for GitHub to populate a repository created from a template.
-# 'gh repo create' returns before generation finishes (cli/cli#2290, #5142,
-# #7055); cloning too early yields "couldn't find remote ref refs/heads/main"
-# or a silently empty checkout.
+# POPULATE_TIMEOUT_SECONDS bounds the wait for asynchronous template generation.
+#
+# NOTE: Cloning early can return an empty checkout (cli/cli#2290, #5142, #7055).
 POPULATE_TIMEOUT_SECONDS = 120
 POPULATE_POLL_SECONDS = 2
 
@@ -76,14 +55,13 @@ GH_SCOPES = re.compile(r"Token scopes:\s*(.+)")
 README_HEADING = re.compile(r"^#\s+(?P<open>\*\*)?(?P<name>.+?)(?P<close>\*\*)?\s*$")
 LICENSE_HEADING = re.compile(r"^##\s+\*\*License\*\*\s*$")
 
-# A 'release-please' annotation, and the last double-quoted string ahead of it.
-# Anchored at end of line so the capture is the nearest literal to the marker.
+# RELEASE_MARKER captures the nearest quoted literal before a release-please marker.
 RELEASE_MARKER = re.compile(
     r'"(?P<literal>[^"]*)"(?P<tail>[^"]*#\s*'
     r"x-release-please-(?P<kind>version|major|minor|patch)\b.*)$"
 )
 
-# Everything ahead of the version in a literal such as "v5.2.0".
+# VERSION_PREFIX captures the nonnumeric prefix preserved during version replacement.
 VERSION_PREFIX = re.compile(r"^(?P<prefix>\D*)\d+\.\d+\.\d+$")
 
 SECRET_REFERENCE = re.compile(r"secrets\.([A-Za-z_][A-Za-z0-9_]*)")
@@ -119,6 +97,11 @@ def run(
     check: bool = True,
     stdin: str | None = None,
 ) -> str:
+    """run returns captured stdout and raises on failure unless `check` is false.
+
+    NOTE: Verbose output includes arguments; secret values must never appear
+    in them.
+    """
     if VERBOSE:
         print(f"run: {' '.join(args)}", file=sys.stderr)
 
@@ -134,7 +117,9 @@ def run(
 
 
 def need_cmd(name: str) -> str:
-    """The resolved path to 'name', or a failure naming what is missing."""
+    """need_cmd returns the executable path for `name`, or raises if it is
+    unavailable.
+    """
     found = shutil.which(name)
     if not found:
         raise RuntimeError(f"required command not found: '{name}'")
@@ -142,7 +127,9 @@ def need_cmd(name: str) -> str:
 
 
 def resolve_gh() -> str:
-    """The 'gh' executable, tolerating a Windows shell that only sees 'gh.exe'."""
+    """resolve_gh returns the path to `gh` or `gh.exe`, or raises if neither is
+    available.
+    """
     for name in ("gh", "gh.exe"):
         found = shutil.which(name)
         if found:
@@ -155,18 +142,17 @@ DRY_RUN = False
 
 
 def gh(*args: str, check: bool = True, stdin: str | None = None) -> str:
-    """A read-only 'gh' invocation, issued even under '--dry-run'."""
+    """gh returns stdout from a read-only GitHub CLI command, including during
+    dry runs.
+    """
     return run(GH, *args, check=check, stdin=stdin)
 
 
 def gh_write(*args: str, stdin: str | None = None) -> str:
-    """A mutating 'gh' invocation, the one place '--dry-run' intercepts.
+    """gh_write executes a mutating GitHub CLI command and returns stdout. During
+    a dry run, it prints the command and returns an empty string.
 
-    Every change this script makes passes through here or 'gh_api', so dry-run
-    is one branch rather than a flag threaded through each call site.
-
-    NOTE: This prints whatever it is handed, so a secret value must never reach
-    it.
+    NOTE: Arguments and stdin must contain no secret values.
     """
     if DRY_RUN:
         print(f"dry-run: gh {shlex.join(args)}")
@@ -178,10 +164,8 @@ def gh_write(*args: str, stdin: str | None = None) -> str:
 
 
 def gh_json(*args: str, default: object = None) -> object:
-    """A read whose result shapes a later write.
-
-    Under '--dry-run' on a creating run the repository does not exist, so these
-    reads cannot succeed; the default stands in for what would have been read.
+    """gh_json returns parsed CLI output, or `default` for empty output. Failed
+    reads return `default` during dry runs and raise otherwise.
     """
     result = subprocess.run([GH, *args], capture_output=True, text=True)
     if result.returncode != 0:
@@ -202,6 +186,11 @@ def gh_api(
     payload: dict | None = None,
     check: bool = True,
 ) -> str:
+    """gh_api returns the response to a GitHub API request with an optional JSON
+    payload. Dry runs print mutating requests without sending them.
+
+    NOTE: `check` controls failure handling only for GET requests.
+    """
     args = [
         "api",
         "--method",
@@ -228,6 +217,9 @@ def gh_api(
 
 
 def check_gh_version() -> None:
+    """check_gh_version raises if the GitHub CLI version is unrecognized or
+    unsupported.
+    """
     match = GH_VERSION.search(gh("--version"))
     if not match:
         raise RuntimeError("failed to determine the version of 'gh'")
@@ -240,7 +232,9 @@ def check_gh_version() -> None:
 
 
 def check_gh_scopes(required: tuple[str, ...]) -> None:
-    """Authority, which 'gh auth status' alone does not prove."""
+    """check_gh_scopes raises if authentication fails or reported scopes omit
+    `required`. Unreadable scope information produces a warning.
+    """
     status = subprocess.run(
         [GH, "auth", "status"],
         capture_output=True,
@@ -265,10 +259,11 @@ def check_gh_scopes(required: tuple[str, ...]) -> None:
 
 
 def preflight(bootstrapping: bool) -> None:
+    """preflight checks GitHub CLI availability and authorization. Bootstrap mode
+    also requires Git and permission to push workflows.
+    """
     check_gh_version()
 
-    # Pushing a commit that carries '.github/workflows/' needs 'workflow'; an
-    # '--existing' run pushes nothing.
     check_gh_scopes(("repo", "workflow") if bootstrapping else ("repo",))
 
     if bootstrapping:
@@ -276,7 +271,9 @@ def preflight(bootstrapping: bool) -> None:
 
 
 def qualify(repository: str, default_owner: str) -> str:
-    """'owner/name' as given, or 'name' under 'default_owner'."""
+    """qualify returns `repository` as owner/name, using `default_owner` for a
+    bare name. An empty name or explicit empty owner raises ValueError.
+    """
     owner, separator, name = repository.rpartition("/")
     if separator and not owner:
         raise ValueError(f"invalid repository: '{repository}'")
@@ -287,6 +284,7 @@ def qualify(repository: str, default_owner: str) -> str:
 
 
 def current_user() -> str:
+    """current_user returns the authenticated GitHub login, or raises if it is empty."""
     user = gh("api", "user", "-q", ".login").strip()
     if not user:
         raise RuntimeError("failed to identify current GitHub user")
@@ -295,6 +293,9 @@ def current_user() -> str:
 
 
 def git_identity() -> tuple[str, str]:
+    """git_identity returns the configured Git name and email, or raises if
+    either is missing.
+    """
     name = run("git", "config", "user.name").strip()
     if not name:
         raise RuntimeError("failed to identify the current Git user's name")
@@ -312,7 +313,9 @@ def git_identity() -> tuple[str, str]:
 
 
 def create_repository(args: argparse.Namespace, source: str, target: str) -> None:
-    """Create the repository; everything reconfigurable is left to 'configure'."""
+    """create_repository generates `target` from `source` using the requested
+    visibility and description. Dry runs print the creation command.
+    """
     info("Creating repository from template.")
 
     create = [
@@ -332,7 +335,9 @@ def create_repository(args: argparse.Namespace, source: str, target: str) -> Non
 
 
 def wait_for_population(target: str) -> None:
-    """Block until the generated repository has a commit to clone."""
+    """wait_for_population waits for `target` to expose a commit, or raises after
+    the population timeout.
+    """
     info("Waiting for GitHub to populate the repository.")
 
     deadline = time.monotonic() + POPULATE_TIMEOUT_SECONDS
@@ -359,11 +364,11 @@ def wait_for_population(target: str) -> None:
 
 
 def resolve_ref(repo: Path, ref: str) -> str:
-    """The commit for '--branch', preferring the remote-tracking branch.
+    """resolve_ref returns a commit hash from `repo`, preferring the remote-
+    tracking branch over the bare `ref`. It raises if neither resolves.
 
-    A fresh clone has only the default branch locally, and git's revision search
-    covers 'refs/remotes/<name>' — a remote *called* '<name>', not 'origin/<name>'
-    — so a remote-only branch does not resolve on its own.
+    NOTE: Template generation copies no tags; callers must pass a branch or
+    commit.
     """
     for candidate in (f"origin/{ref}", ref):
         result = subprocess.run(
@@ -384,6 +389,9 @@ def resolve_ref(repo: Path, ref: str) -> str:
 def clone_repository(
     args: argparse.Namespace, target: str, repo: Path, identity: tuple[str, str]
 ) -> None:
+    """clone_repository clones `target` into `repo`, sets the local Git identity,
+    and resets the checkout to the requested template ref.
+    """
     info(f"Cloning new repository to directory: {repo}")
     gh("repo", "clone", target, str(repo))
 
@@ -397,10 +405,8 @@ def clone_repository(
 
 
 def delete_other_branches(repo: Path) -> None:
-    """Drop every generated branch but 'main'.
-
-    A fresh clone has one local branch, so the remote is the only place the
-    generated branches appear.
+    """delete_other_branches deletes every remote branch except `main` from the
+    repository at `repo`.
     """
     for line in run("git", "ls-remote", "--heads", "origin", cwd=repo).splitlines():
         _, _, ref = line.partition("\t")
@@ -418,17 +424,21 @@ def delete_other_branches(repo: Path) -> None:
 
 
 def read_text(path: Path) -> str:
-    """Read without translating line endings, so a rewrite preserves them."""
+    """read_text returns UTF-8 text without translating line endings."""
     with path.open("r", encoding="utf-8", newline="") as file:
         return file.read()
 
 
 def write_text(path: Path, text: str) -> None:
+    """write_text overwrites `path` with UTF-8 text without translating line endings."""
     with path.open("w", encoding="utf-8", newline="") as file:
         file.write(text)
 
 
 def rewrite_readme(repo: Path, name: str, description: str, has_license: bool) -> None:
+    """rewrite_readme replaces the title and description and optionally removes
+    the license section. Missing expected headings raise RuntimeError.
+    """
     readme = repo / "README.md"
     if not readme.is_file():
         raise RuntimeError("template has no 'README.md'")
@@ -437,7 +447,6 @@ def rewrite_readme(repo: Path, name: str, description: str, has_license: bool) -
     if not lines or not lines[0].startswith("# "):
         raise RuntimeError("'README.md' does not open with a level-one heading")
 
-    # Reuse the template's own heading decoration rather than flattening it.
     heading = README_HEADING.match(lines[0].rstrip("\r\n"))
     decoration = (heading.group("open") or "") if heading else ""
     ending = lines[0][len(lines[0].rstrip("\r\n")) :] or "\n"
@@ -453,7 +462,6 @@ def rewrite_readme(repo: Path, name: str, description: str, has_license: bool) -
         if index is None:
             raise RuntimeError("failed to remove the license section of 'README.md'")
 
-        # Drop the heading, the blank line ahead of it, and everything after.
         body = body[: max(index - 1, 0)]
 
     write_text(readme, "".join(body))
@@ -462,10 +470,13 @@ def rewrite_readme(repo: Path, name: str, description: str, has_license: bool) -
 def update_contents(
     args: argparse.Namespace, repo: Path, source: str, target: str, name: str
 ) -> None:
+    """update_contents rewrites template metadata and amends the generated
+    commit. Private repositories lose their license and README license
+    section.
+    """
     info("Updating repository's contents.")
 
-    # Only paths the template actually has are staged: a pathspec matching
-    # nothing is a fatal error rather than a no-op.
+    # NOTE: Git rejects a staging pathspec that matches no files.
     staged = ["README.md"]
 
     license_path = repo / "LICENSE"
@@ -500,7 +511,9 @@ def update_contents(
 
 
 def release_extra_files(repo: Path) -> list[str]:
-    """The files 'release-please' keeps in sync with the manifest."""
+    """release_extra_files returns the root package's release-please extra files,
+    or an empty list when its configuration is absent.
+    """
     config = repo / RELEASE_PLEASE_CONFIG
     if not config.is_file():
         return []
@@ -510,7 +523,9 @@ def release_extra_files(repo: Path) -> list[str]:
 
 
 def rewrite_release_markers(path: Path, version: str) -> int:
-    """Rewrite the annotated version literals in one 'extra-files' entry."""
+    """rewrite_release_markers writes annotated version literals and returns
+    their count. `version` must contain three dot-separated components.
+    """
     major, minor, patch = version.split(".")
     components = {"version": version, "major": major, "minor": minor, "patch": patch}
 
@@ -524,8 +539,8 @@ def rewrite_release_markers(path: Path, version: str) -> int:
 
         replacement = components[match.group("kind")]
         if match.group("kind") == "version":
-            # Keep a literal 'v' the file wrote for itself; 'release-please'
-            # substitutes the version alone.
+            # NOTE: Release-please supplies bare versions; existing prefixes must
+            # survive.
             prefix = VERSION_PREFIX.match(match.group("literal"))
             replacement = (prefix.group("prefix") if prefix else "") + replacement
 
@@ -541,6 +556,10 @@ def rewrite_release_markers(path: Path, version: str) -> int:
 
 
 def initialize_releases(repo: Path) -> None:
+    """initialize_releases seeds release metadata, amends and force-pushes
+    `main`, then publishes the initial tag. A missing manifest skips release
+    setup.
+    """
     info("Initializing release for the repository.")
 
     manifest = repo / RELEASE_PLEASE_MANIFEST
@@ -551,8 +570,6 @@ def initialize_releases(repo: Path) -> None:
     write_text(manifest, json.dumps({".": INITIAL_VERSION}, indent=2) + "\n")
     staged = [RELEASE_PLEASE_MANIFEST.as_posix()]
 
-    # The manifest alone leaves the repository inconsistent, since 'extra-files'
-    # still carry the template's own version until they are rewritten too.
     for entry in release_extra_files(repo):
         path = repo / entry
         if not path.is_file():
@@ -582,10 +599,11 @@ def initialize_releases(repo: Path) -> None:
 
 
 def put_rule_set(target: str, payload: dict) -> None:
-    """Create the named rule set, or update the one already carrying that name.
+    """put_rule_set applies `payload` to the first ruleset with the same name,
+    creating one if absent. `payload` must include `name`.
 
-    The rule-set endpoint is not idempotent: a second POST creates a duplicate
-    rather than replacing the original.
+    NOTE: Repeated POST requests create duplicates; existing rulesets require
+    PUT.
     """
     existing = gh_json("api", f"repos/{target}/rulesets", default=[])
     match = next(
@@ -601,6 +619,9 @@ def put_rule_set(target: str, payload: dict) -> None:
 
 
 def main_branch_rules(args: argparse.Namespace) -> list[dict]:
+    """main_branch_rules returns default-branch rules for the requested
+    visibility and direct-push policy.
+    """
     rules: list[dict] = [
         {"type": "creation"},
         {"type": "deletion"},
@@ -640,8 +661,7 @@ def main_branch_rules(args: argparse.Namespace) -> list[dict]:
             }
         )
 
-    # Code scanning needs Advanced Security on a private repository, and a rule
-    # with no tool reporting blocks every merge.
+    # NOTE: A required scanner with no results blocks merges; private scanning is paid.
     if args.public:
         rules.append(
             {
@@ -662,12 +682,13 @@ def main_branch_rules(args: argparse.Namespace) -> list[dict]:
 
 
 def apply_rule_sets(args: argparse.Namespace, target: str) -> None:
+    """apply_rule_sets reconciles the default-branch `main` and `push` rulesets.
+    Force-push protection remains active when direct pushes are allowed.
+    """
     info("Applying repository rule sets.")
 
     if args.allow_direct_push:
-        # GitHub applies the status-check rule to direct pushes as well as
-        # merges, so keeping it would block every push for checks that never
-        # ran.
+        # NOTE: Required checks also gate direct pushes, before their workflows can run.
         info("Allowing direct pushes: omitting the pull-request and check rules.")
 
     put_rule_set(
@@ -702,6 +723,9 @@ def apply_rule_sets(args: argparse.Namespace, target: str) -> None:
 
 
 def apply_repository_settings(target: str) -> None:
+    """apply_repository_settings applies merge defaults and disables projects and
+    the wiki. Repository identity and issue settings remain unchanged.
+    """
     info("Updating repository settings.")
 
     gh_write(
@@ -718,8 +742,7 @@ def apply_repository_settings(target: str) -> None:
         "--enable-wiki=false",
     )
 
-    # Not exposed by 'gh repo edit'. 'release-please' parses the squashed
-    # commit's title, so it must be the pull request's.
+    # NOTE: Release-please parses squash titles; these fields require the REST API.
     gh_api(
         "PATCH",
         f"repos/{target}",
@@ -733,13 +756,15 @@ def apply_repository_settings(target: str) -> None:
 
 
 def apply_security_settings(args: argparse.Namespace, target: str) -> None:
+    """apply_security_settings enables dependency alerts and fixes, plus secret
+    and code scanning when `args.public` is true.
+    """
     info("Updating repository security settings.")
 
     gh_api("PUT", f"repos/{target}/vulnerability-alerts")
     gh_api("PUT", f"repos/{target}/automated-security-fixes")
 
-    # Secret scanning and code scanning both need Advanced Security on a
-    # private repository, so both are public-only.
+    # NOTE: Private scanning requires a paid entitlement this script does not provision.
     if not args.public:
         info("Skipping secret and code scanning: private repository.")
         return
@@ -752,27 +777,27 @@ def apply_security_settings(args: argparse.Namespace, target: str) -> None:
         "--enable-secret-scanning-push-protection",
     )
     gh_api(
-        "PUT", f"repos/{target}/code-scanning/default-setup", {"state": "configured"}
+        "PATCH", f"repos/{target}/code-scanning/default-setup", {"state": "configured"}
     )
 
 
 def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
+    """apply_actions_permissions applies token defaults and unions action
+    patterns with the existing allowlist. Unrestricted existing repositories
+    stay unrestricted unless patterns are supplied.
+    """
     info("Updating repository's GitHub Actions permissions.")
 
     current = gh_json("api", f"repos/{target}/actions/permissions", default={}) or {}
 
-    # SHA pinning is deliberately off. godot-infra's own actions are consumed by
-    # floating major tag ('@v5') across many dependent repositories, so
-    # repository-level enforcement would mean churn in every dependent on every
-    # infra release. Workflows pin third-party actions by hand instead.
+    # NOTE: SHA enforcement rejects the floating major tags used for godot-infra
+    # actions.
     permissions = {"enabled": True, "sha_pinning_required": False}
 
     unrestricted = current.get("allowed_actions") == "all"
     if args.existing and unrestricted and not args.allow_action:
-        # A repository on 'all' has no pattern list to union with, so
-        # reconciling it without '--allow-action' would empty the list and
-        # break every workflow that uses a third-party action. A repository
-        # being created has no runs to break, so creation always narrows.
+        # NOTE: Switching an unrestricted repository to an empty allowlist breaks
+        # actions.
         warn(
             "actions are unrestricted and no '--allow-action' was given; "
             "leaving 'allowed_actions' alone"
@@ -791,8 +816,7 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
             )
             or {}
         )
-        # The union is additive, since a reconcile run that forgot a pattern
-        # must not silently narrow what the repository already allows.
+        # NOTE: Reconciliation must preserve patterns omitted from this invocation.
         patterns = sorted(
             set(selected.get("patterns_allowed", [])) | set(args.allow_action)
         )
@@ -811,22 +835,18 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
         f"repos/{target}/actions/permissions/workflow",
         {
             "default_workflow_permissions": args.workflow_permissions,
-            # GitHub's default is off, and its hardening guidance is to leave it
-            # off unless a workflow needs it. None here approves pull requests.
             "can_approve_pull_request_reviews": False,
         },
     )
 
 
 def set_secret(target: str, name: str) -> None:
-    """Set one repository secret from the environment variable of that name.
+    """set_secret reads the environment variable `name` and stores it on
+    `target`. An unset or empty value raises; dry runs print only the secret
+    name.
 
-    Every flow carrying a secret value is confined here. The value goes to 'gh'
-    on stdin, which reads it when '--body' is omitted, so it reaches neither the
-    process list nor any output.
-
-    NOTE: This calls 'subprocess' directly because the shared 'run' echoes its
-    argv under '-v'.
+    NOTE: Secret values go through stdin and never enter verbose command
+    output.
     """
     if not os.environ.get(name):
         raise RuntimeError(
@@ -834,9 +854,8 @@ def set_secret(target: str, name: str) -> None:
         )
 
     if DRY_RUN:
-        # The name, never the value. CodeQL taints a name that keys a secret
-        # and flags this line; the alert is dismissed as a false positive,
-        # since 'gh secret list' prints names too.
+        # NOTE: CodeQL taints the name used to look up a secret; printing it is
+        # intentional.
         print(f"dry-run: gh secret set {name} --repo {target} (value from ${name})")
         return
 
@@ -850,11 +869,13 @@ def set_secret(target: str, name: str) -> None:
 
 
 def apply_secrets(args: argparse.Namespace, target: str) -> None:
+    """apply_secrets stores each requested secret from its environment variable.
+    An unset or empty value stops the operation.
+    """
     if not args.secret_names:
         return
 
-    # Printing the names here would route a CodeQL-tainted value through the
-    # general-purpose printer, so print only how many there are.
+    # NOTE: Printing only the count keeps CodeQL secret taint out of the shared logger.
     info(f"Setting {len(args.secret_names)} repository secret(s).")
 
     for name in args.secret_names:
@@ -862,10 +883,8 @@ def apply_secrets(args: argparse.Namespace, target: str) -> None:
 
 
 def check_visibility(args: argparse.Namespace, target: str) -> None:
-    """Report, never change, a visibility that disagrees with the flag.
-
-    Configure runs against repositories it did not create, where flipping
-    visibility is never what the operator meant to ask for.
+    """check_visibility warns if the repository visibility differs from
+    `args.public`, without changing either the visibility or the argument.
     """
     view = gh_json("repo", "view", target, "--json", "isPrivate", default=None)
     if view is None:
@@ -881,7 +900,10 @@ def check_visibility(args: argparse.Namespace, target: str) -> None:
 
 
 def configure(args: argparse.Namespace, target: str) -> None:
-    """Everything that can be re-applied to an existing repository."""
+    """configure reapplies repository settings, secrets and rulesets without
+    changing content or visibility. Failures may leave earlier settings
+    applied.
+    """
     check_visibility(args, target)
     apply_repository_settings(target)
     apply_security_settings(args, target)
@@ -897,18 +919,23 @@ def configure(args: argparse.Namespace, target: str) -> None:
 
 @dataclass
 class Checklist:
-    """What the run could not do for itself, reported rather than enforced."""
+    """Checklist collects follow-up actions and distinguishes unchecked content
+    from a completed check with no findings.
+    """
 
+    # items preserves findings in reporting order.
     items: list[str] = field(default_factory=list)
+    # ran distinguishes skipped checks from checks with no findings.
     ran: bool = False
 
     def add(self, item: str) -> None:
         self.items.append(item)
 
     def report(self) -> None:
+        """report prints collected findings, or distinguishes a clean checklist
+        from content checks that did not run.
+        """
         if not self.ran:
-            # The content checks need a checkout, which only a creating run
-            # has, so a clean report would claim more than was looked at.
             info("Settings applied. Content checks need a checkout; none was made.")
             return
 
@@ -922,6 +949,9 @@ class Checklist:
 
 
 def workflow_files(repo: Path) -> list[Path]:
+    """workflow_files returns sorted YAML paths directly under
+    `.github/workflows`, or an empty list if the directory is absent.
+    """
     workflows = repo / ".github" / "workflows"
     if not workflows.is_dir():
         return []
@@ -930,16 +960,14 @@ def workflow_files(repo: Path) -> list[Path]:
 
 
 def configured_secrets(target: str) -> set[str]:
+    """configured_secrets returns repository secret names without accessing values."""
     secrets = gh_json("secret", "list", "--repo", target, "--json", "name", default=[])
     return {secret["name"] for secret in secrets or []}
 
 
 def check_secrets(target: str, workflows: list[Path], checklist: Checklist) -> None:
-    """Diff the secrets the workflows read against the ones that are set.
-
-    A token secret is consumed as '${{ secrets.X || github.token }}', so one
-    stored under a name no workflow reads degrades the pipeline silently
-    instead of failing it.
+    """check_secrets adds missing workflow secret names to `checklist`, excluding
+    the built-in GITHUB_TOKEN.
     """
     wanted: set[str] = set()
     for workflow in workflows:
@@ -954,10 +982,8 @@ def check_secrets(target: str, workflows: list[Path], checklist: Checklist) -> N
 def check_third_party_actions(
     args: argparse.Namespace, target: str, workflows: list[Path], checklist: Checklist
 ) -> None:
-    """Name third-party actions the allow-list does not cover.
-
-    These are reported rather than added, since deriving an allow-list from
-    content would widen it silently.
+    """check_third_party_actions adds external actions uncovered by explicit
+    allow-action patterns to `checklist`. It does not change the allowlist.
     """
     owner = target.partition("/")[0]
     allowed = {pattern.partition("@")[0] for pattern in args.allow_action}
@@ -983,6 +1009,9 @@ def check_third_party_actions(
 def check_status_checks(
     args: argparse.Namespace, workflows: list[Path], checklist: Checklist
 ) -> None:
+    """check_status_checks adds required contexts with no matching workflow job
+    ID to `checklist`.
+    """
     defined: set[str] = set()
     for workflow in workflows:
         defined |= set(JOB_ID.findall(workflow.read_text(encoding="utf-8")))
@@ -996,7 +1025,9 @@ def check_status_checks(
 
 
 def check_workflow_permissions(workflows: list[Path], checklist: Checklist) -> None:
-    """A default of 'read' is only safe while every workflow declares its own."""
+    """check_workflow_permissions adds workflows with no top-level permissions
+    block to `checklist`.
+    """
     for workflow in workflows:
         text = workflow.read_text(encoding="utf-8")
         if not TOP_LEVEL_PERMISSIONS.search(text):
@@ -1009,6 +1040,9 @@ def check_workflow_permissions(workflows: list[Path], checklist: Checklist) -> N
 def check_code_owners(
     args: argparse.Namespace, repo: Path, checklist: Checklist
 ) -> None:
+    """check_code_owners reports missing CODEOWNERS files when pull requests are
+    required.
+    """
     if args.allow_direct_push:
         return
 
@@ -1027,7 +1061,9 @@ def check_code_owners(
 
 
 def check_template_links(repo: Path, source: str, checklist: Checklist) -> None:
-    """Catch references to the template that the rewrite did not reach."""
+    """check_template_links adds readable files still referencing `source` to
+    `checklist`, excluding Git metadata.
+    """
     survivors = []
     for path in sorted(repo.rglob("*")):
         if not path.is_file() or ".git" in path.parts:
@@ -1052,7 +1088,9 @@ def run_checks(
     target: str,
     checklist: Checklist,
 ) -> None:
-    """Content-derived checks, possible only while the checkout is in hand."""
+    """run_checks marks content checks as attempted and collects findings from
+    `repo`. A repository with no workflow files skips all checks.
+    """
     checklist.ran = True
 
     workflows = workflow_files(repo)
@@ -1073,6 +1111,9 @@ def run_checks(
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
+    """parse_args validates CLI options and supplies defaults. Invalid
+    combinations exit through argparse before repository operations begin.
+    """
     parser = argparse.ArgumentParser(
         description=__doc__.splitlines()[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1150,8 +1191,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     secrets = parser.add_argument_group("secrets")
     secrets.add_argument(
         "--secret",
-        # Names, not values. The distinction stays in the identifier because
-        # the names are printed and the values never are.
         dest="secret_names",
         action="append",
         default=[],
@@ -1182,15 +1221,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
     args = parser.parse_args(argv)
 
-    # 'append' adds to whatever default it is given, so the default is applied
-    # here rather than seeded into the option.
+    # NOTE: An argparse append default would remain when explicit checks are supplied.
     args.status_check = args.status_check or [DEFAULT_STATUS_CHECK]
 
     if args.existing:
-        # Being past creation means being past the content stage, so nothing
-        # naming content is accepted. '--description' carries a default, so
-        # writing it here would replace a live repository's own description
-        # with this script's placeholder.
+        # NOTE: Bootstrap defaults must not overwrite an existing repository's metadata.
         for option, value in (
             ("--description", args.description),
             ("--branch", args.branch),
@@ -1208,6 +1243,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def repository_exists(target: str) -> bool:
+    """repository_exists reports whether GitHub CLI can resolve `target`. Lookup
+    failures, including authorization failures, return false.
+    """
     return (
         subprocess.run(
             [GH, "repo", "view", target], capture_output=True, text=True
@@ -1223,7 +1261,9 @@ def bootstrap(
     name: str,
     checklist: Checklist,
 ) -> None:
-    """Everything that happens exactly once, at creation."""
+    """bootstrap generates and initializes a new repository, refusing an existing
+    target. Dry runs omit cloning and content changes.
+    """
     if repository_exists(target):
         raise RuntimeError(
             "repository already exists; pass '--existing' to apply settings to it"
@@ -1256,6 +1296,10 @@ def bootstrap(
 
 
 def main(argv: list[str]) -> int:
+    """main runs the requested bootstrap or reconciliation and returns zero on
+    success or one on an operational failure. Invalid arguments exit through
+    argparse.
+    """
     global GH, VERBOSE, DRY_RUN
 
     args = parse_args(argv)
