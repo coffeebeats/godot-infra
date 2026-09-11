@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.5.2 (2026-09-11)
+
+## What's Changed
+* fix(scripts): use PATCH for CodeQL default setup by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/583
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.5.1...v5.5.2
+
 ## 5.5.1 (2026-09-10)
 
 ## What's Changed
