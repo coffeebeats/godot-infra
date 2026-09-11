@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.5.3 (2026-09-11)
+
+## What's Changed
+* fix(scripts): honor pinned template refs by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/585
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.5.2...v5.5.3
+
 ## 5.5.2 (2026-09-11)
 
 ## What's Changed
