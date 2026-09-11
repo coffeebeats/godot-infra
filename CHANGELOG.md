@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.5.4 (2026-09-11)
+
+## What's Changed
+* fix(scripts): normalize stale infra action paths by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/587
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.5.3...v5.5.4
+
 ## 5.5.3 (2026-09-11)
 
 ## What's Changed
