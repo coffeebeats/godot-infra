@@ -45,7 +45,15 @@ INFRA_README = (
 # "- `v5` (`main`): `v4.7.2`" in the README's version table.
 INFRA_ROW = re.compile(r"^- `(v\d+)`(?: \(`main`\))?: `v(\d+\.\d+)", re.MULTILINE)
 INFRA_MAIN_ROW = re.compile(r"^- `v\d+` \(`main`\): `v([\d.]+)`", re.MULTILINE)
-INFRA_PIN = re.compile(r"(coffeebeats/godot-infra/[^\s@'\"]+@)(v\d+(?:\.\d+){0,2})\b")
+INFRA_PIN = re.compile(r"(coffeebeats/godot-infra/)([^\s@'\"]+)@(v\d+(?:\.\d+){0,2})\b")
+INTERNAL_INFRA_PIN = re.compile(r"(\$/[^\s@'\"]+)@v\d+(?:\.\d+){0,2}\b")
+
+# check-godot-project is a public root action. The old path was never a valid
+# public action, but it appeared in downstream workflows after the internal
+# action-path migration.
+INFRA_ACTION_ALIASES = {
+    ".github/actions/check-godot-project": "check-godot-project",
+}
 
 
 # ---------------------------------------------------------------------------- #
@@ -213,9 +221,12 @@ def repin(pin: str, infra_tag: str) -> str:
     return "v" + infra_tag.removeprefix("v").split(".")[0]
 
 
-def upgrade_infra_pins(project: Path, infra_tag: str, summary: Summary) -> None:
-    """Re-pin every 'coffeebeats/godot-infra/<path>@vN[.x.y]' under '.github' to
-    the new floating major."""
+def upgrade_infra_pins(project: Path, infra_tag: str | None, summary: Summary) -> None:
+    """Normalize and optionally re-pin godot-infra actions under '.github'.
+
+    ``infra_tag`` is absent when the Godot version is already current; stale
+    action paths still need repair on that route.
+    """
     workflows = project / ".github"
     if not workflows.is_dir():
         return
@@ -223,17 +234,31 @@ def upgrade_infra_pins(project: Path, infra_tag: str, summary: Summary) -> None:
     for path in sorted(workflows.rglob("*.y*ml")):
         text = path.read_text()
         changed = 0
+        normalized_paths = 0
 
         def replace(match: re.Match[str]) -> str:
-            nonlocal changed
-            new_pin = repin(match.group(2), infra_tag)
-            changed += new_pin != match.group(2)
-            return match.group(1) + new_pin
+            nonlocal changed, normalized_paths
+            old_path = match.group(2)
+            new_path = INFRA_ACTION_ALIASES.get(old_path, old_path)
+            new_pin = repin(match.group(3), infra_tag) if infra_tag else match.group(3)
+            replacement = match.group(1) + new_path + "@" + new_pin
+            normalized_paths += new_path != old_path
+            changed += replacement != match.group(0)
+            return replacement
 
         updated = INFRA_PIN.sub(replace, text)
+        updated, internal_count = INTERNAL_INFRA_PIN.subn(r"\1", updated)
         if changed:
             path.write_text(updated)
             count += changed
+        elif updated != text:
+            path.write_text(updated)
+        normalized = normalized_paths + internal_count
+        if normalized:
+            summary.changes.append(
+                f"{path.relative_to(project)}: normalized {normalized}"
+                " godot-infra action path(s)"
+            )
         elif "coffeebeats/godot-infra/" in text:
             # A SHA pin, or a shape this script does not know; do not guess.
             summary.warnings.append(
@@ -242,7 +267,8 @@ def upgrade_infra_pins(project: Path, infra_tag: str, summary: Summary) -> None:
             )
     if count:
         summary.changes.append(
-            f".github: {count} godot-infra pins -> {repin('', infra_tag)}"
+            f".github: {count} godot-infra pins -> "
+            f"{repin('', infra_tag) if infra_tag else 'unchanged'}"
         )
 
 
@@ -484,20 +510,20 @@ def run_upgrade(args: argparse.Namespace) -> int:
     print(f"route: {route} (v{old.tag} -> v{new.tag})")
 
     # Every remote lookup that can fail happens before the first write.
+    infra_tag: str | None = None
     if route in ("minor", "fork"):
         infra_tag = resolve_infra_tag(new)
 
     if route == "fork":
         upgrade_fork(publish, new, summary)
-        upgrade_infra_pins(project, infra_tag, summary)
     if route == "minor":
         upgrade_submodules(project, old, new, summary)
     if route in ("patch", "minor"):
         upgrade_pin(project, new, summary)
     if route == "minor":
-        upgrade_infra_pins(project, infra_tag, summary)
         upgrade_features(project, old, new, summary)
         upgrade_readme(project, old, new, summary)
+    upgrade_infra_pins(project, infra_tag, summary)
 
     for change in summary.changes:
         print(f"changed: {change}")

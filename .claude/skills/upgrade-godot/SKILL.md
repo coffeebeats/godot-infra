@@ -109,7 +109,8 @@ Everything here takes the bare `<OLD>` → `<NEW>` major.minor, never the full v
    trusting that count:
 
    ```bash
-   git grep -n 'coffeebeats/godot-infra/[a-z-]*@v[0-9]' -- '*.md' '*.yml' '*.yaml'
+   git grep -n -E 'coffeebeats/godot-infra/(\.github/actions/)?[a-z-]+@v[0-9]' -- '*.md' '*.yml' '*.yaml'
+   git grep -n -E 'uses:.*\$/[^@[:space:]\"]+@' -- '*.yml' '*.yaml'
    ```
 
    **Search `*.md`.** Seven action files carried these pins too, until `e2758f0` (#530) switched
@@ -117,6 +118,8 @@ Everything here takes the bare `<OLD>` → `<NEW>` major.minor, never the full v
    until then and has matched nothing since, reporting itself done every time — which is how `v5`
    shipped with the examples still reading `@v4`. Bump them here, in the upgrade commit;
    `@<NEW_TAG>` dangles until release-please cuts the tag on merge, and that is expected.
+   `check-godot-project` is a root action; only the helper actions under `.github/actions/`
+   use that path in public references.
 
 ## Dependency research — minor route only
 
