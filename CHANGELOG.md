@@ -1,5 +1,14 @@
 # Changelog
 
+## 6.0.0 (2026-09-12)
+
+## What's Changed
+* feat!: publish reusable workflows and select toolchain images by Godot minor by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/589
+* feat!: replace 'release-project.yaml' with an 'attach-release-assets' action by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/591
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v5.5.4...v6.0.0
+
 ## 5.5.4 (2026-09-11)
 
 ## What's Changed
