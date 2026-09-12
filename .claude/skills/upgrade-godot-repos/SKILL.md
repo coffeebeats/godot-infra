@@ -5,6 +5,8 @@ disable-model-invocation: true
 argument-hint: "[<repo-path>...] [godot-version]"
 ---
 
+> **OUTDATED (v6):** `godot-infra` no longer tracks a Godot minor. The README version list, `GODOT_MAJOR_MINOR_VERSION`, and the infra-major bump this skill describes no longer exist; supported minors live in `godot-versions.txt`. This skill is pending removal.
+
 Upgrade the local checkouts named in `$ARGUMENTS` to the Godot release that `godot-infra`'s `main`
 currently targets, the top row of its README version table. A trailing argument that is not an
 existing path is a version override, `X.Y.Z`, for moving repositories along an older line. No

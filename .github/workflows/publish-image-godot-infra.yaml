@@ -3,16 +3,15 @@ name: "🐳 Publish: 'godot-infra' images (all platforms)"
 # NOTE: This workflow is intended to be used during releases.
 
 on:
-  # Schedule regular updates for the currently supported Godot major-minor
-  # version. This ensures dependencies get security patches applied.
-  schedule:
-    - cron: "0 14 * * 0" # Every Sunday at 14:00 UTC
   push:
     branches:
       - main
-      - godot-v*
   workflow_dispatch:
     inputs:
+      godot-major-minor-version:
+        type: string
+        description: "The Godot major-minor version to build images for (default: the last line of 'godot-versions.txt')."
+        required: false
       force:
         type: boolean
         description: Rebuild all images without using the cache.
@@ -22,12 +21,6 @@ on:
 permissions:
   contents: write
   packages: write
-
-env:
-  # The Godot minor version which images on 'main' are defined to support. Only
-  # one version of the image will be provided per Godot minor version/platform
-  # pair.
-  GODOT_MAJOR_MINOR_VERSION: 4.7
 
 jobs:
   build-required:
@@ -44,59 +37,74 @@ jobs:
       export-godot-project-preset-web: ${{ github.event_name == 'workflow_dispatch' || steps.export-godot-project-preset-web.outputs.any_modified == 'true' || steps.missing.outputs.export-godot-project-preset-web == 'true' }}
 
     steps:
-      - name: Determine the target major-minor version
-        id: target
-        shell: bash
-        run: |
-          VERSION="${{ env.GODOT_MAJOR_MINOR_VERSION }}"
-          if [[ "${{ github.ref_name }}" != "main" ]]; then
-            VERSION="$(echo ${{ github.ref_name }} | sed -E 's/^godot-//' | sed -E 's/^v//')"
-          fi
-
-          if [[ -z "$VERSION" ]]; then
-            echo "Failed to determine version!"
-            exit 1
-          fi
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 2
+
+      # NOTE: 'main' only ever builds images for the newest supported minor (the
+      # last line of 'godot-versions.txt'). Older minors' tags are frozen; rebuild
+      # one by dispatching this workflow from the commit that targeted it.
+      - name: Determine the target major-minor version
+        id: target
+        shell: bash
+        env:
+          VERSION_OVERRIDE: ${{ inputs.godot-major-minor-version }}
+        run: |
+          VERSION="$VERSION_OVERRIDE"
+          if [[ -z "$VERSION" ]]; then
+            VERSION="$(grep -v '^#' godot-versions.txt | grep -v '^$' | tail -n 1)"
+          fi
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Failed to determine a valid major-minor version: '$VERSION'"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # NOTE: The '*.sh' build commands are mounted into the container at run
+      # time rather than baked in, so a change to one must not rebuild an image
+      # whose tag consumers already pin.
 
       # compile-godot-export-template
 
       - id: compile-godot-export-template-macos
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
         with:
-          files: compile-godot-export-template/macos/
+          files: actions/compile-godot-export-template/macos/
+          files_ignore: actions/compile-godot-export-template/macos/*.sh
 
       - id: compile-godot-export-template-windows
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
         with:
-          files: compile-godot-export-template/windows/
+          files: actions/compile-godot-export-template/windows/
+          files_ignore: actions/compile-godot-export-template/windows/*.sh
 
       - id: compile-godot-export-template-web
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
         with:
-          files: compile-godot-export-template/web/
+          files: actions/compile-godot-export-template/web/
+          files_ignore: actions/compile-godot-export-template/web/*.sh
 
       # export-godot-project-preset
 
       - id: export-godot-project-preset-macos
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
         with:
-          files: export-godot-project-preset/macos/
+          files: actions/export-godot-project-preset/macos/
+          files_ignore: actions/export-godot-project-preset/macos/*.sh
 
       - id: export-godot-project-preset-windows
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
         with:
-          files: export-godot-project-preset/windows/
+          files: actions/export-godot-project-preset/windows/
+          files_ignore: actions/export-godot-project-preset/windows/*.sh
 
       - id: export-godot-project-preset-web
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
         with:
-          files: export-godot-project-preset/web/
+          files: actions/export-godot-project-preset/web/
+          files_ignore: actions/export-godot-project-preset/web/*.sh
 
       # Check for images
 
@@ -114,7 +122,7 @@ jobs:
           for img in compile-godot-export-template export-godot-project-preset; do
             for platform in macos windows web; do
               if [[ $(docker manifest inspect ghcr.io/coffeebeats/$img:godot-v${{ steps.target.outputs.version }}-$platform &>/dev/null; echo $?) -ne 0 ]]; then
-                echo "$img-$platform=true" >> $GITHUB_OUTPUT
+                echo "$img-$platform=true" >> "$GITHUB_OUTPUT"
               fi
             done
           done
@@ -123,7 +131,6 @@ jobs:
     needs: ["build-required"]
 
     if: |
-      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.compile-godot-export-template-macos == 'true'
 
@@ -131,13 +138,12 @@ jobs:
     with:
       platform: "macos"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
+      force: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
 
   compile-godot-export-template-windows:
     needs: ["build-required"]
 
     if: |
-      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.compile-godot-export-template-windows == 'true'
 
@@ -145,13 +151,12 @@ jobs:
     with:
       platform: "windows"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
+      force: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
 
   compile-godot-export-template-web:
     needs: ["build-required"]
 
     if: |
-      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.compile-godot-export-template-web == 'true'
 
@@ -159,13 +164,12 @@ jobs:
     with:
       platform: "web"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
+      force: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
 
   export-godot-project-preset-macos:
     needs: ["build-required"]
 
     if: |
-      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.export-godot-project-preset-macos == 'true'
 
@@ -173,13 +177,12 @@ jobs:
     with:
       platform: "macos"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
+      force: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
 
   export-godot-project-preset-windows:
     needs: ["build-required"]
 
     if: |
-      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.export-godot-project-preset-windows == 'true'
 
@@ -187,13 +190,12 @@ jobs:
     with:
       platform: "windows"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
+      force: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
 
   export-godot-project-preset-web:
     needs: ["build-required"]
 
     if: |
-      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       needs.build-required.outputs.export-godot-project-preset-web == 'true'
 
@@ -201,4 +203,4 @@ jobs:
     with:
       platform: "web"
       godot-major-minor-version: ${{ needs.build-required.outputs.version }}
-      force: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
+      force: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}

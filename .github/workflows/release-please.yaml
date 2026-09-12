@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - godot-v*
 
 permissions:
   contents: write

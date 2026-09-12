@@ -4,20 +4,54 @@ on:
   pull_request:
     branches:
       - main
-      - godot-v*
   push:
     branches:
       - main
-      - godot-v*
 
 permissions:
   contents: read
+
+# NOTE: A cancelled compile saves no cache, but a second multi-hour self-test
+# running alongside the first is worse.
+concurrency:
+  group: "${{ github.workflow }}-${{ github.head_ref || github.ref }}"
+  cancel-in-progress: true
 
 defaults:
   run:
     shell: bash
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      has_pipeline_change: "${{ steps.check-pipeline.outputs.any_modified == 'true' }}"
+      godot-versions: ${{ steps.versions.outputs.value }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      # NOTE: The self-test compiles export templates, so only run it for
+      # changes that can affect the pipeline (not scripts, docs, or releases).
+      - name: Check for pipeline changes
+        id: check-pipeline
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
+        with:
+          files: |
+            actions/**
+            .github/**
+            tests/**
+            godot-versions.txt
+            scripts/resolve_godot_versions.py
+
+      - name: Resolve supported Godot versions
+        id: versions
+        run: echo "value=$(python3 scripts/resolve_godot_versions.py godot-versions.txt)" >> "$GITHUB_OUTPUT"
+
   check-python:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -38,10 +72,77 @@ jobs:
       - name: Verify Python source code is formatted
         run: uv run ruff format --check .
 
+  check-shell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      # NOTE: 'shellcheck' is preinstalled on GitHub-hosted Ubuntu runners.
+      - name: Lint shell scripts
+        run: |
+          shopt -s globstar
+          shellcheck --severity=warning actions/**/*.sh
+
+  check-workflows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      # NOTE: 'actionlint' is not preinstalled, but 'go' is, and a pinned
+      # module version is verified against the checksum database.
+      - name: Install 'actionlint'
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+
+      # NOTE: The '$/' same-repository reference is newer than 'actionlint', so
+      # it reads as a malformed 'uses'. These patterns match only that message
+      # and leave the rest of the rule in force.
+      # NOTE: This also runs 'shellcheck' over every 'run:' block, at its
+      # default severity.
+      - name: Lint workflow files
+        run: |
+          "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/' -ignore 'reusable workflow call "\$/'
+
+  # The self-test exports the sample project with every supported Godot
+  # version through the reusable workflows, so a release never ships an
+  # untested pipeline.
+  export:
+    needs: ["changes"]
+    if: needs.changes.outputs.has_pipeline_change == 'true'
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        version: ${{ fromJson(needs.changes.outputs.godot-versions) }}
+        platform: [macos, web, windows]
+        include:
+          - platform: macos
+            arch: universal
+          - platform: web
+            arch: wasm32
+          - platform: windows
+            arch: x86_64
+
+    # NOTE: Calling 'publish-game' rather than 'export-project' directly also
+    # exercises the nested reusable-workflow call and its '$/' reference.
+    uses: ./.github/workflows/publish-game.yaml
+    secrets: inherit
+    with:
+      project-path: tests/project
+      godot-version: ${{ matrix.version }}
+      platform: ${{ matrix.platform }}
+      arch: ${{ matrix.arch }}
+      storefront: unknown
+      profile: release
+
   # Used to ensure all branch protection requirements are met. This is a workaround until
   # https://github.com/github-community/community/discussions/4324 is addressed.
   branch_protection:
-    needs: ["check-python"]
+    needs: ["changes", "check-python", "check-shell", "check-workflows", "export"]
     if: ${{ always() }}
 
     runs-on: ubuntu-latest

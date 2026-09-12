@@ -26,6 +26,10 @@ DEFAULT_TEMPLATE_OWNER = "coffeebeats"
 # DEFAULT_STATUS_CHECK names the family's aggregate job; `--status-check` overrides it.
 DEFAULT_STATUS_CHECK = "branch_protection"
 
+# DEFAULT_TOPIC marks active repositories so bulk edits can find them with
+# `gh repo list <owner> --topic godot-infra --no-archived`.
+DEFAULT_TOPIC = "godot-infra"
+
 # GITHUB_ACTIONS_APP_ID identifies GitHub Actions as the required-check provider.
 GITHUB_ACTIONS_APP_ID = 15368
 
@@ -762,16 +766,24 @@ def apply_rule_sets(args: argparse.Namespace, target: str) -> None:
     )
 
 
-def apply_repository_settings(target: str) -> None:
-    """apply_repository_settings applies merge defaults and disables projects and
-    the wiki. Repository identity and issue settings remain unchanged.
+def apply_repository_settings(args: argparse.Namespace, target: str) -> None:
+    """apply_repository_settings applies merge defaults, disables projects and
+    the wiki, and adds the topics that mark the repository as maintained with
+    `godot-infra`. Repository identity and issue settings remain unchanged.
     """
     info("Updating repository settings.")
+
+    topics = [
+        flag
+        for topic in [DEFAULT_TOPIC, *args.topic]
+        for flag in ("--add-topic", topic)
+    ]
 
     gh_write(
         "repo",
         "edit",
         target,
+        *topics,
         "--allow-update-branch",
         "--delete-branch-on-merge",
         "--enable-auto-merge",
@@ -945,7 +957,7 @@ def configure(args: argparse.Namespace, target: str) -> None:
     applied.
     """
     check_visibility(args, target)
-    apply_repository_settings(target)
+    apply_repository_settings(args, target)
     apply_security_settings(args, target)
     apply_actions_permissions(args, target)
     apply_secrets(args, target)
@@ -1200,6 +1212,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
             "a status check required to merge into the default branch; "
             f"repeatable (default={DEFAULT_STATUS_CHECK})"
         ),
+    )
+    policy.add_argument(
+        "--topic",
+        action="append",
+        default=[],
+        metavar="TOPIC",
+        help=f"add a repository topic (repeatable; '{DEFAULT_TOPIC}' is always added)",
     )
     policy.add_argument(
         "--allow-action",

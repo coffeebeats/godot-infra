@@ -1,0 +1,4 @@
+# Godot minor versions with published toolchain images, oldest first.
+# The last line is the version 'main' targets and builds; earlier lines are
+# frozen tags built by the commit that targeted them. See README.md.
+4.7
