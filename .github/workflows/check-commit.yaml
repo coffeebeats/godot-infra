@@ -115,7 +115,7 @@ jobs:
   # Used to ensure all branch protection requirements are met. This is a workaround until
   # https://github.com/github-community/community/discussions/4324 is addressed.
   branch_protection:
-    needs: ["check-python", "check-shell", "export"]
+    needs: ["changes", "check-python", "check-shell", "export"]
     if: ${{ always() }}
 
     runs-on: ubuntu-latest
