@@ -12,7 +12,7 @@ pin, resolves the requested target release, and picks one route:
          version in its publish workflow
 
 The pin is written by 'gdenv pin'. A minor route fails before writing anything
-when a submodule branch is not published yet. 'godot-infra' is not involved:
+when a submodule branch is not published yet. 'godot-infra' is not involved;
 its actions and workflows select toolchain images from the pin at run time.
 
 What changed is written as JSON to '--output'. Reimporting and committing are

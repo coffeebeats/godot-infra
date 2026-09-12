@@ -17,13 +17,14 @@ from pathlib import Path
 
 GODOT_REPOSITORY = "https://github.com/godotengine/godot"
 
-# Prerelease kinds in ascending order of maturity.
+# PRERELEASE_RANK orders prerelease kinds by maturity, least mature first.
 PRERELEASE_RANK = {"dev": 0, "beta": 1, "rc": 2}
 
 TAG = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?-(stable|dev|beta|rc)(\d*)$")
 
 
 def list_tags() -> list[str]:
+    """list_tags returns every tag name in the upstream Godot repository."""
     out = subprocess.run(
         ["git", "ls-remote", "--tags", "--refs", GODOT_REPOSITORY],
         check=True,
@@ -38,6 +39,7 @@ def list_tags() -> list[str]:
 
 
 def read_minors(path: Path) -> list[str]:
+    """read_minors returns the 'X.Y' entries in a versions file, comments stripped."""
     minors = []
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.split("#", 1)[0].strip()
@@ -47,6 +49,7 @@ def read_minors(path: Path) -> list[str]:
 
 
 def resolve(minor: str, tags: list[str]) -> str:
+    """resolve returns the newest stable tag for a minor, or its newest prerelease."""
     major, minor_ = minor.split(".")
     stable: list[tuple[int, str]] = []
     pre: list[tuple[int, int, int, str]] = []
@@ -70,6 +73,7 @@ def resolve(minor: str, tags: list[str]) -> str:
 
 
 def main() -> None:
+    """main prints the resolved tags for the versions file named on the CLI."""
     path = Path(sys.argv[1] if len(sys.argv) > 1 else "godot-versions.txt")
     tags = list_tags()
     print(json.dumps([resolve(minor, tags) for minor in read_minors(path)]))

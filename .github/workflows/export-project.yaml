@@ -102,7 +102,7 @@ jobs:
           gdenv-pin-path: ${{ inputs.project-path }}/.godot-version
 
       # NOTE: Optional build inputs are only passed to the compile action when
-      # the project actually has them.
+      # the project has them.
       - name: Detect optional build inputs
         id: files
         env:
@@ -140,8 +140,6 @@ jobs:
           # at a segment boundary and, when a component is named, begins with
           # that component. Each 'case' pattern quotes its variable, so glob
           # characters in a component match literally.
-          #
-          # NOTE: Several presets can match; they package into one artifact.
           PRESETS=()
 
           while IFS= read -r NAME; do
@@ -184,9 +182,8 @@ jobs:
     timeout-minutes: 120
 
     env:
-      # NOTE: The export template passes between jobs as an artifact. Unlike a
-      # shared cache entry, every matrix member of the 'export' job can read
-      # it without racing to delete it.
+      # NOTE: The export template passes between jobs as an artifact, which
+      # every matrix member of the 'export' job can read without contention.
       ARTIFACT_NAME: export-template-${{ inputs.component != '' && format('{0}-', inputs.component) || '' }}${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.storefront }}-${{ inputs.profile }}${{ needs.config.outputs.artifact-suffix }}
 
     outputs:

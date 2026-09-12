@@ -252,10 +252,8 @@ runs:
 
         mkdir $GITHUB_WORKSPACE/dist
 
-    # NOTE: The per-platform export commands live in '<platform>/export.sh'
-    # beside the platform's Dockerfile and are mounted into the export
-    # container at run time. The same scripts can be run locally; see the
-    # README.
+    # NOTE: The export commands are '<platform>/export.sh', mounted into the
+    # export container at run time and runnable locally (see the README).
     - name: Export the Godot project preset
       shell: bash
       env:

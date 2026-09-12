@@ -79,9 +79,9 @@ jobs:
           shopt -s globstar
           shellcheck --severity=warning actions/**/*.sh
 
-  # Self-test: export the sample project with every supported Godot version
-  # through the reusable workflows, so a release never ships an untested
-  # pipeline.
+  # The self-test exports the sample project with every supported Godot
+  # version through the reusable workflows, so a release never ships an
+  # untested pipeline.
   export:
     needs: ["changes"]
     if: needs.changes.outputs.has_pipeline_change == 'true'

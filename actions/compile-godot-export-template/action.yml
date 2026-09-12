@@ -272,10 +272,8 @@ runs:
 
         echo "value=$TARGET" >> "$GITHUB_OUTPUT"
 
-    # NOTE: The per-platform build commands live in
-    # '<platform>/compile.sh' beside the platform's Dockerfile and are mounted
-    # into the toolchain container at run time. The same scripts can be run
-    # locally; see the README.
+    # NOTE: The build commands are '<platform>/compile.sh', mounted into the
+    # toolchain container at run time and runnable locally (see the README).
     - name: Compile the export template
       if: steps.godot-cache.outputs.cache-hit != 'true'
       shell: bash
