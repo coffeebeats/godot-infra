@@ -77,6 +77,10 @@ inputs:
   artifact-name:
     description: "The uploaded artifact's name (only used if 'publish' is 'true')."
     required: false
+  artifact-retention-days:
+    description: "How many days to keep the uploaded artifact (only used if 'publish' is 'true'; defaults to the repository setting)."
+    required: false
+    default: ""
 
 outputs:
   root:
@@ -348,3 +352,4 @@ runs:
         # which generated folders or multiple files are supported.
         path: ${{ github.workspace }}/dist
         if-no-files-found: error
+        retention-days: ${{ inputs.artifact-retention-days }}

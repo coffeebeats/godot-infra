@@ -274,8 +274,10 @@ jobs:
 
       - uses: $/actions/export-godot-project-preset
         with:
+          # NOTE: These are intermediate artifacts; 'package' collects them.
           publish: true
           artifact-name: "export-${{ matrix.preset }}"
+          artifact-retention-days: 1
 
           preset-name: "${{ matrix.preset }}"
           project-path: ${{ inputs.project-path }}
@@ -323,12 +325,6 @@ jobs:
 
           pattern: ${{ needs.config.outputs.artifact-pattern }}
           merge-multiple: true
-
-      # NOTE: These are intermediate artifacts which don't need to be published.
-      - name: Delete export preset artifacts
-        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118
-        with:
-          name: ${{ needs.config.outputs.artifact-pattern }}
 
       - name: Inspect game artifacts
         run: tree -lha --dirsfirst ${{ runner.temp }}/presets
