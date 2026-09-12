@@ -118,7 +118,11 @@ jobs:
             echo "icon-path=$PROJECT_PATH/icon.svg" >> "$GITHUB_OUTPUT"
           fi
 
-          if [[ -d .patches/godotengine/godot && -n "$(ls -A .patches/godotengine/godot | grep -v .gitkeep)" ]]; then
+          # NOTE: The glob skips dotfiles, so a directory holding only
+          # '.gitkeep' correctly reads as having no patches.
+          PATCHES=(.patches/godotengine/godot/*)
+
+          if [[ -e "${PATCHES[0]}" ]]; then
             echo "godot-patches=$PROJECT_PATH/.patches/godotengine/godot/*" >> "$GITHUB_OUTPUT"
           fi
 
@@ -163,7 +167,7 @@ jobs:
             exit 1
           fi
 
-          echo value=$(jq -c -n '$ARGS.positional' --args "${PRESETS[@]}") >> $GITHUB_OUTPUT
+          echo "value=$(jq -c -n '$ARGS.positional' --args "${PRESETS[@]}")" >> "$GITHUB_OUTPUT"
 
           # 'game-' marks a packaged artifact, as 'export-' marks the per-preset
           # intermediates. It stays fixed so callers can glob for the results.

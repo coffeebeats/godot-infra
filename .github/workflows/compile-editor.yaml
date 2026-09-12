@@ -99,11 +99,11 @@ jobs:
         env:
           CHANGED: ${{ steps.changes.outputs.any_modified }}
         run: |-
-          if [[
-            "$CHANGED" == "true" && \
-            -d .patches/godotengine/godot && \
-            -n "$(ls -A .patches/godotengine/godot | grep -v .gitkeep)" \
-          ]]; then
+          # NOTE: The glob skips dotfiles, so a directory holding only
+          # '.gitkeep' correctly reads as having no patches.
+          PATCHES=(.patches/godotengine/godot/*)
+
+          if [[ "$CHANGED" == "true" && -e "${PATCHES[0]}" ]]; then
             echo "value=true" >> "$GITHUB_OUTPUT"
           fi
 

@@ -268,8 +268,10 @@ jobs:
       - name: Check for fuzzy translations before release
         if: "${{ contains( github.event.pull_request.labels.*.name, 'autorelease: pending') }}"
         run: |
-          for f in $(ls project/locale | grep -E '\.po$'); do
-            if grep '#,' "project/locale/$f" >/dev/null; then
+          for f in project/locale/*.po; do
+            [[ -e "$f" ]] || continue
+
+            if grep -q '#,' "$f"; then
               echo "Error: found fuzzy translation in file: $f"
               exit 1
             fi
