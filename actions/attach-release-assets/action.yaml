@@ -1,0 +1,52 @@
+name: "🚀 Release: Attach game assets"
+description: "Attaches packaged game artifacts from the current run to a GitHub release."
+
+inputs:
+  tag:
+    description: "The tag of the release to attach assets to."
+    required: true
+  pattern:
+    description: "The name pattern of the artifacts to attach."
+    required: false
+    default: "game-*"
+  token:
+    description: "A token with 'contents: write' permission; defaults to the job's token."
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    # NOTE: A matrix job collapses its outputs to one value, so this must glob.
+    # 'export-project.yaml' prefixes every packaged artifact with 'game-'.
+    - name: Download the packaged game artifacts
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        pattern: ${{ inputs.pattern }}
+        path: ${{ runner.temp }}/dist
+        merge-multiple: true
+
+    - name: Attach assets to release
+      shell: bash
+      env:
+        # NOTE: 'GH_REPO' removes the need to check out the repository first.
+        GH_TOKEN: ${{ inputs.token || github.token }}
+        GH_REPO: ${{ github.repository }}
+        DIST: ${{ runner.temp }}/dist
+        PATTERN: ${{ inputs.pattern }}
+        TAG: ${{ inputs.tag }}
+      run: |-
+        ASSETS=("$DIST"/*)
+
+        # An empty download means the artifact names no longer match the
+        # pattern, which would otherwise leave the release with no assets.
+        if [[ ! -e "${ASSETS[0]}" ]]; then
+          echo "::error::Found no artifacts matching pattern: $PATTERN"
+          exit 1
+        fi
+
+        for ASSET in "${ASSETS[@]}"; do
+          echo "Attaching asset to release '$TAG': $ASSET"
+
+          gh release upload --clobber "$TAG" "$ASSET"
+        done
