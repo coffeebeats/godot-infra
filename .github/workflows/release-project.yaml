@@ -68,7 +68,7 @@ jobs:
         env:
           # See https://github.com/actions/runner/issues/1656#issuecomment-1030077729.
           RELEASE_INFO: ${{ toJson(steps.release.outputs) }}
-        run: echo $RELEASE_INFO
+        run: echo "$RELEASE_INFO"
 
   publish:
     needs: ["release-please"]
@@ -119,18 +119,11 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }} # Required by the 'gh' CLI.
+          DIST: ${{ runner.temp }}/dist
+          TAG: ${{ needs.release-please.outputs.release-tag }}
         run: |-
-          shopt -s extglob
-          shopt -s globstar
-
-          ASSETS=(${{ runner.temp }}/dist/*)
-          TAG="${{ needs.release-please.outputs.release-tag }}"
-
-          for ASSET in "${ASSETS[@]}"; do
+          for ASSET in "$DIST"/*; do
             echo "Attaching asset to release '$TAG': $ASSET"
 
-            gh release upload \
-              --clobber \
-              ${{ needs.release-please.outputs.release-tag }} \
-              $ASSET
+            gh release upload --clobber "$TAG" "$ASSET"
           done

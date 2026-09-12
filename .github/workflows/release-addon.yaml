@@ -78,7 +78,7 @@ jobs:
         env:
           # See https://github.com/actions/runner/issues/1656#issuecomment-1030077729.
           RELEASE_INFO: ${{ toJson(steps.release.outputs) }}
-        run: echo $RELEASE_INFO
+        run: echo "$RELEASE_INFO"
 
   release-branch:
     needs: ["release-please"]

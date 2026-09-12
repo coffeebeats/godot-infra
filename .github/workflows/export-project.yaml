@@ -328,30 +328,23 @@ jobs:
 
       - name: Assemble the final game artifact
         id: artifact
+        env:
+          PRESETS_DIR: ${{ runner.temp }}/presets
+          ARCHIVE_PATH: ${{ runner.temp }}/${{ needs.config.outputs.artifact-name }}.tar.gz
         run: |-
-          shopt -s extglob
-          shopt -s globstar
-
-          LABEL="${{ env.ARTIFACT_NAME }}"
-
-          cd ${{ runner.temp }}/presets
+          cd "$PRESETS_DIR"
 
           ls -ls
 
-          ARCHIVE_PATH="${{ runner.temp }}/${LABEL}.tar.gz"
-
           # NOTE: The archive preserves permissions, without which MacOS
           # application bundles do not run once downloaded.
-          tar \
-            --strip-components 1 \
-            -czf $ARCHIVE_PATH \
-            *
+          tar -czf "$ARCHIVE_PATH" *
 
           echo "Packaged export game artifacts into archive: $ARCHIVE_PATH"
-          ls -ls $ARCHIVE_PATH
+          ls -ls "$ARCHIVE_PATH"
 
-          echo "label=$LABEL" >> $GITHUB_OUTPUT
-          echo "path=$ARCHIVE_PATH" >> $GITHUB_OUTPUT
+          echo "label=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+          echo "path=$ARCHIVE_PATH" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
