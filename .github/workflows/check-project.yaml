@@ -1,0 +1,354 @@
+name: "🔎 Check: Godot project"
+
+# A reusable workflow that lints, tests, and tidies a Godot game project. Jobs
+# that commit back (image optimization, translation updates) run serially.
+#
+# Caller requirements:
+#   on: pull_request + push on the default branch
+#   permissions: contents: write
+#   secrets: inherit (GHA_TOKEN optional; lets pushed commits trigger workflows)
+
+on:
+  workflow_call:
+    inputs:
+      line-length-max:
+        type: string
+        description: "Overrides the max line length; defaults to the project's 'gdformatrc'."
+        required: false
+        default: ""
+      smoke-test:
+        type: boolean
+        description: "Whether to boot the project headless for 30 seconds as a smoke test."
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      has_change: "${{ steps.check-non-source.outputs.any_modified == 'true' || steps.check-source.outputs.any_modified == 'true' }}"
+      has_source_change: "${{ steps.check-source.outputs.any_modified == 'true' }}"
+      has_pot_change: "${{ steps.check-pot.outputs.any_modified == 'true' }}"
+      has_po_change: "${{ steps.check-po.outputs.any_modified == 'true' }}"
+      has_translations: "${{ steps.tools.outputs.translations == 'true' }}"
+      changed-png-files: "${{ steps.check-png.outputs.all_changed_files }}"
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Check for any non-source code changes
+        id: check-non-source
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
+        with:
+          exclude_submodules: true
+          files_ignore: "**/*.gd"
+
+      - name: Check for any source code changes
+        id: check-source
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
+        with:
+          exclude_submodules: true
+          files: "**/*.gd"
+
+      - name: Check for PNG image file changes
+        id: check-png
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
+        with:
+          exclude_submodules: true
+          files: "**/*.png"
+
+      - name: Check for template translation file changes
+        id: check-pot
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
+        with:
+          exclude_submodules: true
+          files: |
+            project/locale/*.pot
+            project/locale/en_US.po
+
+      - name: Check for non-template translation file changes
+        id: check-po
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
+        with:
+          exclude_submodules: true
+          files: "project/locale/*.po"
+          files_ignore: "project/locale/*.pot"
+
+      - name: Detect project tooling
+        id: tools
+        run: |
+          if [[ -x tools/sync-translations.sh ]]; then
+            echo "translations=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  format-and-lint:
+    needs: ["changes"]
+    if: |
+      needs.changes.outputs.has_source_change == 'true' &&
+      github.actor != 'dependabot[bot]'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          # Checkout the PR branch HEAD in case a commit is later needed.
+          # See https://github.com/stefanzweifel/git-auto-commit-action?tab=readme-ov-file#checkout-the-correct-branch.
+          ref: ${{ github.head_ref }}
+
+          # NOTE: Use repository secret to have new commit run workflows.
+          token: ${{ secrets.GHA_TOKEN || github.token }}
+
+      - uses: $/actions/check-godot-project
+        with:
+          ignore-lint-errors: false
+          line-length-max: ${{ inputs.line-length-max }}
+
+  check-python:
+    needs: ["changes"]
+    if: |
+      needs.changes.outputs.has_change == 'true' &&
+      github.actor != 'dependabot[bot]'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
+        with:
+          enable-cache: true
+
+      - name: Verify the lockfile is up to date
+        run: uv lock --check
+
+      - name: Lint Python source code
+        run: uv run ruff check .
+
+  optimize-png:
+    needs:
+      - "changes"
+      - "format-and-lint" # NOTE: Run serially to avoid racing commits.
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+
+      github.actor != 'dependabot[bot]' &&
+      needs.changes.outputs.changed-png-files != ''
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          # Checkout the PR branch HEAD in case a commit is later needed.
+          # See https://github.com/stefanzweifel/git-auto-commit-action?tab=readme-ov-file#checkout-the-correct-branch.
+          ref: ${{ github.head_ref }}
+
+          # NOTE: Use repository secret to have new commit run workflows.
+          token: ${{ secrets.GHA_TOKEN || github.token }}
+
+      - uses: $/.github/actions/parse-godot-version
+        id: version
+        with:
+          gdenv-pin-path: .godot-version
+
+      - uses: $/.github/actions/setup-godot
+        with:
+          version: ${{ steps.version.outputs.semantic }}
+
+      - name: Install 'pngcrush' tool
+        run: sudo apt-get install -y pngcrush
+
+      - name: Optimize images
+        # NOTE: File names reach the script through the environment rather than
+        # interpolation, so a crafted file name cannot arrive as shell code.
+        env:
+          FILES: ${{ needs.changes.outputs.changed-png-files }}
+        run: |
+          for f in $FILES; do
+            echo "Optimizing image: $f"
+
+            echo "$(du -sh "$f") (before)"
+            pngcrush "$f" "$f.opt"
+            mv "$f.opt" "$f"
+            echo "$(du -sh "$f") (after)"
+          done
+
+      - name: Import optimized images
+        run: godot --verbose --headless --quit --import
+
+      - uses: $/actions/commit-changes
+        with:
+          description: "optimizing PNG images"
+
+  check-translations:
+    needs:
+      - "changes"
+      - "optimize-png" # NOTE: Run serially to avoid racing commits.
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+
+      github.actor != 'dependabot[bot]' &&
+      needs.changes.outputs.has_translations == 'true' &&
+      (
+        (needs.changes.outputs.has_pot_change == 'true' || needs.changes.outputs.has_po_change == 'true') ||
+        contains( github.event.pull_request.labels.*.name, 'autorelease: pending')
+      )
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          # Checkout the PR branch HEAD in case a commit is later needed.
+          # See https://github.com/stefanzweifel/git-auto-commit-action?tab=readme-ov-file#checkout-the-correct-branch.
+          ref: ${{ github.head_ref }}
+
+          # NOTE: Use repository secret to have new commit run workflows.
+          token: ${{ secrets.GHA_TOKEN || github.token }}
+
+      # NOTE: Translation files should not need changes from a release PR.
+      - name: Verify state for release PRs
+        if: |
+          contains( github.event.pull_request.labels.*.name, 'autorelease: pending') &&
+          (needs.changes.outputs.has_pot_change == 'true' || needs.changes.outputs.has_po_change == 'true')
+        run: exit 1
+
+      # 1. Install tools.
+
+      - name: Install 'gettext' tools
+        run: |
+          # Disable man-db, which sometimes takes minutes to process triggers for.
+          sudo debconf-communicate <<< "set man-db/auto-update false"
+          sudo dpkg-reconfigure man-db
+
+          sudo apt-get install --no-install-recommends -y gettext
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
+        with:
+          enable-cache: true
+
+      - name: Install Python tools
+        run: uv sync
+
+      # 2. Validate translation files.
+
+      # NOTE: While we could just check the changed ones, because this will also
+      # be run on release branches, it's better to just check all of them.
+      - name: Validate translation files
+        run: ./tools/sync-translations.sh validate
+
+      - name: Check for fuzzy translations before release
+        if: "${{ contains( github.event.pull_request.labels.*.name, 'autorelease: pending') }}"
+        run: |
+          for f in $(ls project/locale | grep -E '\.po$'); do
+            if grep '#,' "project/locale/$f" >/dev/null; then
+              echo "Error: found fuzzy translation in file: $f"
+              exit 1
+            fi
+          done
+
+      # 3. Update translation files.
+
+      # Non-english 'po' files use the intermediate English translations as
+      # their source language. Ensure these are updated if any of the template
+      # files were changed.
+      - name: Update modified 'po' files
+        if: needs.changes.outputs.has_pot_change == 'true'
+        run: ./tools/sync-translations.sh update --verify
+
+      - name: Compile modified 'po' files
+        if: needs.changes.outputs.has_pot_change == 'true' || needs.changes.outputs.has_po_change == 'true'
+        run: ./tools/sync-translations.sh compile --verify
+
+      - uses: $/actions/commit-changes
+        if: |
+          needs.changes.outputs.has_pot_change == 'true' ||
+          needs.changes.outputs.has_po_change == 'true'
+        with:
+          description: "updating translation files"
+
+  test:
+    needs: ["changes"]
+    if: needs.changes.outputs.has_change == 'true'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          submodules: true
+
+      - uses: $/.github/actions/parse-godot-version
+        id: version
+        with:
+          gdenv-pin-path: .godot-version
+
+      - uses: $/.github/actions/setup-godot
+        with:
+          version: ${{ steps.version.outputs.semantic }}
+
+      - name: Initialize project imports
+        run: godot --verbose --headless --quit --import
+
+      - name: Smoke test the project
+        if: inputs.smoke-test
+        run: godot --headless --quit-after 30
+
+      - name: Check project files
+        run: godot --headless -s tools/check.gd
+
+      - name: Test source code
+        env:
+          TEST_GENERATE_GOLDENS: "0"
+        run: >-
+          godot
+          --verbose
+          --headless
+          -s addons/gut/gut_cmdln.gd
+          -gdir=res://
+          -ginclude_subdirs
+          -gprefix=
+          -gsuffix=_test.gd
+          -gexit
+
+  # Used to ensure all branch protection requirements are met. This is a workaround until
+  # https://github.com/github-community/community/discussions/4324 is addressed.
+  branch_protection:
+    needs:
+      - "format-and-lint"
+      - "check-python"
+      - "optimize-png"
+      - "check-translations"
+      - "test"
+    if: ${{ always() }}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+
+    steps:
+      - name: Verify status of dependencies
+        if: |
+          always() &&
+          (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+        run: exit 1

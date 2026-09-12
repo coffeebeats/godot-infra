@@ -1,0 +1,125 @@
+name: "🚀 Release: Addon version"
+
+# A reusable workflow that runs release-please for an addon repository and,
+# when a release is created (or on 'workflow_dispatch'), packages the addon and
+# pushes it to its distribution branch.
+#
+# Caller requirements:
+#   on: push: branches: [main]; workflow_dispatch (optional, repackages)
+#   permissions: contents: write, issues: write, pull-requests: write
+#   secrets: inherit (RELEASE_PLEASE_TOKEN optional)
+
+on:
+  workflow_call:
+    inputs:
+      subfolder:
+        type: string
+        description: "The subfolder under 'addons' to package the addon into (default: the repository name without a 'godot-plugin-' prefix)."
+        required: false
+        default: ""
+      target-branch:
+        type: string
+        description: "The branch to push the packaged addon to (default: 'godot-v<major.minor>' of the pinned editor)."
+        required: false
+        default: ""
+      godot-editor-version:
+        type: string
+        description: "The Godot editor version to reimport with (default: the project's '.godot-version' pin)."
+        required: false
+        default: ""
+      file-excludes:
+        type: string
+        description: "A newline-delimited list of glob patterns to exclude from the packaged addon."
+        required: false
+        default: |
+          **/AGENTS.md
+          **/CLAUDE.md
+
+          **/example
+          **/examples
+          **/*_test.gd
+          **/*_test.gd.uid
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    outputs:
+      release-created: ${{ steps.release.outputs.releases_created }}
+      release-tag: ${{ steps.release.outputs.tag_name }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
+        id: release
+        with:
+          config-file: .release-please/config.json
+          manifest-file: .release-please/manifest.json
+
+          # NOTE: Releasing from another branch (e.g. a '1.X' release branch)
+          # takes a change to the 'branches' filter on the caller's 'push'
+          # trigger.
+          target-branch: ${{ github.ref_name }}
+
+          # NOTE: A PAT lets the release PR trigger workflows; it needs
+          # 'contents:write' and 'pull-requests:write'.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+
+      - name: Log release-please action output
+        shell: bash
+        env:
+          # See https://github.com/actions/runner/issues/1656#issuecomment-1030077729.
+          RELEASE_INFO: ${{ toJson(steps.release.outputs) }}
+        run: echo $RELEASE_INFO
+
+  release-branch:
+    needs: ["release-please"]
+    if: |
+      !failure() && !cancelled() && (
+        needs.release-please.outputs.release-created == 'true' ||
+        github.event_name == 'workflow_dispatch'
+      )
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          submodules: true
+
+      - uses: $/.github/actions/parse-godot-version
+        id: version
+        with:
+          gdenv-pin-path: .godot-version
+
+      - name: Determine packaging inputs
+        id: package
+        shell: bash
+        env:
+          SUBFOLDER: ${{ inputs.subfolder }}
+          TARGET_BRANCH: ${{ inputs.target-branch }}
+          EDITOR_VERSION: ${{ inputs.godot-editor-version }}
+          REPOSITORY: ${{ github.repository }}
+          MAJOR_MINOR: ${{ steps.version.outputs.major-minor }}
+          SEMANTIC: ${{ steps.version.outputs.semantic }}
+        run: |
+          NAME="${REPOSITORY#*/}"
+          echo "subfolder=${SUBFOLDER:-${NAME#godot-plugin-}}" >> "$GITHUB_OUTPUT"
+          echo "target-branch=${TARGET_BRANCH:-godot-v$MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
+          echo "godot-editor-version=${EDITOR_VERSION:-v$SEMANTIC}" >> "$GITHUB_OUTPUT"
+
+      - uses: $/actions/package-addon
+        with:
+          subfolder: ${{ steps.package.outputs.subfolder }}
+          target-branch: ${{ steps.package.outputs.target-branch }}
+          godot-editor-version: ${{ steps.package.outputs.godot-editor-version }}
+          file-excludes: ${{ inputs.file-excludes }}

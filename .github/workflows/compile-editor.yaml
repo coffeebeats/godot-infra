@@ -1,0 +1,150 @@
+name: "🤖 Compile: Godot editor"
+
+# A reusable workflow that compiles a custom Godot editor for a project that
+# patches the engine. On 'push' it builds when the pin or patches changed; on
+# 'workflow_dispatch' it builds the requested platform.
+#
+# Caller requirements:
+#   on: push: branches: [main]; workflow_dispatch with the inputs below
+#   permissions: contents: read
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        type: string
+        description: "The target platform for the editor build ('macos' or 'windows'; dispatch only)."
+        required: false
+        default: windows
+      arch:
+        type: string
+        description: "The target CPU architecture for the editor build ('arm64' or 'x86_64'; dispatch only)."
+        required: false
+        default: x86_64
+      profile:
+        type: string
+        description: "The optimization profile of the compiled editor (dispatch only)."
+        required: false
+        default: release
+      ref:
+        type: string
+        description: "The branch or tag name to check out (dispatch only)."
+        required: false
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 120
+
+permissions:
+  contents: read
+
+jobs:
+  compile-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJson(inputs.timeout) }}
+
+    steps:
+      - name: Reclaim disk space
+        uses: $/.github/actions/setup-runner
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: $/.github/actions/parse-godot-version
+        id: version
+        with:
+          gdenv-pin-path: .godot-version
+
+      - uses: $/actions/compile-godot-export-template
+        with:
+          compile-editor: true
+          publish: true
+
+          godot-src-rev: ${{ steps.version.outputs.semantic }}
+          godot-patches: .patches/godotengine/godot/*
+
+          platform: ${{ inputs.platform }}
+          arch: ${{ inputs.arch }}
+          profile: ${{ inputs.profile }}
+
+  config:
+    if: github.event_name == 'push'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      build-required: ${{ steps.required.outputs.value }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Check for any changes
+        id: changes
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
+        with:
+          files: |
+            .godot-version
+            .patches/godotengine/godot/*
+
+      - name: Check if build is required
+        id: required
+        shell: bash
+        env:
+          CHANGED: ${{ steps.changes.outputs.any_modified }}
+        run: |-
+          if [[
+            "$CHANGED" == "true" && \
+            -d .patches/godotengine/godot && \
+            -n "$(ls -A .patches/godotengine/godot | grep -v .gitkeep)" \
+          ]]; then
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  compile-push:
+    needs: ["config"]
+    if: |
+      github.event_name == 'push' &&
+      needs.config.outputs.build-required == 'true'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+
+    strategy:
+      fail-fast: true
+
+      matrix:
+        include:
+          - arch: arm64
+            platform: macos
+
+          - arch: x86_64
+            platform: windows
+
+    steps:
+      - name: Reclaim disk space
+        uses: $/.github/actions/setup-runner
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - uses: $/.github/actions/parse-godot-version
+        id: version
+        with:
+          gdenv-pin-path: .godot-version
+
+      - uses: $/actions/compile-godot-export-template
+        with:
+          compile-editor: true
+          publish: true
+
+          godot-src-rev: ${{ steps.version.outputs.semantic }}
+          godot-patches: .patches/godotengine/godot/*
+
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}

@@ -1,0 +1,110 @@
+name: "🌐 Publish: Godot game"
+
+# A reusable workflow that exports a game target and optionally publishes it to
+# itch.io.
+#
+# Caller requirements:
+#   permissions: contents: read
+#   secrets: inherit (BUTLER_API_KEY when publishing to itch.io, plus the
+#            export secrets listed in 'export-project.yaml')
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+      version:
+        type: string
+        required: false
+      project-path:
+        type: string
+        required: false
+        default: "."
+      component:
+        type: string
+        required: false
+        default: ""
+      platform:
+        type: string
+        required: true
+      arch:
+        type: string
+        required: true
+      storefront:
+        type: string
+        required: true
+      profile:
+        type: string
+        required: true
+      publish-export-template:
+        type: boolean
+        required: false
+        default: false
+
+      # itch.io inputs
+      publish-to-itchio:
+        type: boolean
+        required: false
+        default: false
+      itchio-project:
+        type: string
+        required: false
+      itchio-label:
+        type: string
+        required: false
+
+permissions:
+  contents: read # Required to check out a private repository.
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  export:
+    uses: $/.github/workflows/export-project.yaml
+    secrets: inherit
+    with:
+      arch: ${{ inputs.arch }}
+      component: ${{ inputs.component }}
+      platform: ${{ inputs.platform }}
+      profile: ${{ inputs.profile }}
+      project-path: ${{ inputs.project-path }}
+      publish-export-template: ${{ inputs.publish-export-template }}
+      ref: ${{ inputs.ref }}
+      storefront: ${{ inputs.storefront }}
+
+  publish:
+    needs: ["export"]
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download export artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: ${{ needs.export.outputs.name }}
+
+      - name: Extract game assets
+        run: |-
+          tar \
+            -p \
+            -xzvf \
+            ${{ needs.export.outputs.name }}.tar.gz
+
+          rm ${{ needs.export.outputs.name }}.tar.gz
+
+      - name: Inspect game artifacts
+        run: "tree -lha --dirsfirst -I .git"
+
+      - name: Publish to 'itch.io'
+        if: fromJson(inputs.publish-to-itchio)
+        uses: $/actions/publish-project-itchio
+        with:
+          path: "./"
+          version: ${{ inputs.version || inputs.ref }}
+          itchio-project: ${{ contains(inputs.itchio-project, '/') && inputs.itchio-project || format('{0}/{1}', github.repository_owner, inputs.itchio-project) }}
+          itchio-channel: "${{ inputs.component != '' && format('{0}-', inputs.component) || '' }}${{ inputs.arch }}-${{ inputs.platform }}${{ inputs.itchio-label != '' && format('-{0}', inputs.itchio-label) || '' }}"
+          api-key: ${{ secrets.BUTLER_API_KEY }}
