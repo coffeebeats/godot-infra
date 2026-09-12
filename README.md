@@ -124,7 +124,9 @@ jobs:
           tag: ${{ needs.release-please.outputs.release-tag }}
 ```
 
-Available workflows: `check-project.yaml`, `export-project.yaml`, `publish-game.yaml`, `compile-editor.yaml` (games), `check-addon.yaml`, `release-addon.yaml` (addons).
+Available workflows: `check-project.yaml` (games and addons), `export-project.yaml`, `publish-game.yaml`, `compile-editor.yaml` (games), `release-addon.yaml` (addons).
+
+A job inside a reusable workflow reports as `<caller-job> / <job>`, so a branch ruleset that requires a bare context needs that job declared in the calling repository rather than here.
 
 #### **Actions**
 

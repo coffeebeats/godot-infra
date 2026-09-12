@@ -35,6 +35,11 @@ on:
         description: "The maximum allowed duration of a compile job (in minutes)."
         required: false
         default: 150
+      patches-path:
+        type: string
+        description: "A glob matching the engine patches to apply. A project with no patches never builds, so a caller without patches needs no override."
+        required: false
+        default: ".patches/godotengine/godot/*"
 
 permissions:
   contents: read
@@ -65,7 +70,7 @@ jobs:
           publish: true
 
           godot-src-rev: ${{ steps.version.outputs.semantic }}
-          godot-patches: .patches/godotengine/godot/*
+          godot-patches: ${{ inputs.patches-path }}
 
           platform: ${{ inputs.platform }}
           arch: ${{ inputs.arch }}
@@ -91,19 +96,21 @@ jobs:
         with:
           files: |
             .godot-version
-            .patches/godotengine/godot/*
+            ${{ inputs.patches-path }}
 
       - name: Check if build is required
         id: required
         shell: bash
         env:
           CHANGED: ${{ steps.changes.outputs.any_modified }}
+          PATCHES_PATH: ${{ inputs.patches-path }}
         run: |-
-          # NOTE: The glob skips dotfiles, so a directory holding only
+          # NOTE: 'compgen -G' expands the glob without splitting the pattern
+          # on whitespace, and skips dotfiles, so a directory holding only
           # '.gitkeep' correctly reads as having no patches.
-          PATCHES=(.patches/godotengine/godot/*)
+          mapfile -t PATCHES < <(compgen -G "$PATCHES_PATH" || true)
 
-          if [[ "$CHANGED" == "true" && -e "${PATCHES[0]}" ]]; then
+          if [[ "$CHANGED" == "true" && "${#PATCHES[@]}" -gt 0 ]]; then
             echo "value=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -144,7 +151,7 @@ jobs:
           publish: true
 
           godot-src-rev: ${{ steps.version.outputs.semantic }}
-          godot-patches: .patches/godotengine/godot/*
+          godot-patches: ${{ inputs.patches-path }}
 
           platform: ${{ matrix.platform }}
           arch: ${{ matrix.arch }}
