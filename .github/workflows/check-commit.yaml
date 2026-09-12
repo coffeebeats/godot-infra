@@ -101,6 +101,10 @@ jobs:
       # it reads as a malformed 'uses'. These patterns match only that message
       # and leave the rest of the rule in force.
       - name: Lint workflow files
+        # NOTE: 'actionlint' runs 'shellcheck' over every 'run:' block, so this
+        # matches the severity the 'check-shell' job uses for the scripts.
+        env:
+          SHELLCHECK_OPTS: "--severity=warning"
         run: |
           "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/' -ignore 'reusable workflow call "\$/'
 
