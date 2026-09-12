@@ -13,7 +13,9 @@ on:
     inputs:
       ref:
         type: string
-        required: true
+        description: "The branch or tag name to check out. If empty, uses the triggering event's SHA."
+        required: false
+        default: ""
       version:
         type: string
         required: false
