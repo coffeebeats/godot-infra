@@ -7,6 +7,9 @@ name: "🔎 Check: Godot project"
 # NOTE: Every job past linting and testing gates on what the repository carries,
 # so an addon repository skips the rest rather than needing its own workflow.
 #
+# NOTE: The caller declares its own aggregate status job. A job defined here
+# reports as '<caller-job> / <job>', which no branch ruleset can require.
+#
 # Caller requirements:
 #   on: pull_request + push on the default branch
 #   permissions: contents: write
@@ -357,25 +360,3 @@ jobs:
           -gprefix=
           -gsuffix=_test.gd
           -gexit
-
-  # Used to ensure all branch protection requirements are met. This is a workaround until
-  # https://github.com/github-community/community/discussions/4324 is addressed.
-  branch_protection:
-    needs:
-      - "changes"
-      - "format-and-lint"
-      - "check-python"
-      - "optimize-png"
-      - "check-translations"
-      - "test"
-    if: ${{ always() }}
-
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-
-    steps:
-      - name: Verify status of dependencies
-        if: |
-          always() &&
-          (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
-        run: exit 1

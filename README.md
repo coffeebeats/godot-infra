@@ -126,6 +126,24 @@ jobs:
 
 Available workflows: `check-project.yaml` (games and addons), `export-project.yaml`, `publish-game.yaml`, `compile-editor.yaml` (games), `release-addon.yaml` (addons). `check-project.yaml` gates each of its jobs on what the repository carries, so an addon repository skips the Python, image and translation work rather than needing a workflow of its own.
 
+A caller declares its own aggregate status job. A job defined inside a reusable workflow reports as `<caller-job> / <job>`, which a branch ruleset cannot require, so the job whose name the ruleset names has to live in the calling repository.
+
+```yaml
+jobs:
+  check:
+    uses: coffeebeats/godot-infra/.github/workflows/check-project.yaml@v6
+    secrets: inherit
+
+  branch_protection:
+    needs: ["check"]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+```
+
 #### **Actions**
 
 Every action under [`actions/`](./actions) can also be used on its own:
