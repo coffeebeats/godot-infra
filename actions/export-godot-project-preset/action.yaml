@@ -154,7 +154,7 @@ runs:
         echo "path=${TARGET#${{ github.workspace }}/}" >> $GITHUB_OUTPUT
 
     - name: Set path to export template in 'export_presets.cfg'
-      uses: $/inspect-godot-export-presets
+      uses: $/actions/inspect-godot-export-presets
       with:
         project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
         operation: "set"
@@ -165,7 +165,7 @@ runs:
     # ---------------------- Configure export properties --------------------- #
 
     - name: Get the configured preset platform
-      uses: $/inspect-godot-export-presets
+      uses: $/actions/inspect-godot-export-presets
       id: preset-platform
       with:
         project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
@@ -191,7 +191,7 @@ runs:
         echo "Determined platform for preset '${{ inputs.preset-name }}': $PLATFORM"
 
     - name: Get the configured preset export path
-      uses: $/inspect-godot-export-presets
+      uses: $/actions/inspect-godot-export-presets
       id: preset-export-path
       with:
         project-path: ${{ github.workspace }}/${{ steps.project.outputs.dir }}
