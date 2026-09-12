@@ -85,25 +85,20 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      # NOTE: An explicit 'godot-version' overrides the project's pin; write it
-      # to a temporary pin file so both paths go through the same parser.
-      - name: Determine the Godot version pin file
-        id: pin
+      # NOTE: An explicit 'godot-version' overrides the project's pin. It is
+      # written over the pin in this job's checkout only (the parser needs a
+      # file inside the workspace); later jobs take the parsed version.
+      - name: Apply the Godot version override
+        if: inputs.godot-version != ''
         env:
           GODOT_VERSION: ${{ inputs.godot-version }}
           PROJECT_PATH: ${{ inputs.project-path }}
-        run: |
-          if [[ -n "$GODOT_VERSION" ]]; then
-            echo "v${GODOT_VERSION#v}" > "$RUNNER_TEMP/.godot-version"
-            echo "path=$RUNNER_TEMP/.godot-version" >> "$GITHUB_OUTPUT"
-          else
-            echo "path=$PROJECT_PATH/.godot-version" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "v${GODOT_VERSION#v}" > "$PROJECT_PATH/.godot-version"
 
       - uses: $/.github/actions/parse-godot-version
         id: version
         with:
-          gdenv-pin-path: ${{ steps.pin.outputs.path }}
+          gdenv-pin-path: ${{ inputs.project-path }}/.godot-version
 
       # NOTE: Optional build inputs are only passed to the compile action when
       # the project actually has them.
