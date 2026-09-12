@@ -1,10 +1,10 @@
-# **godot-infra** ![GitHub release (with filter)](https://img.shields.io/github/v/release/coffeebeats/godot-infra) ![GitHub](https://img.shields.io/github/license/coffeebeats/godot-infra) [![Build Status](https://img.shields.io/github/actions/workflow/status/coffeebeats/godot-infra/publish-image-godot-infra.yaml?branch=main)](https://github.com/coffeebeats/godot-infra/actions?query=branch%3Amain+workflow%3Apublish-image-godot-infra) ![Static Badge](https://img.shields.io/badge/godot-v4.7.2-478cbf)
+# **godot-infra** ![GitHub release (with filter)](https://img.shields.io/github/v/release/coffeebeats/godot-infra) ![GitHub](https://img.shields.io/github/license/coffeebeats/godot-infra) [![Build Status](https://img.shields.io/github/actions/workflow/status/coffeebeats/godot-infra/publish-image-godot-infra.yaml?branch=main)](https://github.com/coffeebeats/godot-infra/actions?query=branch%3Amain+workflow%3Apublish-image-godot-infra) ![Static Badge](https://img.shields.io/badge/godot-4.7-478cbf)
 
 A repository for Godot build and release infrastructure using [@coffeebeats](https://github.com/coffeebeats?tab=repositories)' tools.
 
 ## **How it works**
 
-This repository contains a number of GitHub actions useful for compiling and exporting Godot projects. See [Example usage](#example-usage) below for demonstrations of how to use the repository.
+This repository publishes reusable GitHub workflows and actions for checking, compiling, exporting, and releasing Godot projects and addons, plus the Docker toolchain images they run in. See [Example usage](#example-usage) below for demonstrations of how to use the repository.
 
 ### Supported platforms
 
@@ -16,38 +16,64 @@ Currently, `godot-infra` supports targeting three platforms:
 
 ### Supported Godot versions
 
-This repository supports multiple minor versions of Godot. The `main` branch always contains the latest `godot-infra` changes and targets support for the latest Godot stable release. See the list below for the mapping of `godot-infra` release versions to supported Godot version.
+Toolchain images are published per Godot minor version, tagged `godot-v<major.minor>-<platform>`, and selected at run time from the consuming project's `.godot-version` pin. A `godot-infra` release is therefore independent of the Godot version; its major only changes when a workflow or action interface changes.
+
+[`godot-versions.txt`](./godot-versions.txt) lists the minors with published images. The last line is the one `main` currently builds and tests against; images for earlier minors are frozen and never deleted, so an archived project keeps working at its pin.
 
 > [!NOTE]
 > Although it's recommended to [pin actions to the full-length commit SHA](https://docs.github.com/en/actions/reference/security/secure-use#using-third-party-actions), the following release tags define stable, tested versions of this project.
 
-#### Release tag: Godot version
-
-- `v5` (`main`): `v4.7.2`
-- `v4`: `v4.6.3`
-- `v3`: `v4.5.1`
-- `v2`: `v4.4.1`
-- `v1`: `v4.3`
-- `v0`: `v4.2`
+| `godot-infra` | Godot minors |
+| --- | --- |
+| `v6` (`main`) | 4.7 |
+| `v5` | 4.7 |
+| `v4` | 4.6 |
+| `v3` | 4.5 |
+| `v2` | 4.4 |
+| `v1` | 4.3 |
+| `v0` | 4.2 |
 
 ## **Getting started**
 
-The `godot-infra` repository does not need to be installed. Simply add the actions defined in the repository to your GitHub actions workflows.
+The `godot-infra` repository does not need to be installed. Call its reusable workflows from your repository's workflows, or use its actions directly.
 
 ### **Example usage**
 
-#### **`compile-godot-export-template`**
+#### **Reusable workflows**
+
+A game repository's export pipeline is one call per workflow file. Secrets (encryption key, codesigning, itch.io) stay in the game's repository and reach the workflow through `secrets: inherit`; each workflow's header comment lists the secret names and the permissions the caller must grant.
 
 ```yaml
-- uses: "coffeebeats/godot-infra/compile-godot-export-template@v5"
-  with:
-    # See the action implementation for available inputs.
+name: "🎮 Export: Godot project"
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform: { type: string, required: true }
+      arch: { type: string, required: true }
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    uses: coffeebeats/godot-infra/.github/workflows/export-project.yaml@v6
+    secrets: inherit
+    with:
+      platform: ${{ inputs.platform }}
+      arch: ${{ inputs.arch }}
+      storefront: unknown
+      profile: release
 ```
 
-#### **`export-godot-project-preset`**
+Available workflows: `check-project.yaml`, `export-project.yaml`, `publish-game.yaml`, `release-project.yaml`, `compile-editor.yaml` (games), `check-addon.yaml`, `release-addon.yaml` (addons).
+
+#### **Actions**
+
+Every action under [`actions/`](./actions) can also be used on its own:
 
 ```yaml
-- uses: "coffeebeats/godot-infra/export-godot-project-preset@v5"
+- uses: "coffeebeats/godot-infra/actions/compile-godot-export-template@v6"
   with:
     # See the action implementation for available inputs.
 ```
@@ -101,7 +127,7 @@ During development, you may want to build the infrastructure images locally rath
 
 #### `compile-godot-export-template`
 
-Dependency versions are taken from the defaults defined in the [publish-image-compile-godot-export-template.yaml](.github/workflows/publish-image-compile-godot-export-template.yaml) workflow.
+Dependency versions are taken from the defaults defined in the [publish-image-compile-godot-export-template.yaml](.github/workflows/publish-image-compile-godot-export-template.yaml) workflow. Substitute the Godot minor you are building for in the image tag.
 
 <details>
 <summary><strong>macOS</strong></summary>
@@ -119,7 +145,7 @@ docker build \
   --build-context patches=thirdparty/.patches \
   --build-context vulkan=thirdparty/moltenvk \
   -t compile-godot-export-template:godot-v4.7-macos \
-  compile-godot-export-template/macos
+  actions/compile-godot-export-template/macos
 ```
 
 </details>
@@ -132,7 +158,7 @@ docker build \
   --build-arg EMSCRIPTEN_SDK_VERSION=4.0.20 \
   --build-context patches=thirdparty/.patches \
   -t compile-godot-export-template:godot-v4.7-web \
-  compile-godot-export-template/web
+  actions/compile-godot-export-template/web
 ```
 
 </details>
@@ -149,7 +175,7 @@ docker build \
   --build-arg PIX_VERSION=1.0.240308001 \
   --build-context patches=thirdparty/.patches \
   -t compile-godot-export-template:godot-v4.7-windows \
-  compile-godot-export-template/windows
+  actions/compile-godot-export-template/windows
 ```
 
 </details>
@@ -166,7 +192,7 @@ docker build \
   --build-arg RUST_VERSION=1.98.0 \
   --build-context patches=thirdparty/.patches \
   -t export-godot-project-preset:godot-v4.7-macos \
-  export-godot-project-preset/macos
+  actions/export-godot-project-preset/macos
 ```
 
 </details>
@@ -179,7 +205,7 @@ docker build \
   --build-arg RUST_VERSION=1.98.0 \
   --build-context patches=thirdparty/.patches \
   -t export-godot-project-preset:godot-v4.7-web \
-  export-godot-project-preset/web
+  actions/export-godot-project-preset/web
 ```
 
 </details>
@@ -192,55 +218,47 @@ docker build \
   --build-arg RUST_VERSION=1.98.0 \
   --build-context patches=thirdparty/.patches \
   -t export-godot-project-preset:godot-v4.7-windows \
-  export-godot-project-preset/windows
+  actions/export-godot-project-preset/windows
 ```
 
 </details>
 
 ### Testing the toolchain end to end
 
-A successful image build only proves that the toolchain installs. The steps below compile a Godot export template with each `compile-godot-export-template` image and export the sample project in [`tests/project`](./tests/project) with each `export-godot-project-preset` image, using the same commands the actions run in CI. Run them from the repository root, against the published images once CI has pushed them and against local images while developing.
+A successful image build only proves that the toolchain installs. CI runs the export pipeline against the sample project in [`tests/project`](./tests/project) for every minor in `godot-versions.txt` on each pull request. The same can be run locally: the per-platform build commands are the scripts beside each Dockerfile (`actions/compile-godot-export-template/<platform>/compile.sh`, `actions/export-godot-project-preset/<platform>/export.sh`), mounted into the container exactly as the actions do it. Each script documents the environment variables it reads.
 
 #### Setup
-
-`gdenv` resolves the Godot version from `tests/project/.godot-version`. `GDENV_OS` and `GDENV_ARCH` make it fetch the Linux editor that the export images run.
 
 ```sh
 # Leave empty to test images built locally (see "Building images locally").
 REGISTRY="ghcr.io/coffeebeats/"
+GODOT_VERSION="4.7.2-stable"
+GODOT_MINOR="${GODOT_VERSION%.*}"
 
-# Vendor the Godot source code into './godot'.
+# Pin the sample project, vendor the Godot source code into './godot', and
+# install the Linux editor (the one the export images run).
+gdenv pin -p tests/project "$GODOT_VERSION"
 gdenv vendor -p tests/project
-
-# Install the Linux editor and copy it into the workspace.
 mkdir -p .godot-editor .scons build dist
 GDENV_OS=linux GDENV_ARCH=x86_64 gdenv install -p tests/project
 cp "$(GDENV_OS=linux GDENV_ARCH=x86_64 gdenv which -p tests/project 2>&1)" .godot-editor/godot
 
 # Shared arguments. The repository root is the container's workspace, as in CI.
-RUN=(docker run --rm --platform linux/amd64 -v "$PWD:/github/workspace" -w /github/workspace)
-SCONS='scons -j$(nproc) -C godot cache_path=/github/workspace/.scons verbose=yes warnings=extra werror=yes'
-EXPORT='.godot-editor/godot --path tests/project --headless --export-release'
+RUN=(docker run --rm --platform linux/amd64 -v "$PWD:/github/workspace" -v "$PWD/actions:/actions:ro" -w /github/workspace)
+COMPILE=(-e GODOT_SRC_PATH=godot -e SCONS_CACHE_PATH=.scons -e TARGET=template_release -e PROFILE=release)
+EXPORT=(-e GODOT_EDITOR_PATH=.godot-editor/godot -e PROJECT_PATH=tests/project -e PROFILE=release)
 ```
-
-The `scons` arguments below are the ones `compile-godot-export-template/*/action.yml` passes for the `release` profile, and `tests/project/export_presets.cfg` expects the templates under `build/` with the names CI gives them. Keep both in sync with the actions.
 
 <details>
 <summary><strong>macOS</strong></summary>
 
-CI compiles `x86_64` first, then `arm64` with `generate_bundle=yes`, which merges both into a universal `godot_macos.zip`.
-
 ```sh
-CCFLAGS="-Wno-ordered-compare-function-pointers -Wno-c99-designator"
-
-"${RUN[@]}" "${REGISTRY}compile-godot-export-template:godot-v4.7-macos" /bin/bash -c \
-  "$SCONS arch=x86_64 target=template_release production=yes optimize=speed ccflags='$CCFLAGS'"
-"${RUN[@]}" "${REGISTRY}compile-godot-export-template:godot-v4.7-macos" /bin/bash -c \
-  "$SCONS arch=arm64 target=template_release production=yes optimize=speed generate_bundle=yes ccflags='$CCFLAGS'"
+"${RUN[@]}" "${COMPILE[@]}" -e ARCH=universal "${REGISTRY}compile-godot-export-template:godot-v${GODOT_MINOR}-macos" \
+  /actions/compile-godot-export-template/macos/compile.sh
 mv godot/bin/godot_macos.zip build/
 
-"${RUN[@]}" "${REGISTRY}export-godot-project-preset:godot-v4.7-macos" /bin/bash -c \
-  "$EXPORT macos /github/workspace/dist/Game.app.zip"
+"${RUN[@]}" "${EXPORT[@]}" -e PRESET_NAME=universal-macos-unknown -e PRESET_OUTPUT_PATH=dist/Game.app.zip \
+  "${REGISTRY}export-godot-project-preset:godot-v${GODOT_MINOR}-macos" /actions/export-godot-project-preset/macos/export.sh
 ```
 
 > [!NOTE]
@@ -252,12 +270,12 @@ mv godot/bin/godot_macos.zip build/
 <summary><strong>Web</strong></summary>
 
 ```sh
-"${RUN[@]}" "${REGISTRY}compile-godot-export-template:godot-v4.7-web" /bin/bash -c \
-  "$SCONS arch=wasm32 target=template_release production=yes optimize=speed javascript_eval=no threads=yes"
-mv godot/bin/godot.web.template_release.wasm32.zip build/web_release.zip
+"${RUN[@]}" "${COMPILE[@]}" -e ARCH=wasm32 "${REGISTRY}compile-godot-export-template:godot-v${GODOT_MINOR}-web" \
+  /actions/compile-godot-export-template/web/compile.sh
+mv godot/bin/web_release.zip build/
 
-"${RUN[@]}" "${REGISTRY}export-godot-project-preset:godot-v4.7-web" /bin/bash -c \
-  "$EXPORT web /github/workspace/dist/Game.html"
+"${RUN[@]}" "${EXPORT[@]}" -e PRESET_NAME=wasm32-web-unknown -e PRESET_OUTPUT_PATH=dist/Game.html \
+  "${REGISTRY}export-godot-project-preset:godot-v${GODOT_MINOR}-web" /actions/export-godot-project-preset/web/export.sh
 ```
 
 </details>
@@ -266,21 +284,21 @@ mv godot/bin/godot.web.template_release.wasm32.zip build/web_release.zip
 <summary><strong>Windows</strong></summary>
 
 ```sh
-"${RUN[@]}" "${REGISTRY}compile-godot-export-template:godot-v4.7-windows" /bin/bash -c \
-  "$SCONS arch=x86_64 target=template_release production=yes optimize=speed"
+"${RUN[@]}" "${COMPILE[@]}" -e ARCH=x86_64 "${REGISTRY}compile-godot-export-template:godot-v${GODOT_MINOR}-windows" \
+  /actions/compile-godot-export-template/windows/compile.sh
 mv godot/bin/godot.windows.template_release.x86_64.llvm.exe build/
 
-"${RUN[@]}" "${REGISTRY}export-godot-project-preset:godot-v4.7-windows" /bin/bash -c \
-  "$EXPORT windows /github/workspace/dist/Game.exe"
+"${RUN[@]}" "${EXPORT[@]}" -e PRESET_NAME=x86_64-windows-unknown -e PRESET_OUTPUT_PATH=dist/Game.exe \
+  "${REGISTRY}export-godot-project-preset:godot-v${GODOT_MINOR}-windows" /actions/export-godot-project-preset/windows/export.sh
 ```
 
 </details>
 
 #### What passing looks like
 
-Each compile ends with `scons: done building targets.` and each export with `[ DONE ] export`, leaving `Game.app.zip`, `Game.html` with `Game.wasm`, and `Game.exe` in `dist/`. A broken toolchain fails within seconds of `scons: Building targets ...`. The editor's `Unable to load fontconfig` errors are noise.
+Each compile ends with `scons: done building targets.` and each export with `[ DONE ] export`, leaving `Game.app.zip`, `index.html` with `Game.wasm`, and `Game.exe` in `dist/`. A broken toolchain fails within seconds of `scons: Building targets ...`. The editor's `Unable to load fontconfig` errors are noise.
 
-The `release` profile enables link-time optimization, so compiles are slow under emulation on an M-series Mac (the web template takes about 23 minutes; an export takes seconds). `.scons/` caches object files between runs. `godot/`, `build/`, `dist/`, `.godot-editor/`, and `.scons/` are gitignored.
+The `release` profile enables link-time optimization, so compiles are slow under emulation on an M-series Mac (the web template takes about 23 minutes; an export takes seconds). `.scons/` caches object files between runs. `godot/`, `build/`, `dist/`, `.godot-editor/`, `.scons/`, and `tests/project/.godot-version` are gitignored.
 
 ## **Contributing**
 
