@@ -30,7 +30,7 @@ on:
         default: "."
       godot-version:
         type: string
-        description: "A Godot version (e.g. '4.7.2-stable') to build with instead of the project's '.godot-version' pin."
+        description: "A Godot version (e.g. '4.7.2-stable') to build with instead of the project's '.godot-version' pin. Artifact names gain a '-<version>' suffix so one run can export several versions."
         required: false
         default: ""
       component:
@@ -75,6 +75,7 @@ jobs:
       presets: ${{ steps.set-presets.outputs.value }}
       artifact-name: ${{ steps.set-presets.outputs.artifact-name }}
       artifact-pattern: ${{ steps.set-presets.outputs.artifact-pattern }}
+      artifact-suffix: ${{ steps.set-presets.outputs.artifact-suffix }}
       godot-version: "${{ steps.version.outputs.semantic }}"
       custompy-path: ${{ steps.files.outputs.custompy-path }}
       icon-path: ${{ steps.files.outputs.icon-path }}
@@ -131,6 +132,9 @@ jobs:
           COMPONENT: "${{ inputs.component }}"
           PROFILE: "${{ inputs.profile }}"
           TARGET: "${{ inputs.arch }}-${{ inputs.platform }}-${{ inputs.storefront }}"
+          # NOTE: A version override means several versions may export in one
+          # run, so every artifact name carries the version to stay unique.
+          SUFFIX: "${{ inputs.godot-version != '' && format('-{0}', inputs.godot-version) || '' }}"
         run: |-
           # A preset belongs to this build when its name ends with the target
           # at a segment boundary and, when a component is named, begins with
@@ -165,12 +169,13 @@ jobs:
 
           # 'game-' marks a packaged artifact, as 'export-' marks the per-preset
           # intermediates. It stays fixed so callers can glob for the results.
-          echo "artifact-name=game-${COMPONENT:+$COMPONENT-}$TARGET-$PROFILE" >> "$GITHUB_OUTPUT"
+          echo "artifact-name=game-${COMPONENT:+$COMPONENT-}$TARGET-$PROFILE$SUFFIX" >> "$GITHUB_OUTPUT"
+          echo "artifact-suffix=$SUFFIX" >> "$GITHUB_OUTPUT"
 
           # The 'package' job downloads what the 'export' job publishes as
           # 'export-<preset>', so this glob mirrors the rule above. Anchoring
           # the end stops 'steam' from selecting 'steamdeck'.
-          echo "artifact-pattern=export-${COMPONENT:+$COMPONENT-}*$TARGET" >> "$GITHUB_OUTPUT"
+          echo "artifact-pattern=export-${COMPONENT:+$COMPONENT-}*$TARGET$SUFFIX" >> "$GITHUB_OUTPUT"
 
   compile:
     needs: ["config"]
@@ -182,7 +187,7 @@ jobs:
       # NOTE: The export template passes between jobs as an artifact. Unlike a
       # shared cache entry, every matrix member of the 'export' job can read
       # it without racing to delete it.
-      ARTIFACT_NAME: export-template-${{ inputs.component }}-${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.storefront }}-${{ inputs.profile }}
+      ARTIFACT_NAME: export-template-${{ inputs.component != '' && format('{0}-', inputs.component) || '' }}${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.storefront }}-${{ inputs.profile }}${{ needs.config.outputs.artifact-suffix }}
 
     outputs:
       artifact-name: ${{ env.ARTIFACT_NAME }}
@@ -271,7 +276,7 @@ jobs:
         with:
           # NOTE: These are intermediate artifacts; 'package' collects them.
           publish: true
-          artifact-name: "export-${{ matrix.preset }}"
+          artifact-name: "export-${{ matrix.preset }}${{ needs.config.outputs.artifact-suffix }}"
           artifact-retention-days: 1
 
           preset-name: "${{ matrix.preset }}"
