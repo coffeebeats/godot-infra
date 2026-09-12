@@ -11,6 +11,12 @@ on:
 permissions:
   contents: read
 
+# NOTE: A cancelled compile saves no cache, but a second multi-hour self-test
+# running alongside the first is worse.
+concurrency:
+  group: "${{ github.workflow }}-${{ github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
