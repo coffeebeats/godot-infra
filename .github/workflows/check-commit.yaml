@@ -85,6 +85,25 @@ jobs:
           shopt -s globstar
           shellcheck --severity=warning actions/**/*.sh
 
+  check-workflows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      # NOTE: 'actionlint' is not preinstalled, but 'go' is, and a pinned
+      # module version is verified against the checksum database.
+      - name: Install 'actionlint'
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+
+      # NOTE: The '$/' same-repository reference is newer than 'actionlint', so
+      # it reads as a malformed 'uses'. These patterns match only that message
+      # and leave the rest of the rule in force.
+      - name: Lint workflow files
+        run: |
+          "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/' -ignore 'reusable workflow call "\$/'
+
   # The self-test exports the sample project with every supported Godot
   # version through the reusable workflows, so a release never ships an
   # untested pipeline.
@@ -121,7 +140,7 @@ jobs:
   # Used to ensure all branch protection requirements are met. This is a workaround until
   # https://github.com/github-community/community/discussions/4324 is addressed.
   branch_protection:
-    needs: ["changes", "check-python", "check-shell", "export"]
+    needs: ["changes", "check-python", "check-shell", "check-workflows", "export"]
     if: ${{ always() }}
 
     runs-on: ubuntu-latest
