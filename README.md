@@ -66,9 +66,20 @@ jobs:
       profile: release
 ```
 
-Compose a game's release pipeline in the game repository rather than calling a single workflow that does everything. The build matrix stays readable YAML, `release-please` keeps its own pin and configuration, and the chain is shallow enough to leave room under GitHub's four-level nesting limit. Grant `contents: write`, `issues: write` and `pull-requests: write`.
+Compose a game's release pipeline in the game repository rather than calling a single workflow that does everything. The build matrix stays readable YAML, `release-please` keeps its own pin and configuration, and the chain is shallow enough to leave room under GitHub's four-level nesting limit.
 
 ```yaml
+name: "🚀 Release: Project version"
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
