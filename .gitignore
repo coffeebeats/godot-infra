@@ -25,7 +25,6 @@ dist/
 godot/
 # Everything the editor generates inside the sample project; only its sources are tracked.
 tests/project/*
-!tests/project/.godot-version
 !tests/project/export_presets.cfg
 !tests/project/main.tscn
 !tests/project/project.godot
