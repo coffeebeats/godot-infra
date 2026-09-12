@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.1.0 (2026-09-12)
+
+## What's Changed
+* feat(workflows): serve addons from 'check-project' and leave aggregates to callers by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/592
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.0.0...v6.1.0
+
 ## 6.0.0 (2026-09-12)
 
 ## What's Changed
