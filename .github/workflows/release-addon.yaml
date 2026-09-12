@@ -113,9 +113,12 @@ jobs:
           SEMANTIC: ${{ steps.version.outputs.semantic }}
         run: |
           NAME="${REPOSITORY#*/}"
-          echo "subfolder=${SUBFOLDER:-${NAME#godot-plugin-}}" >> "$GITHUB_OUTPUT"
-          echo "target-branch=${TARGET_BRANCH:-godot-v$MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
-          echo "godot-editor-version=${EDITOR_VERSION:-v$SEMANTIC}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "subfolder=${SUBFOLDER:-${NAME#godot-plugin-}}"
+            echo "target-branch=${TARGET_BRANCH:-godot-v$MAJOR_MINOR}"
+            echo "godot-editor-version=${EDITOR_VERSION:-v$SEMANTIC}"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: $/actions/package-addon
         with:

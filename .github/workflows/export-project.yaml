@@ -167,17 +167,20 @@ jobs:
             exit 1
           fi
 
-          echo "value=$(jq -c -n '$ARGS.positional' --args "${PRESETS[@]}")" >> "$GITHUB_OUTPUT"
+          {
+            echo "value=$(jq -c -n '$ARGS.positional' --args "${PRESETS[@]}")"
 
-          # 'game-' marks a packaged artifact, as 'export-' marks the per-preset
-          # intermediates. It stays fixed so callers can glob for the results.
-          echo "artifact-name=game-${COMPONENT:+$COMPONENT-}$TARGET-$PROFILE$SUFFIX" >> "$GITHUB_OUTPUT"
-          echo "artifact-suffix=$SUFFIX" >> "$GITHUB_OUTPUT"
+            # 'game-' marks a packaged artifact, as 'export-' marks the
+            # per-preset intermediates. It stays fixed so callers can glob
+            # for the results.
+            echo "artifact-name=game-${COMPONENT:+$COMPONENT-}$TARGET-$PROFILE$SUFFIX"
+            echo "artifact-suffix=$SUFFIX"
 
-          # The 'package' job downloads what the 'export' job publishes as
-          # 'export-<preset>', so this glob mirrors the rule above. Anchoring
-          # the end stops 'steam' from selecting 'steamdeck'.
-          echo "artifact-pattern=export-${COMPONENT:+$COMPONENT-}*$TARGET$SUFFIX" >> "$GITHUB_OUTPUT"
+            # The 'package' job downloads what the 'export' job publishes
+            # as 'export-<preset>', so this glob mirrors the rule above.
+            # Anchoring the end stops 'steam' from selecting 'steamdeck'.
+            echo "artifact-pattern=export-${COMPONENT:+$COMPONENT-}*$TARGET$SUFFIX"
+          } >> "$GITHUB_OUTPUT"
 
   compile:
     needs: ["config"]
@@ -342,7 +345,7 @@ jobs:
 
           # NOTE: The archive preserves permissions, without which MacOS
           # application bundles do not run once downloaded.
-          tar -czf "$ARCHIVE_PATH" *
+          tar -czf "$ARCHIVE_PATH" -- *
 
           echo "Packaged export game artifacts into archive: $ARCHIVE_PATH"
           ls -ls "$ARCHIVE_PATH"
