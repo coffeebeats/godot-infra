@@ -100,9 +100,12 @@ jobs:
           - platform: windows
             arch: x86_64
 
-    uses: $/.github/workflows/export-project.yaml
+    # NOTE: Calling 'publish-game' rather than 'export-project' directly also
+    # exercises the nested reusable-workflow call and its '$/' reference.
+    uses: ./.github/workflows/publish-game.yaml
     secrets: inherit
     with:
+      ref: ${{ github.head_ref || github.ref_name }}
       project-path: tests/project
       godot-version: ${{ matrix.version }}
       platform: ${{ matrix.platform }}

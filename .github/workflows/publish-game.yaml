@@ -21,6 +21,10 @@ on:
         type: string
         required: false
         default: "."
+      godot-version:
+        type: string
+        required: false
+        default: ""
       component:
         type: string
         required: false
@@ -68,6 +72,7 @@ jobs:
     with:
       arch: ${{ inputs.arch }}
       component: ${{ inputs.component }}
+      godot-version: ${{ inputs.godot-version }}
       platform: ${{ inputs.platform }}
       profile: ${{ inputs.profile }}
       project-path: ${{ inputs.project-path }}
