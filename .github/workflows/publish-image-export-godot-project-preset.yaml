@@ -97,9 +97,12 @@ jobs:
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
         with:
           build-args: RUST_VERSION=${{ env.RUST_VERSION }}
-          context: export-godot-project-preset/${{ inputs.platform }}
+          context: actions/export-godot-project-preset/${{ inputs.platform }}
           push: true
           tags: ghcr.io/coffeebeats/export-godot-project-preset:godot-v${{ inputs.godot-major-minor-version }}-${{ inputs.platform }}
+          labels: |
+            org.opencontainers.image.version=godot-v${{ inputs.godot-major-minor-version }}
+            org.opencontainers.image.revision=${{ github.sha }}
           no-cache: ${{ inputs.force }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -107,6 +110,8 @@ jobs:
           build-contexts: |
             patches=thirdparty/.patches
 
+  # NOTE: Only untagged (orphaned) image versions are removed; tagged images
+  # are immutable and never deleted.
   remove-stale-images:
     needs: ["build-and-publish"]
     if: |
