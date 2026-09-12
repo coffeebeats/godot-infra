@@ -124,12 +124,30 @@ runs:
         godot-patches: ${{ inputs.godot-patches }}
 
     - name: Parse Godot source code version
+      id: version
       uses: "$/.github/actions/parse-godot-version"
       with:
         versionpy-path: ${{ github.workspace }}/godot/version.py
         minimum-major-version: 4
         minimum-minor-version: 3
         minimum-patch-version: 0
+
+    # NOTE: The toolchain image is selected by the Godot minor version being
+    # compiled; images for every supported minor are published by
+    # '.github/workflows/publish-image-godot-infra.yaml'.
+    - name: Check that the toolchain image exists
+      id: image
+      shell: bash
+      env:
+        IMAGE: ghcr.io/coffeebeats/compile-godot-export-template:godot-v${{ steps.version.outputs.major-minor }}-${{ inputs.platform }}
+        VERSION: ${{ steps.version.outputs.major-minor }}
+      run: |
+        if ! docker manifest inspect "$IMAGE" &>/dev/null; then
+          echo "::error::Toolchain image not found: '$IMAGE'. Run 'publish-image-godot-infra.yaml' in 'coffeebeats/godot-infra' with 'godot-major-minor-version=$VERSION'."
+          exit 1
+        fi
+
+        echo "value=$IMAGE" >> "$GITHUB_OUTPUT"
 
     - name: Remove editor-related source code
       if: inputs.compile-editor != 'true'
@@ -254,75 +272,41 @@ runs:
 
         echo "value=$TARGET" >> "$GITHUB_OUTPUT"
 
-    # MacOS
+    # NOTE: The per-platform build commands live in
+    # '<platform>/compile.sh' beside the platform's Dockerfile and are mounted
+    # into the toolchain container at run time. The same scripts can be run
+    # locally; see the README.
+    - name: Compile the export template
+      if: steps.godot-cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        IMAGE: ${{ steps.image.outputs.value }}
+        PLATFORM: ${{ inputs.platform }}
+        GODOT_SRC_PATH: godot
+        SCONS_CACHE_PATH: .scons
+        ARCH: ${{ inputs.arch }}
+        TARGET: ${{ steps.target.outputs.value }}
+        PROFILE: ${{ inputs.profile }}
+        USE_DOUBLE_PRECISION: ${{ inputs.use-double-precision }}
+        ENABLE_JAVASCRIPT_EVAL: ${{ inputs.enable-javascript-eval }}
+        ENABLE_GDEXTENSION: ${{ inputs.enable-gdextension }}
+        ENCRYPTION_KEY: ${{ inputs.encryption-key }}
+      run: |
+        # NOTE: SCons fails on an empty encryption key variable, so only pass it
+        # through when one is set.
+        KEY_ARGS=()
+        if [[ -n "$ENCRYPTION_KEY" ]]; then
+          KEY_ARGS=(-e "SCRIPT_AES256_ENCRYPTION_KEY=$ENCRYPTION_KEY")
+        fi
 
-    # TODO: 'universal' builds cannot take advantage of 'x86_64'/'arm64'-
-    # specific caches. Consider restructuring, but this is unlikely to be an
-    # issue in practice because 'universal' is by far the most common arch.
-
-    - name: Compile the export template (MacOS - x86_64)
-      if: |
-        inputs.platform == 'macos' &&
-        (inputs.arch == 'x86_64' || inputs.arch == 'universal') &&
-        steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "$/compile-godot-export-template/macos"
-      with:
-        app-bundle: ${{ inputs.arch == 'x86_64' }}
-        arch: x86_64
-        encryption-key: ${{ inputs.encryption-key }}
-        godot-src-path: godot
-        profile: ${{ inputs.profile }}
-        target: ${{ steps.target.outputs.value }}
-        use-double-precision: ${{ inputs.use-double-precision }}
-
-    - name: Compile the export template (MacOS - arm64+universal)
-      if: |
-        inputs.platform == 'macos'  &&
-        (inputs.arch == 'arm64' || inputs.arch == 'universal') &&
-        steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "$/compile-godot-export-template/macos"
-      with:
-        app-bundle: true
-        arch: arm64
-        encryption-key: ${{ inputs.encryption-key }}
-        godot-src-path: godot
-        lipo: ${{ inputs.arch == 'universal' }}
-        profile: ${{ inputs.profile }}
-        target: ${{ steps.target.outputs.value }}
-        use-double-precision: ${{ inputs.use-double-precision }}
-
-    # Web
-
-    - name: Compile the export template (Web - wasm32)
-      if: |
-        inputs.compile-editor != 'true' &&
-        inputs.platform == 'web' &&
-        steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "$/compile-godot-export-template/web"
-      with:
-        arch: ${{ inputs.arch }}
-        enable-gdextension: ${{ inputs.enable-gdextension }}
-        enable-javascript-eval: ${{ inputs.enable-javascript-eval }}
-        encryption-key: ${{ inputs.encryption-key }}
-        godot-src-path: godot
-        profile: ${{ inputs.profile }}
-        target: ${{ steps.target.outputs.value }}
-        use-double-precision: ${{ inputs.use-double-precision }}
-
-    # Windows
-
-    - name: Compile the export template (Windows - x86_64)
-      if: |
-        inputs.platform == 'windows' &&
-        steps.godot-cache.outputs.cache-hit != 'true'
-      uses: "$/compile-godot-export-template/windows"
-      with:
-        arch: ${{ inputs.arch }}
-        encryption-key: ${{ inputs.encryption-key }}
-        godot-src-path: godot
-        profile: ${{ inputs.profile }}
-        target: ${{ steps.target.outputs.value }}
-        use-double-precision: ${{ inputs.use-double-precision }}
+        docker run --rm \
+          -v "$GITHUB_WORKSPACE:/github/workspace" \
+          -v "$GITHUB_ACTION_PATH:/action:ro" \
+          -w /github/workspace \
+          -e GODOT_SRC_PATH -e SCONS_CACHE_PATH -e ARCH -e TARGET -e PROFILE \
+          -e USE_DOUBLE_PRECISION -e ENABLE_JAVASCRIPT_EVAL -e ENABLE_GDEXTENSION \
+          "${KEY_ARGS[@]}" \
+          "$IMAGE" "/action/$PLATFORM/compile.sh"
 
     # ---------------------- Inspect compiled artifacts ---------------------- #
 

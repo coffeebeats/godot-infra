@@ -13,9 +13,8 @@ inputs:
     required: false
     default: .
   godot-editor-version:
-    description: "The godot editor version to use for reimporting."
-    required: false
-    default: "v4.7.2-stable"
+    description: "The godot editor version to use for reimporting (e.g. 'v4.7.2-stable')."
+    required: true
   file-excludes:
     description: "A comma or newline-delimited list of glob patterns to exclude addon files."
     required: false

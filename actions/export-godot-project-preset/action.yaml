@@ -221,6 +221,23 @@ runs:
 
     # ----------------------- Export the project preset ---------------------- #
 
+    # NOTE: The export image is selected by the Godot minor version of the
+    # editor; images for every supported minor are published by
+    # '.github/workflows/publish-image-godot-infra.yaml'.
+    - name: Check that the export image exists
+      id: image
+      shell: bash
+      env:
+        IMAGE: ghcr.io/coffeebeats/export-godot-project-preset:godot-v${{ steps.godot-version.outputs.major-minor }}-${{ steps.platform.outputs.value }}
+        VERSION: ${{ steps.godot-version.outputs.major-minor }}
+      run: |
+        if ! docker manifest inspect "$IMAGE" &>/dev/null; then
+          echo "::error::Export image not found: '$IMAGE'. Run 'publish-image-godot-infra.yaml' in 'coffeebeats/godot-infra' with 'godot-major-minor-version=$VERSION'."
+          exit 1
+        fi
+
+        echo "value=$IMAGE" >> "$GITHUB_OUTPUT"
+
     - name: Create output directory
       shell: bash
       run: |
@@ -231,68 +248,60 @@ runs:
 
         mkdir $GITHUB_WORKSPACE/dist
 
-    - name: Export the Godot project preset (MacOS)
-      if: steps.platform.outputs.value == 'macos'
-      uses: "$/export-godot-project-preset/macos"
-      with:
-        pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
-        preset-name: ${{ inputs.preset-name }}
-        profile: ${{ inputs.profile }}
-        verbose: ${{ steps.verbose.outputs.enabled }}
-
-        godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
-        preset-output-path: dist/${{ steps.export-path.outputs.value }}
-        project-path: ${{ steps.project.outputs.dir }}
-
-        # Encryption secrets
-        encryption-key: ${{ inputs.encryption-key }}
-
-        # Codesigning secrets
-        codesign-certificate-file: ${{ inputs.codesign-certificate-file }}
-        codesign-certificate-password: ${{ inputs.codesign-certificate-password }}
-        codesign-provisioning-profile: ${{ inputs.codesign-provisioning-profile }}
-        notarization-api-uuid: ${{ inputs.notarization-api-uuid }}
-        notarization-api-key: ${{ inputs.notarization-api-key }}
-        notarization-api-key-id: ${{ inputs.notarization-api-key-id }}
-        notarization-apple-id-name: ${{ inputs.notarization-apple-id-name }}
-        notarization-apple-id-password: ${{ inputs.notarization-apple-id-password }}
-
-    - name: Export the Godot project preset (Web)
-      if: steps.platform.outputs.value == 'web'
-      uses: "$/export-godot-project-preset/web"
-      with:
-        pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
-        preset-name: ${{ inputs.preset-name }}
-        profile: ${{ inputs.profile }}
-        verbose: ${{ steps.verbose.outputs.enabled }}
-
-        godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
-        preset-output-path: dist/${{ steps.export-path.outputs.value }}
-        project-path: ${{ steps.project.outputs.dir }}
+    # NOTE: The per-platform export commands live in '<platform>/export.sh'
+    # beside the platform's Dockerfile and are mounted into the export
+    # container at run time. The same scripts can be run locally; see the
+    # README.
+    - name: Export the Godot project preset
+      shell: bash
+      env:
+        IMAGE: ${{ steps.image.outputs.value }}
+        PLATFORM: ${{ steps.platform.outputs.value }}
+        GODOT_EDITOR_PATH: ${{ steps.editor.outputs.path }}/bin/godot
+        PROJECT_PATH: ${{ steps.project.outputs.dir }}
+        PRESET_NAME: ${{ inputs.preset-name }}
+        PRESET_OUTPUT_PATH: dist/${{ steps.export-path.outputs.value }}
+        PROFILE: ${{ inputs.profile }}
+        PCK_ONLY: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
+        VERBOSE: ${{ steps.verbose.outputs.enabled }}
 
         # Encryption secrets
-        encryption-key: ${{ inputs.encryption-key }}
+        GODOT_SCRIPT_ENCRYPTION_KEY: ${{ inputs.encryption-key }}
 
-    - name: Export the Godot project preset (Windows)
-      if: steps.platform.outputs.value == 'windows'
-      uses: "$/export-godot-project-preset/windows"
-      with:
-        pck-only: ${{ inputs.pck-only == 'true' || endsWith(steps.export-path.outputs.value, '.pck') }}
-        preset-name: ${{ inputs.preset-name }}
-        profile: ${{ inputs.profile }}
-        verbose: ${{ steps.verbose.outputs.enabled }}
+        # Codesigning secrets (MacOS)
+        GODOT_MACOS_CODESIGN_CERTIFICATE_FILE: ${{ inputs.codesign-certificate-file }}
+        GODOT_MACOS_CODESIGN_CERTIFICATE_PASSWORD: ${{ inputs.codesign-certificate-password }}
+        GODOT_MACOS_CODESIGN_PROVISIONING_PROFILE: ${{ inputs.codesign-provisioning-profile }}
+        GODOT_MACOS_NOTARIZATION_API_UUID: ${{ inputs.notarization-api-uuid }}
+        GODOT_MACOS_NOTARIZATION_API_KEY: ${{ inputs.notarization-api-key }}
+        GODOT_MACOS_NOTARIZATION_API_KEY_ID: ${{ inputs.notarization-api-key-id }}
+        GODOT_MACOS_NOTARIZATION_APPLE_ID_NAME: ${{ inputs.notarization-apple-id-name }}
+        GODOT_MACOS_NOTARIZATION_APPLE_ID_PASSWORD: ${{ inputs.notarization-apple-id-password }}
 
-        godot-editor-path: ${{ steps.editor.outputs.path }}/bin/godot
-        preset-output-path: dist/${{ steps.export-path.outputs.value }}
-        project-path: ${{ steps.project.outputs.dir }}
-
-        # Encryption secrets
-        encryption-key: ${{ inputs.encryption-key }}
-
-        # Codesigning secrets
-        codesign-identity-type: ${{ inputs.codesign-identity-type }}
-        codesign-identity: ${{ inputs.codesign-identity }}
-        codesign-password: ${{ inputs.codesign-password }}
+        # Codesigning secrets (Windows)
+        GODOT_WINDOWS_CODESIGN_IDENTITY_TYPE: ${{ inputs.codesign-identity-type }}
+        GODOT_WINDOWS_CODESIGN_IDENTITY: ${{ inputs.codesign-identity }}
+        GODOT_WINDOWS_CODESIGN_PASSWORD: ${{ inputs.codesign-password }}
+      run: |
+        docker run --rm \
+          -v "$GITHUB_WORKSPACE:/github/workspace" \
+          -v "$GITHUB_ACTION_PATH:/action:ro" \
+          -w /github/workspace \
+          -e GODOT_EDITOR_PATH -e PROJECT_PATH -e PRESET_NAME -e PRESET_OUTPUT_PATH \
+          -e PROFILE -e PCK_ONLY -e VERBOSE \
+          -e GODOT_SCRIPT_ENCRYPTION_KEY \
+          -e GODOT_MACOS_CODESIGN_CERTIFICATE_FILE \
+          -e GODOT_MACOS_CODESIGN_CERTIFICATE_PASSWORD \
+          -e GODOT_MACOS_CODESIGN_PROVISIONING_PROFILE \
+          -e GODOT_MACOS_NOTARIZATION_API_UUID \
+          -e GODOT_MACOS_NOTARIZATION_API_KEY \
+          -e GODOT_MACOS_NOTARIZATION_API_KEY_ID \
+          -e GODOT_MACOS_NOTARIZATION_APPLE_ID_NAME \
+          -e GODOT_MACOS_NOTARIZATION_APPLE_ID_PASSWORD \
+          -e GODOT_WINDOWS_CODESIGN_IDENTITY_TYPE \
+          -e GODOT_WINDOWS_CODESIGN_IDENTITY \
+          -e GODOT_WINDOWS_CODESIGN_PASSWORD \
+          "$IMAGE" "/action/$PLATFORM/export.sh"
 
     # ----------------------- Collect export artifacts ----------------------- #
 
