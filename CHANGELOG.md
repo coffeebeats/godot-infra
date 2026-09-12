@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.2.0 (2026-09-12)
+
+## What's Changed
+* feat(workflows): compile one editor per call in 'compile-editor' by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/594
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.1.0...v6.2.0
+
 ## 6.1.0 (2026-09-12)
 
 ## What's Changed
