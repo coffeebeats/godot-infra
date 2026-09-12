@@ -4,7 +4,7 @@ A repository for Godot build and release infrastructure using [@coffeebeats](htt
 
 ## **How it works**
 
-This repository publishes reusable GitHub workflows and actions for checking, compiling, exporting, and releasing Godot projects and addons, plus the Docker toolchain images they run in. See [Example usage](#example-usage) below for demonstrations of how to use the repository.
+This repository publishes reusable GitHub workflows and actions for checking, compiling, exporting, and releasing Godot projects and addons, plus the Docker toolchain images they run in. See [Example usage](#example-usage) below.
 
 ### Supported platforms
 
@@ -225,7 +225,7 @@ docker build \
 
 ### Testing the toolchain end to end
 
-A successful image build only proves that the toolchain installs. CI runs the export pipeline against the sample project in [`tests/project`](./tests/project) for every minor in `godot-versions.txt` on each pull request. The same can be run locally: the per-platform build commands are the scripts beside each Dockerfile (`actions/compile-godot-export-template/<platform>/compile.sh`, `actions/export-godot-project-preset/<platform>/export.sh`), mounted into the container exactly as the actions do it. Each script documents the environment variables it reads.
+A successful image build only proves that the toolchain installs. CI runs the export pipeline against the sample project in [`tests/project`](./tests/project) for every minor in `godot-versions.txt` on each pull request that touches the pipeline. The same runs locally; the build commands are the scripts beside each Dockerfile (`actions/compile-godot-export-template/<platform>/compile.sh`, `actions/export-godot-project-preset/<platform>/export.sh`), mounted into the container exactly as the actions do it. Each script documents the environment variables it reads.
 
 #### Setup
 
