@@ -66,7 +66,65 @@ jobs:
       profile: release
 ```
 
-Available workflows: `check-project.yaml`, `export-project.yaml`, `publish-game.yaml`, `release-project.yaml`, `compile-editor.yaml` (games), `check-addon.yaml`, `release-addon.yaml` (addons).
+Compose a game's release pipeline in the game repository rather than calling a single workflow that does everything. The build matrix stays readable YAML, `release-please` keeps its own pin and configuration, and the chain is shallow enough to leave room under GitHub's four-level nesting limit.
+
+```yaml
+name: "🚀 Release: Project version"
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+
+    outputs:
+      release-created: ${{ steps.release.outputs.releases_created }}
+      release-tag: ${{ steps.release.outputs.tag_name }}
+
+    steps:
+      # The repository's existing 'release-please' configuration.
+      - uses: googleapis/release-please-action@v4
+        id: release
+
+  publish:
+    needs: ["release-please"]
+    if: needs.release-please.outputs.release-created == 'true'
+
+    strategy:
+      matrix:
+        include:
+          - { arch: x86_64, platform: windows, storefront: unknown }
+          # ... one entry per shipped target.
+
+    uses: coffeebeats/godot-infra/.github/workflows/publish-game.yaml@v6
+    secrets: inherit
+    with:
+      arch: ${{ matrix.arch }}
+      platform: ${{ matrix.platform }}
+      storefront: ${{ matrix.storefront }}
+      profile: release
+      ref: ${{ needs.release-please.outputs.release-tag }}
+
+  upload:
+    needs: ["release-please", "publish"]
+    if: needs.release-please.outputs.release-created == 'true'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: coffeebeats/godot-infra/actions/attach-release-assets@v6
+        with:
+          tag: ${{ needs.release-please.outputs.release-tag }}
+```
+
+Available workflows: `check-project.yaml`, `export-project.yaml`, `publish-game.yaml`, `compile-editor.yaml` (games), `check-addon.yaml`, `release-addon.yaml` (addons).
 
 #### **Actions**
 

@@ -4,6 +4,10 @@ name: "🚀 Release: Addon version"
 # when a release is created (or on 'workflow_dispatch'), packages the addon and
 # pushes it to its distribution branch.
 #
+# NOTE: Games compose their release in the game repository because that chain
+# would otherwise reach GitHub's four-level nesting limit. An addon release is
+# a single action call, so it stays a workflow.
+#
 # Caller requirements:
 #   on: push: branches: [main]; workflow_dispatch (optional, repackages)
 #   permissions: contents: write, issues: write, pull-requests: write
