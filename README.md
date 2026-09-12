@@ -124,7 +124,7 @@ jobs:
           tag: ${{ needs.release-please.outputs.release-tag }}
 ```
 
-Available workflows: `check-project.yaml`, `export-project.yaml`, `publish-game.yaml`, `compile-editor.yaml` (games), `check-addon.yaml`, `release-addon.yaml` (addons).
+Available workflows: `check-project.yaml` (games and addons), `export-project.yaml`, `publish-game.yaml`, `compile-editor.yaml` (games), `release-addon.yaml` (addons). `check-project.yaml` gates each of its jobs on what the repository carries, so an addon repository skips the Python, image and translation work rather than needing a workflow of its own.
 
 #### **Actions**
 

@@ -1,7 +1,11 @@
 name: "🔎 Check: Godot project"
 
-# A reusable workflow that lints, tests, and tidies a Godot game project. Jobs
-# that commit back (image optimization, translation updates) run serially.
+# A reusable workflow that lints, tests, and tidies a Godot repository, whether
+# it holds a game or an addon. Jobs that commit back (image optimization,
+# translation updates) run serially.
+#
+# NOTE: Every job past linting and testing gates on what the repository carries,
+# so an addon repository skips the rest rather than needing its own workflow.
 #
 # Caller requirements:
 #   on: pull_request + push on the default branch
@@ -41,6 +45,7 @@ jobs:
       has_po_change: "${{ steps.check-po.outputs.any_modified == 'true' }}"
       has_python: "${{ steps.tools.outputs.python == 'true' }}"
       has_translations: "${{ steps.tools.outputs.translations == 'true' }}"
+      has_check_script: "${{ steps.tools.outputs.check-script == 'true' }}"
       changed-png-files: "${{ steps.check-png.outputs.all_changed_files }}"
 
     steps:
@@ -60,7 +65,13 @@ jobs:
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
         with:
           exclude_submodules: true
-          files: "**/*.gd"
+
+          # NOTE: The linter configuration counts as source, so that changing a
+          # rule re-lints the tree it applies to.
+          files: |
+            **/*.gd
+            .gdformatrc
+            .gdlintrc
 
       - name: Check for PNG image file changes
         id: check-png
@@ -97,6 +108,10 @@ jobs:
 
           if [[ -x tools/sync-translations.sh ]]; then
             echo "translations=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -f tools/check.gd ]]; then
+            echo "check-script=true" >> "$GITHUB_OUTPUT"
           fi
 
   format-and-lint:
@@ -326,6 +341,7 @@ jobs:
         run: godot --headless --quit-after 30
 
       - name: Check project files
+        if: needs.changes.outputs.has_check_script == 'true'
         run: godot --headless -s tools/check.gd
 
       - name: Test source code
