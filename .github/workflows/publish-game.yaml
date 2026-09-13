@@ -383,6 +383,9 @@ jobs:
         run: |-
           cd "$PRESETS_DIR"
 
+          # NOTE: '*' skips dotfiles, which would drop them from the release.
+          shopt -s dotglob
+
           tar -czf "$ARCHIVE_PATH" -- *
 
           echo "Packaged export game artifacts into archive: $ARCHIVE_PATH"
