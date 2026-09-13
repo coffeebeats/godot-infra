@@ -369,21 +369,49 @@ jobs:
           merge-multiple: true
 
       # NOTE: Each preset arrives as one archive, since an artifact drops file
-      # modes; unpacking them into one directory merges the presets.
+      # modes. The archives unpack side by side before merging, so two presets
+      # that export different files at one path fail the job rather than one
+      # silently replacing the other. Identical files, such as a library every
+      # preset bundles, merge as one.
       - name: Unpack export preset artifacts
         env:
           EXPORTS_DIR: ${{ runner.temp }}/exports
+          UNPACKED_DIR: ${{ runner.temp }}/unpacked
           PRESETS_DIR: ${{ runner.temp }}/presets
         run: |
-          mkdir -p "$PRESETS_DIR"
+          mkdir -p "$UNPACKED_DIR" "$PRESETS_DIR"
 
           # NOTE: A pattern matching no artifacts downloads nothing and still
           # succeeds, so 'failglob' turns an empty download into an error.
           shopt -s failglob
 
           for ARCHIVE in "$EXPORTS_DIR"/*.tar; do
-            tar -xpf "$ARCHIVE" -C "$PRESETS_DIR"
+            DIR="$UNPACKED_DIR/$(basename "$ARCHIVE" .tar)"
+            mkdir "$DIR"
+            tar -xpf "$ARCHIVE" -C "$DIR"
+            rm "$ARCHIVE"
           done
+
+          # Once identical checksum lines collapse, a path still listed twice
+          # holds different contents in different presets.
+          CONFLICTS=$(
+            for DIR in "$UNPACKED_DIR"/*; do
+              (cd "$DIR" && find . -type f -exec sha256sum {} +)
+            done | sort -u | cut -c 67- | sort | uniq -d
+          )
+
+          if [[ -n "$CONFLICTS" ]]; then
+            echo "::error::Presets exported different files at the same path:"
+            echo "$CONFLICTS"
+            exit 1
+          fi
+
+          # NOTE: Hard links merge the presets without copying their contents.
+          for DIR in "$UNPACKED_DIR"/*; do
+            cp -a --link --remove-destination "$DIR"/. "$PRESETS_DIR"/
+          done
+
+          rm -rf "$UNPACKED_DIR"
 
       - name: Inspect game artifacts
         run: tree -lha --dirsfirst ${{ runner.temp }}/presets
