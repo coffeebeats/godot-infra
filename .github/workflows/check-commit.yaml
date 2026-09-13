@@ -97,15 +97,12 @@ jobs:
       - name: Install 'actionlint'
         run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
 
-      # NOTE: The '$/' same-repository reference is newer than 'actionlint', so
-      # a step's 'uses' reads as malformed. The pattern matches only that
-      # message and leaves the rest of the rule in force. No matching ignore
-      # exists for a job's 'uses', because '$/' does not work there; GitHub
-      # resolves it as './', against the caller's repository.
-      # NOTE: This also runs 'shellcheck' over every 'run:' block, at its
-      # default severity.
+      # NOTE: 'actionlint' also runs 'shellcheck' over every 'run:' block, at
+      # its default severity.
       - name: Lint workflow files
         run: |
+          # 'actionlint' predates '$/', so a step's 'uses' reads as malformed.
+          # A job's 'uses' needs no ignore, because '$/' becomes './' there.
           "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/'
 
   # The self-test exports the sample project with every supported Godot
