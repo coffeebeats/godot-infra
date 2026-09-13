@@ -69,7 +69,10 @@ defaults:
 
 jobs:
   export:
-    uses: $/.github/workflows/export-project.yaml
+    # NOTE: '$/' resolves against the repository running the workflow, so a
+    # nested call from a consumer would look for this file there. The major is
+    # rewritten on release; see '.release-please/config.json'.
+    uses: coffeebeats/godot-infra/.github/workflows/export-project.yaml@v6 # x-release-please-major
     secrets: inherit
     with:
       arch: ${{ inputs.arch }}
