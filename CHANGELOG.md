@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.3.3 (2026-09-13)
+
+## What's Changed
+* chore(workflows): correct two release comments by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/602
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.3.2...v6.3.3
+
 ## 6.3.2 (2026-09-13)
 
 ## What's Changed
