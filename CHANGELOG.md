@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.3.4 (2026-09-13)
+
+## What's Changed
+* fix(compile): drop 'restore-keys' from the build artifact cache by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/604
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.3.3...v6.3.4
+
 ## 6.3.3 (2026-09-13)
 
 ## What's Changed
