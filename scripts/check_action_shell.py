@@ -10,6 +10,7 @@ Usage: check_action_shell.py [SHELLCHECK OPTION...]
 from __future__ import annotations
 
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -46,6 +47,9 @@ class Script:
     line: int
     # column is the zero-based column at which each line of the text begins.
     column: int
+    # exact is false when the text's lines differ from the action's, as in a
+    # folded block, so findings can only be reported at the script's first line.
+    exact: bool
 
 
 def mapping_value(node: yaml.Node | None, key: str) -> yaml.Node | None:
@@ -99,12 +103,16 @@ def extract_scripts(action: Path) -> list[Script]:
             line = mark.line
             column = mark.column + (1 if run.style in ("'", '"') else 0)
 
+        # NOTE: Folding rewrites line breaks, so only a literal block or a one-line
+        # scalar keeps the action's lines.
+        exact = run.style == "|" or mark.line == run.end_mark.line
+
         # NOTE: 'shellcheck' treats an uppercase variable as a set environment
         # variable, so an expression reads as the runtime value it stands for.
         text = EXPRESSION.sub(
             lambda match: "${" + "X" * (len(match[0]) - 3) + "}", run.value
         )
-        scripts.append(Script(action, command[0], options, text, line, column))
+        scripts.append(Script(action, command[0], options, text, line, column, exact))
 
     return scripts
 
@@ -113,6 +121,10 @@ def main(argv: list[str]) -> int:
     """main checks every action's scripts, passing `argv` through to
     'shellcheck', and returns its exit code.
     """
+    if not shutil.which("shellcheck"):
+        print("error: 'shellcheck' was not found on the PATH", file=sys.stderr)
+        return 2
+
     actions = sorted(path for pattern in ACTION_GLOBS for path in ROOT.glob(pattern))
     scripts = [script for action in actions for script in extract_scripts(action)]
     if not scripts:
@@ -124,13 +136,16 @@ def main(argv: list[str]) -> int:
             name = f"{index:04d}.sh"
             files[name] = script
 
-            # NOTE: Padding puts the text on the line it occupies in the action,
-            # and its first lines carry the shell directive and options.
-            padding = [f"# shellcheck shell={script.shell}", script.options]
+            # NOTE: Padding puts the text on the line it occupies in the action.
+            # The options go last, where 'shellcheck' still honors them, so a
+            # directive atop the script keeps applying to all of it.
+            padding = [f"# shellcheck shell={script.shell}"]
             padding += [""] * (script.line - len(padding))
-            text = "\n".join([*padding, script.text])
+            options = ["# shellcheck disable=SC2317", script.options]
+            text = "\n".join([*padding, script.text, *options])
             Path(tmpdir, name).write_text(text, encoding="utf-8", newline="\n")
 
+        # NOTE: 'shellcheck' takes the first '--format', so `argv` cannot override it.
         result = subprocess.run(
             ["shellcheck", "--format=gcc", *argv, *files],
             cwd=tmpdir,
@@ -146,8 +161,13 @@ def main(argv: list[str]) -> int:
 
         script = files[finding["file"]]
         path = script.action.relative_to(ROOT).as_posix()
-        column = int(finding["column"]) + script.column
-        print(f"{path}:{finding['line']}:{column}: {finding['rest']}")
+        if script.exact:
+            line = int(finding["line"])
+            column = int(finding["column"]) + script.column
+        else:
+            line, column = script.line + 1, script.column + 1
+
+        print(f"{path}:{line}:{column}: {finding['rest']}")
 
     print(result.stderr, end="", file=sys.stderr)
     return result.returncode
