@@ -79,11 +79,20 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
+        with:
+          enable-cache: true
+
       # NOTE: 'shellcheck' is preinstalled on GitHub-hosted Ubuntu runners.
       - name: Lint shell scripts
         run: |
           shopt -s globstar
           shellcheck --severity=warning actions/**/*.sh
+
+      # NOTE: 'actionlint' reads only workflows, so the 'run:' blocks inside
+      # 'action.yml' files are extracted and checked here.
+      - name: Lint action 'run:' blocks
+        run: uv run scripts/check_action_shell.py --severity=warning
 
   check-workflows:
     runs-on: ubuntu-latest
