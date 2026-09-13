@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.4.0 (2026-09-13)
+
+## What's Changed
+* fix(export): archive preset output so file modes survive the upload by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/606
+* chore(workflows): shellcheck the 'run:' blocks of actions by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/607
+* feat(scripts): allow and check the actions godot-infra's reusable workflows call by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/608
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.3.4...v6.4.0
+
 ## 6.3.4 (2026-09-13)
 
 ## What's Changed
