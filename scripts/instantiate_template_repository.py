@@ -30,6 +30,12 @@ DEFAULT_STATUS_CHECK = "branch_protection"
 # `gh repo list <owner> --topic godot-infra --no-archived`.
 DEFAULT_TOPIC = "godot-infra"
 
+# DEFAULT_ALLOW_ACTIONS are always allowed: godot-infra itself, for a repository
+# under another owner, and the unverified actions its reusable workflows call.
+#
+# NOTE: A caller's allowlist governs every action a reusable workflow pulls in.
+DEFAULT_ALLOW_ACTIONS = ("coffeebeats/*", "tj-actions/changed-files@*")
+
 # GITHUB_ACTIONS_APP_ID identifies GitHub Actions as the required-check provider.
 GITHUB_ACTIONS_APP_ID = 15368
 
@@ -834,9 +840,9 @@ def apply_security_settings(args: argparse.Namespace, target: str) -> None:
 
 
 def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
-    """apply_actions_permissions applies token defaults and unions action
-    patterns with the existing allowlist. Unrestricted existing repositories
-    stay unrestricted unless patterns are supplied.
+    """apply_actions_permissions applies token defaults and unions the default
+    and requested action patterns with the existing allowlist. Unrestricted
+    existing repositories stay unrestricted unless patterns are requested.
     """
     info("Updating repository's GitHub Actions permissions.")
 
@@ -870,7 +876,9 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
         )
         # NOTE: Reconciliation must preserve patterns omitted from this invocation.
         patterns = sorted(
-            set(selected.get("patterns_allowed", [])) | set(args.allow_action)
+            set(selected.get("patterns_allowed", []))
+            | set(DEFAULT_ALLOW_ACTIONS)
+            | set(args.allow_action)
         )
         gh_api(
             "PUT",
@@ -1227,7 +1235,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         metavar="PATTERN",
         help=(
             "permit a third-party action pattern, in addition to those already "
-            "allowed; repeatable"
+            f"allowed and to {', '.join(DEFAULT_ALLOW_ACTIONS)}; repeatable"
         ),
     )
     policy.add_argument(
