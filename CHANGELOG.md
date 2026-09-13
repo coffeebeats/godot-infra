@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.3.1 (2026-09-13)
+
+## What's Changed
+* fix(compile): skip the disk cleanup when the build is cached by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/598
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.3.0...v6.3.1
+
 ## 6.3.0 (2026-09-13)
 
 ## What's Changed
