@@ -97,14 +97,13 @@ jobs:
       - name: Install 'actionlint'
         run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
 
-      # NOTE: The '$/' same-repository reference is newer than 'actionlint', so
-      # it reads as a malformed 'uses'. These patterns match only that message
-      # and leave the rest of the rule in force.
-      # NOTE: This also runs 'shellcheck' over every 'run:' block, at its
-      # default severity.
+      # NOTE: 'actionlint' also runs 'shellcheck' over every 'run:' block, at
+      # its default severity.
       - name: Lint workflow files
         run: |
-          "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/' -ignore 'reusable workflow call "\$/'
+          # 'actionlint' predates '$/', so a step's 'uses' reads as malformed.
+          # A job's 'uses' needs no ignore, because '$/' becomes './' there.
+          "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/'
 
   # The self-test exports the sample project with every supported Godot
   # version through the reusable workflows, so a release never ships an
@@ -127,8 +126,6 @@ jobs:
           - platform: windows
             arch: x86_64
 
-    # NOTE: Calling 'publish-game' rather than 'export-project' directly also
-    # exercises the nested reusable-workflow call and its '$/' reference.
     uses: ./.github/workflows/publish-game.yaml
     secrets: inherit
     with:
