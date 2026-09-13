@@ -172,12 +172,6 @@ runs:
         VALUE="$BASE-$SECRET_HASH-${BUILD_OPTIONS}"
         echo "value=$VALUE" >> "$GITHUB_OUTPUT"
 
-        echo "restore-keys<<EOM" >> "$GITHUB_OUTPUT"
-        echo "$BASE-$SECRET_HASH-${{ hashFiles(inputs.custompy-path) }}" >> "$GITHUB_OUTPUT"
-        echo "$BASE-$SECRET_HASH" >> "$GITHUB_OUTPUT"
-        echo "$BASE" >> "$GITHUB_OUTPUT"
-        echo "EOM" >> "$GITHUB_OUTPUT"
-
     - name: Validate build directories don't exist
       shell: bash
       run: |
@@ -191,6 +185,8 @@ runs:
           exit 1
         fi
 
+    # NOTE: This takes no 'restore-keys'. A partial hit still compiles, and the
+    # stale 'build' directory it restores stops the output from moving there.
     - name: Cache the Godot build artifact
       id: godot-cache
       uses: actions/cache@v4
@@ -199,15 +195,13 @@ runs:
         # IF/ELSE: Update the 'save' step below if this changes.
         path: ${{ github.workspace }}/build
         key: ${{ steps.godot-cache-key.outputs.value }}
-        restore-keys: ${{ steps.godot-cache-key.outputs.restore-keys }}
 
     - name: Inspect restored artifacts
       if: steps.godot-cache.outputs.cache-hit == 'true'
       shell: bash
       run: tree -lha --dirsfirst $GITHUB_WORKSPACE/build
 
-    # NOTE: Only a compile needs the reclaimed space, and a cached build skips
-    # it. A partial restore reports no hit, so it still frees the disk.
+    # NOTE: Only a compile needs the reclaimed space, and a cache hit skips it.
     - name: Reclaim disk space
       if: steps.godot-cache.outputs.cache-hit != 'true'
       uses: $/.github/actions/setup-runner
