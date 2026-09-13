@@ -15,9 +15,7 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "changelog-path": "CHANGELOG.md",
-
-      "extra-files": [".github/workflows/publish-game.yaml"]
+      "changelog-path": "CHANGELOG.md"
     }
   }
 }
