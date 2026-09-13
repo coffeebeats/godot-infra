@@ -30,6 +30,12 @@ DEFAULT_STATUS_CHECK = "branch_protection"
 # `gh repo list <owner> --topic godot-infra --no-archived`.
 DEFAULT_TOPIC = "godot-infra"
 
+# DEFAULT_ALLOW_ACTIONS are always allowed: godot-infra itself, for a repository
+# under another owner, and the unverified actions its reusable workflows call.
+#
+# NOTE: A caller's allowlist governs every action a reusable workflow pulls in.
+DEFAULT_ALLOW_ACTIONS = ("coffeebeats/*", "tj-actions/changed-files@*")
+
 # GITHUB_ACTIONS_APP_ID identifies GitHub Actions as the required-check provider.
 GITHUB_ACTIONS_APP_ID = 15368
 
@@ -69,7 +75,7 @@ RELEASE_MARKER = re.compile(
 VERSION_PREFIX = re.compile(r"^(?P<prefix>\D*)\d+\.\d+\.\d+$")
 
 SECRET_REFERENCE = re.compile(r"secrets\.([A-Za-z_][A-Za-z0-9_]*)")
-USES_REFERENCE = re.compile(r"uses:\s*['\"]?([^\s@'\"]+)@")
+USES_REFERENCE = re.compile(r"^\s*(?:-\s+)?uses:\s*['\"]?([^\s'\"]+)", re.MULTILINE)
 JOB_ID = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
 TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:", re.MULTILINE)
 
@@ -834,9 +840,9 @@ def apply_security_settings(args: argparse.Namespace, target: str) -> None:
 
 
 def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
-    """apply_actions_permissions applies token defaults and unions action
-    patterns with the existing allowlist. Unrestricted existing repositories
-    stay unrestricted unless patterns are supplied.
+    """apply_actions_permissions applies token defaults and unions the default
+    and requested action patterns with the existing allowlist. Unrestricted
+    existing repositories stay unrestricted unless patterns are requested.
     """
     info("Updating repository's GitHub Actions permissions.")
 
@@ -870,7 +876,9 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
         )
         # NOTE: Reconciliation must preserve patterns omitted from this invocation.
         patterns = sorted(
-            set(selected.get("patterns_allowed", [])) | set(args.allow_action)
+            set(selected.get("patterns_allowed", []))
+            | set(DEFAULT_ALLOW_ACTIONS)
+            | set(args.allow_action)
         )
         gh_api(
             "PUT",
@@ -1031,30 +1039,114 @@ def check_secrets(target: str, workflows: list[Path], checklist: Checklist) -> N
         checklist.add(f"set the '{name}' secret, which a workflow reads")
 
 
+def read_uses_target(
+    repo: Path, source: tuple[str, str] | None, path: str
+) -> str | None:
+    """read_uses_target returns the workflow, or the metadata of the action, that
+    a `uses:` path names. A None `source` reads from `repo`; otherwise `source`
+    is a (repository, ref) pair read through the API. It returns None when
+    nothing is found.
+    """
+    path = path.strip("/")
+    if path.endswith((".yml", ".yaml")):
+        candidates = [path]
+    else:
+        candidates = [
+            f"{path}/{name}".lstrip("/") for name in ("action.yml", "action.yaml")
+        ]
+
+    for candidate in candidates:
+        if source is None:
+            file = repo / candidate
+            if file.is_file():
+                return file.read_text(encoding="utf-8")
+            continue
+
+        repository, ref = source
+        result = subprocess.run(
+            [
+                GH,
+                "api",
+                "-H",
+                "Accept: application/vnd.github.raw+json",
+                f"repos/{repository}/contents/{candidate}?ref={ref}",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        if result.returncode == 0:
+            return result.stdout
+
+    return None
+
+
 def check_third_party_actions(
-    args: argparse.Namespace, target: str, workflows: list[Path], checklist: Checklist
+    args: argparse.Namespace,
+    repo: Path,
+    target: str,
+    workflows: list[Path],
+    checklist: Checklist,
 ) -> None:
-    """check_third_party_actions adds external actions uncovered by explicit
-    allow-action patterns to `checklist`. It does not change the allowlist.
+    """check_third_party_actions adds external actions uncovered by allow-action
+    patterns to `checklist`. It follows the workflows and actions of the target's
+    owner and of godot-infra's, since the allowlist governs the actions those
+    call too. It does not change the allowlist.
     """
     owner = target.partition("/")[0]
-    allowed = {pattern.partition("@")[0] for pattern in args.allow_action}
+    followed = {owner, DEFAULT_TEMPLATE_OWNER}
+    allowed = {
+        pattern.partition("@")[0]
+        for pattern in (*DEFAULT_ALLOW_ACTIONS, *args.allow_action)
+    }
 
+    # NOTE: A None source is the checkout; any other is a (repository, ref) pair.
+    pending = [(None, workflow.relative_to(repo).as_posix()) for workflow in workflows]
+    visited: set[tuple[tuple[str, str] | None, str]] = set()
     uncovered: set[str] = set()
-    for workflow in workflows:
-        for action in USES_REFERENCE.findall(workflow.read_text(encoding="utf-8")):
-            action_owner = action.partition("/")[0]
-            if action_owner in ("actions", "github", owner) or action.startswith("./"):
+
+    while pending:
+        source, path = pending.pop()
+        if (source, path) in visited:
+            continue
+        visited.add((source, path))
+
+        text = read_uses_target(repo, source, path)
+        if text is None:
+            where = f"'{source[0]}@{source[1]}'" if source else "the checkout"
+            checklist.add(
+                f"could not read '{path}' in {where}, so the actions it uses "
+                "went unchecked"
+            )
+            continue
+
+        for reference in USES_REFERENCE.findall(text):
+            # NOTE: './' resolves against the caller's workspace, while '$/'
+            # resolves against the repository and ref of the file naming it.
+            if reference.startswith("./"):
+                pending.append((None, reference[2:]))
                 continue
-            if action in allowed or f"{action_owner}/*" in allowed:
+            if reference.startswith("$/"):
+                pending.append((source, reference[2:]))
+                continue
+            if reference.startswith("docker://"):
                 continue
 
-            uncovered.add(action)
+            name, _, ref = reference.partition("@")
+            action_owner, _, rest = name.partition("/")
+            repository, _, subpath = rest.partition("/")
+
+            if action_owner in followed:
+                pending.append(((f"{action_owner}/{repository}", ref), subpath))
+            elif action_owner in ("actions", "github"):
+                continue
+            elif name not in allowed and f"{action_owner}/*" not in allowed:
+                uncovered.add(name)
 
     for action in sorted(uncovered):
         checklist.add(
-            f"confirm '{action}' runs: no '--allow-action' pattern covers it, so "
-            "it is permitted only if its creator is verified"
+            f"confirm '{action}' runs: no allow-action pattern covers it, so it is "
+            "permitted only if its creator is verified"
         )
 
 
@@ -1150,7 +1242,7 @@ def run_checks(
         return
 
     check_secrets(target, workflows, checklist)
-    check_third_party_actions(args, target, workflows, checklist)
+    check_third_party_actions(args, repo, target, workflows, checklist)
     check_status_checks(args, workflows, checklist)
     check_workflow_permissions(workflows, checklist)
     check_code_owners(args, repo, checklist)
@@ -1227,7 +1319,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         metavar="PATTERN",
         help=(
             "permit a third-party action pattern, in addition to those already "
-            "allowed; repeatable"
+            f"allowed and to {', '.join(DEFAULT_ALLOW_ACTIONS)}; repeatable"
         ),
     )
     policy.add_argument(

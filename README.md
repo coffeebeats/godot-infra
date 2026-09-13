@@ -163,7 +163,7 @@ Pass `--dry-run` first; it prints every mutating call with its payload and issue
 | Option | Purpose |
 | --- | --- |
 | `--public` | Create a public repository. The script enables secret and code scanning on public repositories only, since both need Advanced Security on a private one. |
-| `--allow-action PATTERN` | Permit a third-party action. Repeatable and additive; it never narrows an allow-list the repository already has. |
+| `--allow-action PATTERN` | Permit a third-party action. Repeatable and additive; it never narrows an allow-list the repository already has. Whenever the script sets the allow-list, it also adds `coffeebeats/*` and `tj-actions/changed-files@*`, since a caller's allow-list governs the actions inside the reusable workflows it calls; an existing repository that allows every action stays that way unless a pattern is given. |
 | `--allow-direct-push` | Drop the pull-request and status-check rules, for a repository that commits straight to `main`. Force-pushing stays blocked. |
 | `--no-release` | Skip `release-please` seeding and the initial tag. |
 | `--secret NAME` | Set a repository secret from the environment variable of the same name. Repeatable; for many at once, `gh secret set -f` is simpler. |
