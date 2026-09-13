@@ -54,6 +54,7 @@ on:
         required: true
       publish-export-template:
         type: boolean
+        description: "Whether to keep the compiled export template as a run artifact for the repository's retention period."
         required: false
         default: false
 
@@ -241,8 +242,6 @@ jobs:
       - uses: $/actions/compile-godot-export-template
         id: compile
         with:
-          publish: ${{ inputs.publish-export-template }}
-
           godot-src-rev: ${{ needs.config.outputs.godot-version }}
           godot-patches: ${{ needs.config.outputs.godot-patches }}
 
@@ -258,13 +257,14 @@ jobs:
 
       # NOTE: The export template passes between jobs as an artifact, which
       # every matrix member of the 'export' job can read without contention.
-      - name: Upload the export template for the 'export' job
+      # A published template keeps the repository's retention, not one day.
+      - name: Upload the export template
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: ${{ needs.config.outputs.template-artifact-name }}
           path: ${{ steps.compile.outputs.path-artifact-dir }}
           if-no-files-found: error
-          retention-days: 1
+          retention-days: ${{ !inputs.publish-export-template && 1 || '' }}
 
   export:
     needs: ["config", "compile"]
