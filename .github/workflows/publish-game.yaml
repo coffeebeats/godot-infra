@@ -70,7 +70,7 @@ on:
         default: ""
       itchio-project:
         type: string
-        description: "The itch.io project to publish to, as 'user/project' or just 'project' to use this repository's owner."
+        description: "The itch.io project to publish to, as 'user/project', or 'project' to use this repository's owner."
         required: false
         default: ""
       itchio-label:
@@ -78,10 +78,6 @@ on:
         description: "An extra suffix for the itch.io channel (e.g. 'beta')."
         required: false
         default: ""
-    outputs:
-      name:
-        description: "The name of the artifact containing the exported game."
-        value: ${{ jobs.package.outputs.artifact-name }}
 
 permissions:
   contents: read # Required to check out a private repository.
@@ -336,14 +332,11 @@ jobs:
   package:
     needs: ["config", "export"]
 
-    outputs:
-      artifact-name: ${{ needs.config.outputs.artifact-name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     env:
       ARTIFACT_NAME: ${{ needs.config.outputs.artifact-name }}
-
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
 
     steps:
       - name: Download export preset artifacts
@@ -357,62 +350,32 @@ jobs:
       - name: Inspect game artifacts
         run: tree -lha --dirsfirst ${{ runner.temp }}/presets
 
+      # NOTE: The archive makes one release asset per target, whatever mix of
+      # files the matching presets produced.
       - name: Assemble the final game artifact
-        id: artifact
         env:
           PRESETS_DIR: ${{ runner.temp }}/presets
-          ARCHIVE_PATH: ${{ runner.temp }}/${{ needs.config.outputs.artifact-name }}.tar.gz
+          ARCHIVE_PATH: ${{ runner.temp }}/${{ env.ARTIFACT_NAME }}.tar.gz
         run: |-
           cd "$PRESETS_DIR"
 
-          ls -ls
-
-          # NOTE: The archive preserves permissions, without which MacOS
-          # application bundles do not run once downloaded.
           tar -czf "$ARCHIVE_PATH" -- *
 
           echo "Packaged export game artifacts into archive: $ARCHIVE_PATH"
           ls -ls "$ARCHIVE_PATH"
 
-          echo "label=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
-          echo "path=$ARCHIVE_PATH" >> "$GITHUB_OUTPUT"
-
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ${{ steps.artifact.outputs.label }}
-          path: ${{ steps.artifact.outputs.path }}
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/${{ env.ARTIFACT_NAME }}.tar.gz
 
-  # NOTE: This job runs even when not publishing, so that every export proves
-  # its archive unpacks. Only the upload is gated.
-  publish:
-    needs: ["package"]
-
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Download the packaged game artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        with:
-          name: ${{ needs.package.outputs.artifact-name }}
-
-      # NOTE: '-p' restores the recorded modes, without which MacOS application
-      # bundles lose their executable bit and will not launch.
-      - name: Extract game assets
-        env:
-          ARCHIVE: ${{ needs.package.outputs.artifact-name }}.tar.gz
-        run: |-
-          tar -p -xzvf "$ARCHIVE"
-          rm "$ARCHIVE"
-
-      - name: Inspect game artifacts
-        run: "tree -lha --dirsfirst -I .git"
-
+      # NOTE: Uploading first means a failed push still leaves the packaged
+      # game attached to the run.
       - name: Publish to 'itch.io'
         if: inputs.publish-to-itchio
         uses: $/actions/publish-project-itchio
         with:
-          path: "./"
+          path: ${{ runner.temp }}/presets
           version: ${{ inputs.version || inputs.ref }}
           itchio-project: ${{ contains(inputs.itchio-project, '/') && inputs.itchio-project || format('{0}/{1}', github.repository_owner, inputs.itchio-project) }}
           itchio-channel: "${{ inputs.component != '' && format('{0}-', inputs.component) || '' }}${{ inputs.arch }}-${{ inputs.platform }}${{ inputs.itchio-label != '' && format('-{0}', inputs.itchio-label) || '' }}"
