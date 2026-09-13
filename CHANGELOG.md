@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.3.0 (2026-09-13)
+
+## What's Changed
+* feat(workflows): fold 'export-project' into 'publish-game' by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/596
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.2.0...v6.3.0
+
 ## 6.2.0 (2026-09-12)
 
 ## What's Changed
