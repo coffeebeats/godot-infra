@@ -103,6 +103,24 @@ jobs:
       godot-patches: ${{ steps.files.outputs.godot-patches }}
 
     steps:
+      # NOTE: This runs before the checkout so that a misconfigured publish
+      # fails in seconds rather than after the engine compile.
+      - name: Verify the itch.io inputs
+        if: inputs.publish-to-itchio
+        env:
+          ITCHIO_PROJECT: ${{ inputs.itchio-project }}
+          VERSION: ${{ inputs.version || inputs.ref }}
+        run: |
+          if [[ -z "$ITCHIO_PROJECT" ]]; then
+            echo "::error::'itchio-project' is required when publishing to itch.io."
+            exit 1
+          fi
+
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::'version' or 'ref' is required when publishing to itch.io."
+            exit 1
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ inputs.ref }}
