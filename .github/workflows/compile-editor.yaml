@@ -51,9 +51,6 @@ jobs:
     timeout-minutes: ${{ inputs.timeout }}
 
     steps:
-      - name: Reclaim disk space
-        uses: $/.github/actions/setup-runner
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ inputs.ref }}

@@ -206,6 +206,12 @@ runs:
       shell: bash
       run: tree -lha --dirsfirst $GITHUB_WORKSPACE/build
 
+    # NOTE: Only a compile needs the reclaimed space, and a cached build skips
+    # it. A partial restore reports no hit, so it still frees the disk.
+    - name: Reclaim disk space
+      if: steps.godot-cache.outputs.cache-hit != 'true'
+      uses: $/.github/actions/setup-runner
+
     - name: Cache the 'SCons' build directory
       if: steps.godot-cache.outputs.cache-hit != 'true'
       uses: actions/cache@v4
