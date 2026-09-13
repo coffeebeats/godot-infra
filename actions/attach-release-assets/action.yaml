@@ -29,8 +29,8 @@ runs:
       run: |-
         ASSETS=("$DIST"/*)
 
-        # An empty download means the artifact names no longer match 'game-*',
-        # which would otherwise leave the release with no assets.
+        # 'download-artifact' succeeds when 'game-*' matches nothing, so this
+        # stops a renamed artifact from leaving the release with no assets.
         if [[ ! -e "${ASSETS[0]}" ]]; then
           echo "::error::Found no artifacts matching 'game-*'."
           exit 1
