@@ -66,7 +66,7 @@ jobs:
       profile: release
 ```
 
-Compose a game's release pipeline in the game repository rather than delegating it to one workflow here. The build matrix stays readable YAML and `release-please` keeps its own pin and configuration.
+`publish-game.yaml` builds and publishes one target, so the release pipeline that wraps it belongs in the game repository. The matrix over targets stays real YAML there instead of crossing `workflow_call` as a JSON string, and `release-please` keeps its own pin and configuration.
 
 ```yaml
 name: "🚀 Release: Project version"
@@ -124,7 +124,7 @@ jobs:
           tag: ${{ needs.release-please.outputs.release-tag }}
 ```
 
-Available workflows: `check-project.yaml` (games and addons), `publish-game.yaml`, `compile-editor.yaml` (games), `release-addon.yaml` (addons).
+Available workflows: `check-project.yaml` (games and addons), `publish-game.yaml` (exports and packages one target; the itch.io upload is opt-in), `compile-editor.yaml` (games), `release-addon.yaml` (addons).
 
 A job inside a reusable workflow reports as `<caller-job> / <job>`, so a branch ruleset that requires a bare context needs that job declared in the calling repository rather than here.
 
