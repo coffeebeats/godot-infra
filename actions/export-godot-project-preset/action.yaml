@@ -351,6 +351,13 @@ runs:
       env:
         ARCHIVE_PATH: ${{ runner.temp }}/${{ steps.artifact.outputs.name }}.tar
       run: |
+        # NOTE: An archive of an empty directory still exists, so an empty
+        # export must fail here; 'if-no-files-found' can no longer catch it.
+        if [[ -z "$(ls -A "$GITHUB_WORKSPACE/dist")" ]]; then
+          echo "::error::The export produced no files."
+          exit 1
+        fi
+
         tar -cf "$ARCHIVE_PATH" -C "$GITHUB_WORKSPACE/dist" .
         echo "path=$ARCHIVE_PATH" >> "$GITHUB_OUTPUT"
 
