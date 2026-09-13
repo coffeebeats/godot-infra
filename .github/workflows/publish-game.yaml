@@ -363,10 +363,27 @@ jobs:
       - name: Download export preset artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          path: ${{ runner.temp }}/presets
+          path: ${{ runner.temp }}/exports
 
           pattern: ${{ needs.config.outputs.artifact-pattern }}
           merge-multiple: true
+
+      # NOTE: Each preset arrives as one archive, since an artifact drops file
+      # modes; unpacking them into one directory merges the presets.
+      - name: Unpack export preset artifacts
+        env:
+          EXPORTS_DIR: ${{ runner.temp }}/exports
+          PRESETS_DIR: ${{ runner.temp }}/presets
+        run: |
+          mkdir -p "$PRESETS_DIR"
+
+          # NOTE: A pattern matching no artifacts downloads nothing and still
+          # succeeds, so 'failglob' turns an empty download into an error.
+          shopt -s failglob
+
+          for ARCHIVE in "$EXPORTS_DIR"/*.tar; do
+            tar -xpf "$ARCHIVE" -C "$PRESETS_DIR"
+          done
 
       - name: Inspect game artifacts
         run: tree -lha --dirsfirst ${{ runner.temp }}/presets
