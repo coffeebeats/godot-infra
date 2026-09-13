@@ -19,6 +19,7 @@ from pathlib import Path
 
 import yaml
 
+# ROOT is the repository root, which actions are found under and reported against.
 ROOT = Path(__file__).resolve().parent.parent
 
 # ACTION_GLOBS matches the public and the private actions.
@@ -38,17 +39,21 @@ SHELL_OPTIONS = {"bash": "set -eo pipefail", "sh": "set -e"}
 class Script:
     """Script is one 'run:' block and the position of its text in the action."""
 
+    # action is the action file the step belongs to.
     action: Path
+    # shell is the dialect 'shellcheck' reads the text as, 'bash' or 'sh'.
     shell: str
-    # options holds the 'set' command GitHub's shell options amount to.
+    # options is the 'set' command for GitHub's shell options, or empty for a
+    # custom shell command.
     options: str
+    # text is the step's script with each GitHub expression replaced.
     text: str
     # line is the zero-based line on which the script's text begins.
     line: int
     # column is the zero-based column at which each line of the text begins.
     column: int
-    # exact is false when the text's lines differ from the action's, as in a
-    # folded block, so findings can only be reported at the script's first line.
+    # exact is false when the text's lines differ from the action's, in which case
+    # findings are reported at the script's first line.
     exact: bool
 
 
@@ -95,7 +100,7 @@ def extract_scripts(action: Path) -> list[Script]:
 
         mark = run.start_mark
         if run.style in ("|", ">"):
-            # NOTE: A block scalar's text begins on the line after its indicator.
+            # PyYAML marks a block scalar at its indicator, a line above the text.
             line = mark.line + 1
             first = next((text for text in lines[line:] if text.strip()), "")
             column = len(first) - len(first.lstrip())
@@ -103,8 +108,8 @@ def extract_scripts(action: Path) -> list[Script]:
             line = mark.line
             column = mark.column + (1 if run.style in ("'", '"') else 0)
 
-        # NOTE: Folding rewrites line breaks, so only a literal block or a one-line
-        # scalar keeps the action's lines.
+        # Folding rewrites line breaks, so only a literal block or a scalar on one
+        # line keeps the action's lines.
         exact = run.style == "|" or mark.line == run.end_mark.line
 
         # NOTE: 'shellcheck' treats an uppercase variable as a set environment
@@ -119,7 +124,7 @@ def extract_scripts(action: Path) -> list[Script]:
 
 def main(argv: list[str]) -> int:
     """main checks every action's scripts, passing `argv` through to
-    'shellcheck', and returns its exit code.
+    'shellcheck', and returns its exit code, or 2 if 'shellcheck' is missing.
     """
     if not shutil.which("shellcheck"):
         print("error: 'shellcheck' was not found on the PATH", file=sys.stderr)
@@ -136,11 +141,12 @@ def main(argv: list[str]) -> int:
             name = f"{index:04d}.sh"
             files[name] = script
 
-            # NOTE: Padding puts the text on the line it occupies in the action.
-            # The options go last, where 'shellcheck' still honors them, so a
-            # directive atop the script keeps applying to all of it.
+            # Padding puts the text on the line it occupies in the action.
             padding = [f"# shellcheck shell={script.shell}"]
             padding += [""] * (script.line - len(padding))
+
+            # NOTE: The options go last so a directive atop the script covers all
+            # of it; SC2317 is off because they follow any final 'exit'.
             options = ["# shellcheck disable=SC2317", script.options]
             text = "\n".join([*padding, script.text, *options])
             Path(tmpdir, name).write_text(text, encoding="utf-8", newline="\n")
