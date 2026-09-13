@@ -284,12 +284,19 @@ jobs:
       # directory, so this step makes them absolute.
       - name: Compute 'extra-bundled-files'
         id: bundle
+        env:
+          BUILD_DIR: ${{ runner.temp }}/build
+          PATTERNS: ${{ needs.compile.outputs.extra-bundled-files }}
         run: |
+          # The compile action emits a space-delimited list, so splitting is
+          # intended; 'read -ra' splits without letting a name reach the shell.
+          read -ra NAMES <<< "$PATTERNS"
+
           {
             echo "files<<EOM"
 
-            for pattern in ${{ needs.compile.outputs.extra-bundled-files }}; do
-                echo "${{ runner.temp }}/build/$pattern"
+            for NAME in "${NAMES[@]}"; do
+              echo "$BUILD_DIR/$NAME"
             done
 
             echo "EOM"
@@ -332,7 +339,7 @@ jobs:
     needs: ["config", "export"]
 
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     env:
       ARTIFACT_NAME: ${{ needs.config.outputs.artifact-name }}
@@ -367,6 +374,7 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: ${{ runner.temp }}/${{ env.ARTIFACT_NAME }}.tar.gz
+          if-no-files-found: error
 
       # NOTE: Uploading first means a failed push still leaves the packaged
       # game attached to the run.
