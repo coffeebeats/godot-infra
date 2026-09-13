@@ -75,7 +75,7 @@ RELEASE_MARKER = re.compile(
 VERSION_PREFIX = re.compile(r"^(?P<prefix>\D*)\d+\.\d+\.\d+$")
 
 SECRET_REFERENCE = re.compile(r"secrets\.([A-Za-z_][A-Za-z0-9_]*)")
-USES_REFERENCE = re.compile(r"uses:\s*['\"]?([^\s'\"]+)")
+USES_REFERENCE = re.compile(r"^\s*(?:-\s+)?uses:\s*['\"]?([^\s'\"]+)", re.MULTILINE)
 JOB_ID = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
 TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:", re.MULTILINE)
 
