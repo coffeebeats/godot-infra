@@ -94,6 +94,7 @@ jobs:
     outputs:
       presets: ${{ steps.set-presets.outputs.value }}
       artifact-name: ${{ steps.set-presets.outputs.artifact-name }}
+      template-artifact-name: ${{ steps.set-presets.outputs.template-artifact-name }}
       artifact-pattern: ${{ steps.set-presets.outputs.artifact-pattern }}
       artifact-suffix: ${{ steps.set-presets.outputs.artifact-suffix }}
       godot-version: "${{ steps.version.outputs.semantic }}"
@@ -190,10 +191,12 @@ jobs:
           {
             echo "value=$(jq -c -n '$ARGS.positional' --args "${PRESETS[@]}")"
 
-            # 'game-' marks a packaged artifact, as 'export-' marks the
-            # per-preset intermediates. It stays fixed so callers can glob
-            # for the results.
+            # Every artifact in the run is named here, from one rule, because
+            # a matrix caller shares a single run and its artifact namespace.
+            # 'game-' marks a packaged result and stays fixed so callers can
+            # glob for it; 'export-' marks the per-preset intermediates.
             echo "artifact-name=game-${COMPONENT:+$COMPONENT-}$TARGET-$PROFILE$SUFFIX"
+            echo "template-artifact-name=export-template-${COMPONENT:+$COMPONENT-}$TARGET-$PROFILE$SUFFIX"
             echo "artifact-suffix=$SUFFIX"
 
             # The 'package' job downloads what the 'export' job publishes
@@ -208,13 +211,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
-    env:
-      # NOTE: The export template passes between jobs as an artifact, which
-      # every matrix member of the 'export' job can read without contention.
-      ARTIFACT_NAME: export-template-${{ inputs.component != '' && format('{0}-', inputs.component) || '' }}${{ inputs.platform }}-${{ inputs.arch }}-${{ inputs.storefront }}-${{ inputs.profile }}${{ needs.config.outputs.artifact-suffix }}
-
     outputs:
-      artifact-name: ${{ env.ARTIFACT_NAME }}
       export-template-filename: ${{ steps.compile.outputs.export-template-filename }}
       extra-bundled-files: ${{ steps.compile.outputs.extra-bundled-files }}
 
@@ -244,10 +241,12 @@ jobs:
 
           encryption-key: ${{ secrets.GODOT_SCRIPT_ENCRYPTION_KEY }}
 
+      # NOTE: The export template passes between jobs as an artifact, which
+      # every matrix member of the 'export' job can read without contention.
       - name: Upload the export template for the 'export' job
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ${{ env.ARTIFACT_NAME }}
+          name: ${{ needs.config.outputs.template-artifact-name }}
           path: ${{ steps.compile.outputs.path-artifact-dir }}
           if-no-files-found: error
           retention-days: 1
@@ -273,7 +272,7 @@ jobs:
       - name: Download the export template
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          name: ${{ needs.compile.outputs.artifact-name }}
+          name: ${{ needs.config.outputs.template-artifact-name }}
           path: ${{ runner.temp }}/build
 
       - name: Inspect compilation artifacts
