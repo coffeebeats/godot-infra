@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.3.2 (2026-09-13)
+
+## What's Changed
+* fix(workflows): upload a published export template once by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/600
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.3.1...v6.3.2
+
 ## 6.3.1 (2026-09-13)
 
 ## What's Changed
