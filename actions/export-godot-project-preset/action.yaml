@@ -135,7 +135,7 @@ runs:
             continue
           fi
 
-          mv ${{ inputs.project-path }}/$f $PROJECT_DIR
+          mv "${{ inputs.project-path }}/$f" "$PROJECT_DIR"
         done
 
         echo "Copied Godot project to target directory: $PROJECT_DIR"
