@@ -176,11 +176,11 @@ The script deliberately leaves SHA pinning off. Dependent repositories consume g
 
 This repository is also a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) holding one plugin, [`godot`](./plugins/godot). Nothing is published anywhere; a repository references it by GitHub path. The plugin carries the Godot tooling that is the same in every repository:
 
-- An edit hook that runs `gdformat` and `gdlint` on each `.gd` edit, then the [project checker](./plugins/godot/checker/README.md) with `--fix` on each edited `.gd`, `.tscn` or `.tres` file, then the edited script's `<name>_test.gd` if one exists.
+- An edit hook that runs `gdformat` and `gdlint` on each `.gd` edit, the [project checker](./plugins/godot/checker/README.md) with `--fix` on each edited `.gd`, `.tscn` or `.tres` file, and the edited script's `<name>_test.gd` if one exists.
 - `godot-check`, which runs the same checker over the whole project, for changes the hook never sees such as a move.
-- The `godot-api` skill, which dumps the engine, addon and project class references into `.godot/agent-api/` for lookups.
+- The `godot-api` skill, which dumps engine, addon and project class references for lookups.
 
-The `test` job of `check-project.yaml` runs the same checker, so a new rule reaches CI and the hook together. Scripts naming GodotSteam's API are held automatically wherever its binary did not load, such as on a Linux runner; see the checker's README.
+The `test` job of `check-project.yaml` runs the same checker, so a new rule reaches CI and the hook together.
 
 A repository enables the plugin in its `.claude/settings.json`:
 

@@ -114,9 +114,8 @@ jobs:
           # A job's 'uses' needs no ignore, because '$/' becomes './' there.
           "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/'
 
-  # A release ships the project checker to every consumer's CI and edit hook
-  # at once, so it runs against the sample project with each supported Godot
-  # version first.
+  # A release ships the project checker to every consumer at once, so it runs
+  # here against the sample project with each supported Godot version first.
   check-plugin:
     needs: ["changes"]
 

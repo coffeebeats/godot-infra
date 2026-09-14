@@ -5,9 +5,6 @@
 ## repairs the ones it can. The `godot` plugin's edit hook runs it on each edited file,
 ## and `check-project.yaml` runs it over the whole project.
 ##
-## Each check is a `Rule` in the registry below. Rules share one `SourceFile` per file,
-## so a file is read, loaded and instantiated at most once however many rules apply.
-##
 ## NOTE: A parse error in a `preload`ed script exits 0 having checked nothing, so keep
 ## rules in this file or load them with `ResourceLoader.load`.
 ##
@@ -17,8 +14,7 @@
 ##   godot --headless -s <checker> -- --fix a.tscn       # repair, then re-check
 ##   godot --headless -s <checker> -- --list             # print the rule registry
 ##
-## Exits 0 when there is nothing to report and 1 when there is, whether that is a
-## problem found or a repair applied.
+## Exits 1 when a problem is found or a repair applied, and 0 otherwise.
 ##
 
 extends SceneTree
@@ -43,7 +39,6 @@ const KNOWN_EXTENSIONS: Dictionary = {
 	"res://addons/godotsteam/godotsteam.gdextension": "\\bSteam\\.",
 }
 
-## _dependency is the compiled `DEPENDENCY_PATTERN`.
 var _dependency := RegEx.create_from_string(DEPENDENCY_PATTERN)
 
 
@@ -53,16 +48,9 @@ var _dependency := RegEx.create_from_string(DEPENDENCY_PATTERN)
 class Problem:
 	extends RefCounted
 
-	## path is the `res://` path of the file the problem is in.
 	var path: String
-
-	## line is the 1-based line the problem is on, or 0 when there is none.
 	var line: int
-
-	## rule is the name of the rule that reported the problem.
 	var rule: StringName
-
-	## message describes the problem.
 	var message: String
 
 	func _init(
@@ -86,28 +74,14 @@ class Problem:
 class SourceFile:
 	extends RefCounted
 
-	## path is the `res://` path of the file.
 	var path: String
 
-	## _instance is the instantiated scene root, once `instance` has created one.
 	var _instance: Node = null
-
-	## _instantiated records whether `instance` has run.
 	var _instantiated: bool = false
-
-	## _lines holds the contents split on newlines, once read.
 	var _lines := PackedStringArray()
-
-	## _loaded records whether `resource` has run.
 	var _loaded: bool = false
-
-	## _read records whether `text` has run.
 	var _read: bool = false
-
-	## _resource is the loaded resource, or null if it did not load.
 	var _resource: Resource = null
-
-	## _text holds the file's contents, once read.
 	var _text: String = ""
 
 	func _init(file_path: String) -> void:
@@ -176,10 +150,7 @@ class SourceFile:
 class Rule:
 	extends RefCounted
 
-	## name identifies the rule in reports and in `--list`.
 	var name: StringName = &""
-
-	## extensions lists the file extensions the rule covers.
 	var extensions: Array[String] = []
 
 	## roots limits the rule to these directories; an empty list covers the whole scan.
@@ -298,7 +269,6 @@ class UidRule:
 	func fixable() -> bool:
 		return true
 
-	## _has_uid reports whether the file's header line carries a uid.
 	func _has_uid(file: SourceFile) -> bool:
 		var lines := file.lines()
 		return not lines.is_empty() and lines[0].contains(' uid="')
@@ -310,12 +280,12 @@ class UidRule:
 ## NOTE: A move rewrites `ext_resource` headers but not `res://` strings in properties,
 ## which then point at nothing; a `uid://` reference survives the move.
 ##
-## NOTE: A header is validated but never rewritten, since the engine prefers its uid and
-## falls back to its path. A scene with a missing dependency still loads.
+## NOTE: A scene with a missing `[ext_resource]` target still loads, so `load` never
+## catches it.
 class PathRefRule:
 	extends Rule
 
-	## EXT_RESOURCE_PREFIX marks a dependency header, validated but never rewritten.
+	## EXT_RESOURCE_PREFIX marks a dependency header, which this rule never rewrites.
 	const EXT_RESOURCE_PREFIX := "[ext_resource "
 
 	## REFERENCE_PATTERN matches one quoted `res://` or `uid://` string literal.
@@ -324,7 +294,6 @@ class PathRefRule:
 	## SELF_HEADER_PREFIXES mark the file's own header, which the `uid` rule owns.
 	const SELF_HEADER_PREFIXES: Array[String] = ["[gd_resource ", "[gd_scene "]
 
-	## _reference is the compiled `REFERENCE_PATTERN`.
 	var _reference := RegEx.create_from_string(REFERENCE_PATTERN)
 
 	func _init() -> void:
@@ -419,8 +388,7 @@ class PathRefRule:
 
 		return "dependency does not resolve: %s" % " ".join(references)
 
-	## _describe_path returns what is wrong with a `res://` reference, or an empty string
-	## if there is nothing wrong with it.
+	## _describe_path returns what is wrong with a `res://` reference, or an empty string.
 	func _describe_path(ref: String) -> String:
 		if not _resolves(ref):
 			return "path does not exist"
@@ -431,8 +399,7 @@ class PathRefRule:
 
 		return "reference this as %s; a res:// string is dropped on a move" % uid
 
-	## _describe_uid returns what is wrong with a `uid://` reference, or an empty string
-	## if there is nothing wrong with it.
+	## _describe_uid returns what is wrong with a `uid://` reference, or an empty string.
 	func _describe_uid(ref: String) -> String:
 		var id := ResourceUID.text_to_id(ref)
 		if id == ResourceUID.INVALID_ID or not ResourceUID.has_id(id):
@@ -522,13 +489,8 @@ class ScriptOrderRule:
 	## SCRIPT_RESOURCE_PATTERN captures the path and id of a declared script resource.
 	const SCRIPT_RESOURCE_PATTERN := 'type="Script".*path="([^"]+)".*id="([^"]+)"'
 
-	## _property is the compiled `PROPERTY_PATTERN`.
 	var _property := RegEx.create_from_string(PROPERTY_PATTERN)
-
-	## _script_resource is the compiled `SCRIPT_RESOURCE_PATTERN`.
 	var _script_resource := RegEx.create_from_string(SCRIPT_RESOURCE_PATTERN)
-
-	## _script_value is the compiled `SCRIPT_VALUE_PATTERN`.
 	var _script_value := RegEx.create_from_string(SCRIPT_VALUE_PATTERN)
 
 	func _init() -> void:
@@ -760,8 +722,6 @@ func _initialize() -> void:
 			)
 		)
 
-	# NOTE: A script naming an absent extension's API reports as `does not compile`,
-	# which blames the script for the machine's gap.
 	if not problems.is_empty() and not missing.is_empty():
 		print(
 			(
@@ -847,9 +807,6 @@ func _localize(path: String) -> String:
 ##
 ## NOTE: A GDExtension with no binary for the platform does not load, so scripts naming
 ## its API fail to parse. GodotSteam ships no Linux binary.
-##
-## NOTE: Scripts are matched by what they name rather than where they live, so the
-## plain data and scenes beside them stay checked.
 func _missing_extensions() -> Dictionary:
 	var missing := {}
 
@@ -866,7 +823,7 @@ func _missing_extensions() -> Dictionary:
 
 
 ## _needs_missing_extension reports whether loading the file reaches a script naming
-## the API of an extension that did not load. Text-only rules still run on such a file.
+## the API of an extension that did not load.
 func _needs_missing_extension(path: String, missing: Dictionary) -> bool:
 	if missing.is_empty():
 		return false

@@ -1,14 +1,8 @@
 #!/bin/sh
 # plugins/godot/skills/godot-api/dump_api.sh
 #
-# Dumps API references into the project's '.godot/agent-api/' so lookups can be grepped
-# instead of recalled:
-#
-#   engine/          built-in classes from ClassDB reflection, with signatures but no
-#                    prose, since a release binary does not embed descriptions.
-#   <dir>/           each top-level directory holding GDScript, and
-#   addons/<name>/   each addon, from '##' comments, with prose. Files are named after
-#                    each script's 'class_name', or its source path when it has none.
+# Dumps engine, project and addon API references into the project's '.godot/agent-api/'
+# for the `godot-api` skill, whose SKILL.md describes the layout.
 
 set -eu
 
@@ -30,7 +24,6 @@ fi
 # changes the working directory.
 out_dir="$project_dir/.godot/agent-api"
 
-# has_gdscript reports whether a directory holds any GDScript.
 has_gdscript() {
   [ -n "$(find "$1" -name '*.gd' | head -n 1)" ]
 }

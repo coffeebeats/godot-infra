@@ -1,6 +1,6 @@
 ---
 name: godot-api
-description: Look up an exact Godot, addon, or project API — a class's methods, signatures, parameters, signals, constants, or enum values — against a generated reference instead of recalling it. Use when unsure whether a method exists, what it is named, what it returns, or what arguments it takes.
+description: Look up an exact Godot, addon, or project API (a class's methods, signatures, parameters, signals, constants, or enum values) against a generated reference instead of recalling it. Use when unsure whether a method exists, what it is named, what it returns, or what arguments it takes.
 user-invocable: true
 argument-hint: "<ClassName> [member]"
 ---
@@ -17,12 +17,12 @@ grep -rn -B6 "func load_save_data" addons/std/save/
 
 The `##` comment above the definition is the same prose the dump carries, and it costs no dump. The dump earns its keep in two cases the source cannot answer:
 
-- **Engine classes**, which are not in the repository at all. This is the main case — `ResourceUID.create_id_for_path`, `RenderingServer.frame_post_draw`, `DisplayServer` capability checks.
+- **Engine classes**, which are not in the repository at all. This is the main case, as for `ResourceUID.create_id_for_path`, `RenderingServer.frame_post_draw`, `DisplayServer` capability checks.
 - **Inherited members**, where the dump flattens the chain into one file per class. `StdSaveFile` inherits through `StdConfigWriterBinary`, `StdConfigWriter`, `StdFileWriter`, and `StdThreadWorker`; the source makes you walk it by hand.
 
 ## Generating the dump
 
-The reference lives in the project's `.godot/agent-api/`, which is gitignored along with the rest of `.godot/`, so it is absent in a fresh clone and stale after an addon bump or an edit to any `##` doc comment. Regenerate it from the project root whenever a lookup comes back empty or contradicts the code:
+The reference lives in the project's `.godot/agent-api/`, so it is absent in a fresh clone and stale after an addon bump or an edit to any `##` doc comment. Regenerate it from the project root whenever a lookup comes back empty or contradicts the code:
 
 ```sh
 sh "${CLAUDE_SKILL_DIR}/dump_api.sh"
@@ -38,7 +38,7 @@ Takes about 15 seconds and prints a class count per tree. It removes each tree b
 | `.godot/agent-api/addons/<name>/` | each addon, from its `##` comments | Yes |
 | `.godot/agent-api/<dir>/` | each top-level project directory holding GDScript | Yes |
 
-**The engine tree carries signatures but no descriptions** — a release binary does not embed the documentation text, and `--doctool` regenerates from reflection alone. So "what are the arguments" is answerable there and "what does it do" is not. For that, use the online docs for the pinned version, or read how the project already calls it.
+**The engine tree carries signatures but no descriptions**, since a release binary does not embed the documentation text. For what a method does, use the online docs for the pinned version, or read how the project already calls it.
 
 Engine classes are split across `doc/classes/` and `modules/*/doc_classes/`, so find the file rather than assuming a path:
 
@@ -63,7 +63,7 @@ grep -A8 '<method name="load_save_data"' .godot/agent-api/addons/std/StdSaveFile
 # properties, signals, constants and enum values
 grep -E '<member name=|<signal name=|<constant name=' .godot/agent-api/project/Main.xml
 
-# "which class has this member?" — matches a method, signal, property or constant
+# which class has this member, as a method, signal, property or constant
 grep -rl 'name="frame_post_draw"' .godot/agent-api/
 ```
 
@@ -71,4 +71,4 @@ grep -rl 'name="frame_post_draw"' .godot/agent-api/
 
 ## Verification
 
-End every lookup by quoting the line you found, not a paraphrase of it. If a grep returns nothing, the answer is not "the method does not exist" until you have confirmed the class file itself is present — an empty result far more often means the dump is stale or the class name is spelled differently. Regenerate, then say the method does not exist.
+End every lookup by quoting the line you found, not a paraphrase of it. If a grep returns nothing, the answer is not "the method does not exist" until you have confirmed the class file itself is present, since an empty result far more often means the dump is stale or the class name is spelled differently. Regenerate, then say the method does not exist.
