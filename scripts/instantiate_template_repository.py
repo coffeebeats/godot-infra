@@ -675,8 +675,10 @@ def main_branch_rules(args: argparse.Namespace) -> list[dict]:
     rules: list[dict] = [
         {"type": "creation"},
         {"type": "deletion"},
-        {"type": "required_linear_history"},
     ]
+
+    if not args.allow_merge_commits:
+        rules.append({"type": "required_linear_history"})
 
     if not args.allow_direct_push:
         rules.append(
@@ -732,14 +734,18 @@ def main_branch_rules(args: argparse.Namespace) -> list[dict]:
 
 
 def apply_rule_sets(args: argparse.Namespace, target: str) -> None:
-    """apply_rule_sets reconciles the default-branch `main` and `push` rulesets.
-    Force-push protection remains active when direct pushes are allowed.
+    """apply_rule_sets reconciles the default-branch `main` and `push` rulesets
+    and the `dist` ruleset. Force-push protection remains active when direct
+    pushes are allowed.
     """
     info("Applying repository rule sets.")
 
     if args.allow_direct_push:
         # NOTE: Required checks also gate direct pushes, before their workflows can run.
         info("Allowing direct pushes: omitting the pull-request and check rules.")
+
+    if args.allow_merge_commits:
+        info("Allowing merge commits: omitting the linear-history rule.")
 
     put_rule_set(
         target,
@@ -768,6 +774,20 @@ def apply_rule_sets(args: argparse.Namespace, target: str) -> None:
             "bypass_actors": [],
             "conditions": {"ref_name": {"exclude": [], "include": ["~DEFAULT_BRANCH"]}},
             "rules": [{"type": "non_fast_forward"}],
+        },
+    )
+
+    # NOTE: Consumers pin commits on an addon's 'dist' branch, so rewriting or
+    # deleting it would strand every submodule pointing at a lost commit.
+    put_rule_set(
+        target,
+        {
+            "name": "dist",
+            "enforcement": "active",
+            "target": "branch",
+            "bypass_actors": [],
+            "conditions": {"ref_name": {"exclude": [], "include": ["refs/heads/dist"]}},
+            "rules": [{"type": "deletion"}, {"type": "non_fast_forward"}],
         },
     )
 
@@ -1326,6 +1346,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--allow-direct-push",
         action="store_true",
         help="drop the pull-request and status-check rules from the 'main' rule set",
+    )
+    policy.add_argument(
+        "--allow-merge-commits",
+        action="store_true",
+        help="drop the linear-history rule from the 'main' rule set",
     )
     policy.add_argument(
         "--workflow-permissions",

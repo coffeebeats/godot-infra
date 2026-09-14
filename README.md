@@ -154,9 +154,9 @@ uv run scripts/instantiate_template_repository.py \
   --description "A new Godot 4+ project."
 ```
 
-A run creates the repository, rewrites the generated contents for their new home, applies every repository setting and both branch rule sets, and reports what still needs attention. By default it seeds `release-please` at `v0.1.0`; `--no-release` removes the release workflow and configuration as well as skipping the tag.
+A run creates the repository, rewrites the generated contents for their new home, applies every repository setting and all three branch rule sets, and reports what still needs attention. The third rule set protects an addon's `dist` branch from deletion and force-pushes, so every published commit a consumer pins stays reachable. By default it seeds `release-please` at `v0.1.0`; `--no-release` removes the release workflow and configuration as well as skipping the tag.
 
-Pass `--dry-run` first; it prints every mutating call with its payload and issues none. `--existing` applies settings alone, which resumes a failed run and re-converges a repository created before a setting existed. It touches no content and never changes visibility.
+Pass `--dry-run` first; it prints every mutating call with its payload and issues none. `--existing` applies settings alone, which resumes a failed run and re-converges a repository created before a setting existed. It touches no content and never changes visibility. A rule set is replaced wholesale, so pass `--public` with `--existing` on a public repository; without it, the `main` rule set loses its code scanning rule.
 
 `--name` and `--template` each take `owner/name`, or a bare name under a default owner — `@coffeebeats` for the template, the authenticated user for the new repository. `--branch` takes a branch or a commit. The default branch uses GitHub's template generation; a pinned or non-default ref is cloned from the source and pushed as a new initial commit, so the pin is honored even though template generation squashes history.
 
@@ -165,6 +165,7 @@ Pass `--dry-run` first; it prints every mutating call with its payload and issue
 | `--public` | Create a public repository. The script enables secret and code scanning on public repositories only, since both need Advanced Security on a private one. |
 | `--allow-action PATTERN` | Permit a third-party action. Repeatable and additive; it never narrows an allow-list the repository already has. Whenever the script sets the allow-list, it also adds `coffeebeats/*` and `tj-actions/changed-files@*`, since a caller's allow-list governs the actions inside the reusable workflows it calls; an existing repository that allows every action stays that way unless a pattern is given. |
 | `--allow-direct-push` | Drop the pull-request and status-check rules, for a repository that commits straight to `main`. Force-pushing stays blocked. |
+| `--allow-merge-commits` | Drop the linear-history rule, for a fork that merges its upstream and pushes the merge straight to the default branch. Usually paired with `--allow-direct-push`. |
 | `--no-release` | Skip `release-please` seeding and the initial tag. |
 | `--secret NAME` | Set a repository secret from the environment variable of the same name. Repeatable; for many at once, `gh secret set -f` is simpler. |
 | `--workflow-permissions` | The default `GITHUB_TOKEN` permissions (default `read`). |
