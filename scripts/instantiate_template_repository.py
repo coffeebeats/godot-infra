@@ -677,7 +677,6 @@ def main_branch_rules(args: argparse.Namespace) -> list[dict]:
         {"type": "deletion"},
     ]
 
-    # NOTE: A fork merges its upstream and pushes the merge commit directly.
     if not args.allow_merge_commits:
         rules.append({"type": "required_linear_history"})
 
