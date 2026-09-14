@@ -1,0 +1,7 @@
+{
+  "name": "godot",
+  "description": "Checks Godot project files on every edit and looks up exact engine and project APIs.",
+  "author": {
+    "name": "coffeebeats"
+  }
+}

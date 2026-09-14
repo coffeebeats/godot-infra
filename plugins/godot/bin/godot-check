@@ -1,0 +1,27 @@
+#!/bin/sh
+# plugins/godot/bin/godot-check
+#
+# Runs the plugin's project checker against the Godot project in the working directory.
+# The edit hook checks only the file an `Edit` or `Write` touched, so run this after
+# anything else changes files, such as a move or a rename:
+#
+#   godot-check                  # every rule, every file
+#   godot-check a.gd b.tscn      # only the given files
+#   godot-check --fix a.tscn     # repair, then re-check
+#   godot-check --list           # print the rule registry
+
+set -eu
+
+if [ ! -f project.godot ]; then
+  echo "godot-check: no 'project.godot' here; run it from the project root." >&2
+  exit 1
+fi
+
+checker="$(CDPATH='' cd -- "$(dirname -- "$0")/../checker" && pwd)/check.gd"
+
+# On Windows the engine needs a native path, not the shell's.
+if command -v cygpath >/dev/null 2>&1; then
+  checker="$(cygpath -m "$checker")"
+fi
+
+exec godot --headless --path . -s "$checker" -- "$@"

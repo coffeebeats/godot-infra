@@ -172,6 +172,38 @@ Pass `--dry-run` first; it prints every mutating call with its payload and issue
 
 The script deliberately leaves SHA pinning off. Dependent repositories consume godot-infra's actions by floating major tag, so enforcing it here would churn every dependent on every release. Workflows pin third-party actions by hand instead.
 
+## **Agent plugin**
+
+This repository is also a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) holding one plugin, [`godot`](./plugins/godot). Nothing is published anywhere; a repository references it by GitHub path. The plugin carries the Godot tooling that is the same in every repository:
+
+- An edit hook that runs `gdformat` and `gdlint` on each `.gd` edit, the [project checker](./plugins/godot/checker/README.md) with `--fix` on each edited `.gd`, `.tscn` or `.tres` file, and the edited script's `<name>_test.gd` if one exists.
+- `godot-check`, which runs the same checker over the whole project, for changes the hook never sees such as a move.
+- The `godot-api` skill, which dumps engine, addon and project class references for lookups.
+
+The `test` job of `check-project.yaml` runs the same checker, so a new rule reaches CI and the hook together.
+
+A repository enables the plugin in its `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "godot-infra": {
+      "source": { "source": "github", "repo": "coffeebeats/godot-infra", "ref": "v6" },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": { "godot@godot-infra": true }
+}
+```
+
+Each machine installs it once, after trusting the repository folder, and every repository with these settings then loads it:
+
+```sh
+claude plugin install godot@godot-infra --scope project
+```
+
+The plugin declares no `version`, so each commit is its version, and it follows the floating major tag like the workflows do: a release moves `v6`, and Claude Code picks the update up in the background. A breaking change to the plugin is a major release, taken alongside the workflows' `@v7`.
+
 ## **Development**
 
 ### Setup

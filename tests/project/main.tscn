@@ -1,4 +1,4 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bsp87c1e074tj"]
 
 [node name="Main" type="Label"]
 text = "godot-infra"

@@ -1,0 +1,98 @@
+# Project checker
+
+`check.gd` reports problems that a normal boot or import does not surface, and repairs
+the ones it can. The `godot` plugin's edit hook runs it on each edited file,
+`godot-check` runs it by hand, and `check-project.yaml` runs it over the whole project
+in CI. Verified on Godot **4.7.2.stable.official**.
+
+```sh
+godot-check                         # every rule, every file
+godot-check a.gd b.tscn             # only the given files
+godot-check --fix a.tscn            # repair, then re-check
+godot-check --list                  # print the rule registry
+```
+
+Outside Claude Code, run `godot --headless -s <path to check.gd> -- <args>` from the
+project root.
+
+| Rule | Covers | Reports | Fixable |
+| --- | --- | --- | --- |
+| `compile` | `.gd` | a script that does not compile, a promoted warning included | |
+| `uid` | `.tscn` `.tres` | a header carrying no `uid=` | yes |
+| `path-ref` | `.tscn` `.tres` | a reference that does not resolve, and a `res://` string that should be a uid | yes |
+| `load` | `.tscn` `.tres` | a file that does not parse or instantiate | |
+| `script-order` | `.tscn` `.tres` | a property assigned ahead of `script =` | |
+| `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
+
+Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
+directories and any directory holding a `.gdignore`. It exits 1 for a problem or a
+repair alike, since the engine cannot return a code that tells them apart. Follow
+`--fix` with `godot --import --headless` so the assigned uids resolve.
+
+Add a rule only after a pitfall has bitten twice. A rule applies to every repository
+that enables the plugin, so it must hold for any Godot project.
+
+## One boot for every rule
+
+Booting the project costs 1.17s, against about 10ms for every rule checking one file.
+One boot runs every rule, and the edit hook must not add another.
+
+## GDExtensions that did not load
+
+A script naming the API of a GDExtension that did not load fails to parse, which reports
+the machine rather than the script. GodotSteam has no Linux build, so a Linux runner has
+no `Steam` singleton.
+
+`KNOWN_EXTENSIONS` in `check.gd` maps each such extension to a pattern for the scripts
+naming its API; GodotSteam's is `\bSteam\.`. While the extension is unloaded, a matching
+script and any file reaching one through its `[ext_resource]` headers skip the rules
+that load files, and the count is printed. Text-only rules still run. The list is
+hard-coded until [#617](https://github.com/coffeebeats/godot-infra/issues/617)
+generalizes exclusions.
+
+## Warnings
+
+A warning set to level 2 in `project.godot` is raised as a parse error, so `compile`
+reports it. The engine prints warnings only to an attached debugger, and `-d` hangs at a
+`debug>` prompt on the first runtime error, so nothing else surfaces them.
+
+## What it does not cover
+
+`project.godot` holds fragile path strings too (the main scene, autoloads, bus layout,
+translations), but it is neither a scene nor a resource, and the engine reads it before
+any of this runs. Scripts are out of scope for `path-ref`, since a broken `preload`
+already fails `compile`.
+
+## Engine behavior the checker works around
+
+Each of these returns a plausible wrong answer rather than an error.
+
+- **`--check-only` does not register autoloads**, so every script naming one reports a
+  false `Identifier not found`. `compile` loads scripts inside a running `SceneTree`
+  instead.
+- **A script that fails to parse still loads as non-null.** A compiled script always
+  has a native base type, so `compile` checks `get_instance_base_type()`.
+  `Script.reload()` cannot stand in, since it errors on any script with live instances.
+- **Re-loading the running script hangs the engine**, so `compile` skips its own path.
+  `ResourceLoader.has_cached()` cannot stand in for that skip, since it reports true for
+  scripts the process never loaded.
+- **A parse error in a `preload`ed script exits 0** having run nothing, which is why
+  every rule lives in one file.
+- **`SceneTree.quit(code)` collapses every non-zero code to 1** under `-s`.
+- **A missing `[ext_resource]` target does not fail a load.** The scene loads without
+  the node that needed it, so `path-ref` validates headers rather than `load`.
+- **A move rewrites `ext_resource` headers and nothing else**, so a `res://` string in a
+  property such as `StdScreen.scene_path` points at nothing until something reads it. A
+  `uid://` reference survives the move.
+- **A script process does not rebuild the uid cache**, so a reference to a file created
+  since the last import reports as unknown until `godot --import --headless`. Uids derive
+  from the path, so every machine assigns the same one.
+- **Quitting mid-load prints parse errors for well-formed scenes**, and the failing set
+  changes between runs. A smoke test uses `--quit-after 30`, and `load` loads
+  synchronously.
+
+## The edit hook
+
+`hooks/on_edit.sh` fires on `Edit` and `Write` only, so run `godot-check` after a move
+or any other change it never sees. Its feedback goes to stderr, since stdout never
+reaches the agent; a hook that writes there shows up as "No stderr output".

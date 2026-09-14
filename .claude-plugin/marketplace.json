@@ -1,0 +1,13 @@
+{
+  "name": "godot-infra",
+  "owner": {
+    "name": "coffeebeats"
+  },
+  "plugins": [
+    {
+      "name": "godot",
+      "source": "./plugins/godot",
+      "description": "Checks Godot project files on every edit and looks up exact engine and project APIs."
+    }
+  ]
+}

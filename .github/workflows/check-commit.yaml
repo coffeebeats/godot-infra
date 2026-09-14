@@ -87,7 +87,7 @@ jobs:
       - name: Lint shell scripts
         run: |
           shopt -s globstar
-          shellcheck --severity=warning actions/**/*.sh
+          shellcheck --severity=warning actions/**/*.sh plugins/**/*.sh plugins/*/bin/*
 
       # NOTE: 'actionlint' reads only workflows, so the 'run:' blocks inside
       # 'action.yml' files are extracted and checked here.
@@ -113,6 +113,34 @@ jobs:
           # 'actionlint' predates '$/', so a step's 'uses' reads as malformed.
           # A job's 'uses' needs no ignore, because '$/' becomes './' there.
           "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/'
+
+  # A release ships the project checker to every consumer at once, so it runs
+  # here against the sample project with each supported Godot version first.
+  check-plugin:
+    needs: ["changes"]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJson(needs.changes.outputs.godot-versions) }}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - uses: ./.github/actions/setup-godot
+        with:
+          version: ${{ matrix.version }}
+
+      - name: Initialize project imports
+        working-directory: tests/project
+        run: godot --verbose --headless --quit --import
+
+      - uses: ./.github/actions/check-godot-files
+        with:
+          path: tests/project
 
   # The self-test exports the sample project with every supported Godot
   # version through the reusable workflows, so a release never ships an
@@ -148,7 +176,7 @@ jobs:
   # Used to ensure all branch protection requirements are met. This is a workaround until
   # https://github.com/github-community/community/discussions/4324 is addressed.
   branch_protection:
-    needs: ["changes", "check-python", "check-shell", "check-workflows", "export"]
+    needs: ["changes", "check-plugin", "check-python", "check-shell", "check-workflows", "export"]
     if: ${{ always() }}
 
     runs-on: ubuntu-latest
