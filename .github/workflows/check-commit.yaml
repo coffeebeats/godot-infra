@@ -145,8 +145,8 @@ jobs:
       storefront: unknown
       profile: release
 
-  # The packaging self-test publishes a fixture addon to a local remote three
-  # times, so a release never ships untested 'dist' branch or tag handling.
+  # The packaging self-test publishes a fixture addon to a local remote, so a
+  # release never ships untested 'dist' branch or tag handling.
   package-addon:
     needs: ["changes"]
     if: needs.changes.outputs.has_pipeline_change == 'true'
@@ -165,8 +165,8 @@ jobs:
         with:
           version: ${{ steps.version.outputs.value }}
 
-      # NOTE: The fixture commits the '.uid' files Godot generates, so that
-      # packaging it again reimports to identical contents and publishes nothing.
+      # NOTE: The fixture commits the '.uid' files Godot generates, so packaging
+      # it again reimports identically and publishes nothing.
       - name: Create a fixture addon repository
         env:
           GODOT_VERSION: ${{ steps.version.outputs.value }}
