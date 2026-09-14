@@ -224,7 +224,9 @@ runs:
       run: |
         # NOTE: A tag never moves. A re-run finds its tag on the commit it
         # already published, which is not an error.
-        EXISTING="$(git ls-remote origin "refs/tags/$TAG" | cut -f1)"
+        # NOTE: An annotated tag also lists the commit it points at as
+        # '<tag>^{}', which sorts last, so the last line is the commit.
+        EXISTING="$(git ls-remote origin "refs/tags/$TAG" "refs/tags/$TAG^{}" | awk '{ sha = $1 } END { print sha }')"
         HEAD_SHA="$(git rev-parse HEAD)"
 
         if [[ -z "$EXISTING" ]]; then
