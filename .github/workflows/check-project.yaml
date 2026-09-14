@@ -123,8 +123,7 @@ jobs:
             echo "check-script=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # NOTE: Versions are written without a 'v' prefix, as 'setup-godot' and
-      # the job names show them, and a version listed twice is tested once.
+      # NOTE: Versions drop any 'v' prefix, so a version listed twice runs once.
       - name: Resolve the Godot versions to test with
         id: test-versions
         env:
