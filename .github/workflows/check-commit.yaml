@@ -145,10 +145,130 @@ jobs:
       storefront: unknown
       profile: release
 
+  # The packaging self-test publishes a fixture addon to a local remote three
+  # times, so a release never ships untested 'dist' branch or tag handling.
+  package-addon:
+    needs: ["changes"]
+    if: needs.changes.outputs.has_pipeline_change == 'true'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Select the newest supported Godot version
+        id: version
+        env:
+          VERSIONS: ${{ needs.changes.outputs.godot-versions }}
+        run: echo "value=$(jq -r '.[-1]' <<<"$VERSIONS")" >> "$GITHUB_OUTPUT"
+
+      - uses: $/.github/actions/setup-godot
+        with:
+          version: ${{ steps.version.outputs.value }}
+
+      # NOTE: The fixture commits the '.uid' files Godot generates, so that
+      # packaging it again reimports to identical contents and publishes nothing.
+      - name: Create a fixture addon repository
+        env:
+          GODOT_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          git init --quiet --initial-branch=main
+          git config user.name "fixture"
+          git config user.email "fixture@example.invalid"
+
+          git init --quiet --bare "$RUNNER_TEMP/origin.git"
+          git remote add origin "file://$RUNNER_TEMP/origin.git"
+
+          mkdir -p addons/fixture/example
+
+          echo "v${GODOT_VERSION#v}" > .godot-version
+          echo ".godot/" > .gitignore
+          printf 'config_version=5\n\n[application]\n\nconfig/name="fixture"\n' > project.godot
+
+          printf '[plugin]\n\nname="fixture"\ndescription=""\nauthor=""\nversion="0.0.0"\nscript=""\n' > addons/fixture/plugin.cfg
+          printf 'extends RefCounted\n' > addons/fixture/a.gd
+          printf 'extends RefCounted\n' > addons/fixture/a_test.gd
+          printf 'extends RefCounted\n' > addons/fixture/example/x.gd
+
+          godot --editor --headless --import --quit || :
+
+          git add --all
+          git commit --quiet --message "add fixture"
+          git push --quiet origin main
+
+      - name: Publish the fixture
+        uses: $/actions/package-addon
+        with:
+          subfolder: fixture
+          tag: dist/v0.0.1
+          file-excludes: |
+            **/example
+            **/*_test.gd
+            **/*_test.gd.uid
+
+      - name: Change the fixture
+        run: |
+          git checkout --quiet main
+          echo "# changed" >> addons/fixture/a.gd
+          git commit --quiet --all --message "change fixture"
+          git push --quiet origin main
+
+      - name: Publish the changed fixture
+        uses: $/actions/package-addon
+        with:
+          subfolder: fixture
+          tag: dist/v0.0.2
+          file-excludes: |
+            **/example
+            **/*_test.gd
+            **/*_test.gd.uid
+
+      - name: Return to the fixture source
+        run: git checkout --quiet main
+
+      - name: Republish the unchanged fixture
+        uses: $/actions/package-addon
+        with:
+          subfolder: fixture
+          tag: dist/v0.0.2
+          file-excludes: |
+            **/example
+            **/*_test.gd
+            **/*_test.gd.uid
+
+      - name: Verify the published branch and tags
+        run: |
+          fail() {
+            echo "::error::$1"
+            exit 1
+          }
+
+          origin() {
+            git -C "$RUNNER_TEMP/origin.git" "$@"
+          }
+
+          [[ "$(origin rev-list --count dist)" == "2" ]] ||
+            fail "'dist' should hold exactly two commits"
+          [[ "$(origin rev-list --max-parents=0 dist)" == "$(origin rev-parse dist~1)" ]] ||
+            fail "'dist' should start without history"
+          ! origin merge-base --is-ancestor main dist ||
+            fail "'main' should not be an ancestor of 'dist'"
+
+          [[ "$(origin rev-parse refs/tags/dist/v0.0.1)" == "$(origin rev-parse dist~1)" ]] ||
+            fail "'dist/v0.0.1' should tag the first publish"
+          [[ "$(origin rev-parse refs/tags/dist/v0.0.2)" == "$(origin rev-parse dist)" ]] ||
+            fail "'dist/v0.0.2' should tag the second publish"
+
+          origin cat-file -e dist:plugin.cfg ||
+            fail "'plugin.cfg' should be published at the branch root"
+          for excluded in a_test.gd a_test.gd.uid example; do
+            ! origin cat-file -e "dist:$excluded" 2>/dev/null ||
+              fail "'$excluded' should be excluded"
+          done
+
   # Used to ensure all branch protection requirements are met. This is a workaround until
   # https://github.com/github-community/community/discussions/4324 is addressed.
   branch_protection:
-    needs: ["changes", "check-python", "check-shell", "check-workflows", "export"]
+    needs: ["changes", "check-python", "check-shell", "check-workflows", "export", "package-addon"]
     if: ${{ always() }}
 
     runs-on: ubuntu-latest

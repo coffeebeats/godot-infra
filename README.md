@@ -126,6 +126,8 @@ jobs:
 
 Available workflows: `check-project.yaml` (games and addons), `publish-game.yaml` (exports and packages one target; the itch.io upload is opt-in), `compile-editor.yaml` (games), `release-addon.yaml` (addons).
 
+`release-addon.yaml` publishes each release as a commit on the addon's `dist` branch, tagged `dist/v<version>`. Consumers track it with `branch = dist` in `.gitmodules`, so each release arrives as one submodule bump.
+
 A job inside a reusable workflow reports as `<caller-job> / <job>`, so a branch ruleset that requires a bare context needs that job declared in the calling repository rather than here.
 
 #### **Actions**
