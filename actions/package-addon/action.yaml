@@ -14,7 +14,7 @@ inputs:
     required: false
     default: .
   godot-editor-version:
-    description: "The godot editor version to use for reimporting (e.g. 'v4.7.2-stable'; default: the '.godot-version' pin)."
+    description: "The Godot editor version to use for reimporting (e.g. 'v4.7.2-stable'; default: the '.godot-version' pin)."
     required: false
     default: ""
   file-excludes:
