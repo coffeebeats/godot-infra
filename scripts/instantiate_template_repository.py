@@ -827,8 +827,6 @@ def apply_repository_settings(args: argparse.Namespace, target: str) -> None:
         {
             "squash_merge_commit_title": "PR_TITLE",
             "squash_merge_commit_message": "COMMIT_MESSAGES",
-            "merge_commit_title": "MERGE_MESSAGE",
-            "merge_commit_message": "PR_TITLE",
         },
     )
 
@@ -910,12 +908,19 @@ def apply_actions_permissions(args: argparse.Namespace, target: str) -> None:
             },
         )
 
+    # NOTE: Release-please opens pull requests with the workflow token unless a
+    # 'RELEASE_PLEASE_TOKEN' secret is set, so an existing grant is kept.
+    workflow = (
+        gh_json("api", f"repos/{target}/actions/permissions/workflow", default={}) or {}
+    )
     gh_api(
         "PUT",
         f"repos/{target}/actions/permissions/workflow",
         {
             "default_workflow_permissions": args.workflow_permissions,
-            "can_approve_pull_request_reviews": False,
+            "can_approve_pull_request_reviews": bool(
+                workflow.get("can_approve_pull_request_reviews", False)
+            ),
         },
     )
 
