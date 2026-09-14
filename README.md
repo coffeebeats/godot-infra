@@ -124,7 +124,7 @@ jobs:
           tag: ${{ needs.release-please.outputs.release-tag }}
 ```
 
-Available workflows: `check-project.yaml` (games and addons), `publish-game.yaml` (exports and packages one target; the itch.io upload is opt-in), `compile-editor.yaml` (games), `release-addon.yaml` (addons).
+Available workflows: `check-project.yaml` (games and addons), `publish-game.yaml` (exports and packages one target; the itch.io upload is opt-in), `compile-editor.yaml` (games).
 
 An addon repository composes its own release on `actions/package-addon`, which publishes the addon as a commit on its `dist` branch. An authored plugin runs `release-please` first and passes `tag: dist/<release tag>`; a fork publishes on each push to its default branch. Consumers track the branch with `branch = dist` in `.gitmodules`.
 
