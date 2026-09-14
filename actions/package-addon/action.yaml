@@ -52,6 +52,8 @@ runs:
         PACKAGE_DIR="${{ runner.temp }}/addon"
         echo "Constructing addon directory: $PACKAGE_DIR"
 
+        # NOTE: A previous run in the same job leaves this directory behind.
+        rm -rf "$PACKAGE_DIR"
         mkdir "$PACKAGE_DIR"
 
         # Set options to enable more extensive globbing.
