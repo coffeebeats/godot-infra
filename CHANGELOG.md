@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.5.1 (2026-09-14)
+
+## What's Changed
+* fix(scripts): keep --existing from breaking existing repositories by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/615
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.5.0...v6.5.1
+
 ## 6.5.0 (2026-09-14)
 
 ## What's Changed
