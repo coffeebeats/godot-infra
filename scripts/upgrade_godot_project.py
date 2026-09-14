@@ -6,14 +6,12 @@ pin, resolves the requested target release, and picks one route:
 
   none   the pin is already current; nothing changes
   patch  '.godot-version' only
-  minor  patch, plus 'godot-vX.Y' submodule branches and gitlinks,
-         'config/features', and a plugin README's version table
-  fork   an addon fork with no pin: the 'godot-vX.Y' target branch and editor
-         version in its publish workflow
+  minor  patch, plus 'config/features' in 'project.godot'
 
-The pin is written by 'gdenv pin'. A minor route fails before writing anything
-when a submodule branch is not published yet. 'godot-infra' is not involved;
-its actions and workflows select toolchain images from the pin at run time.
+The pin is written by 'gdenv pin'. Addon submodules track their 'dist' branch
+and move with their own releases, so no route touches them. 'godot-infra' is not
+involved either; its actions and workflows select toolchain images from the pin
+at run time.
 
 What changed is written as JSON to '--output'. Reimporting and committing are
 the caller's job. 'resolve' prints the target release without touching the
@@ -120,12 +118,6 @@ def resolve_target(requested: str, releases: list[Version]) -> Version:
     return target
 
 
-def to_https(url: str) -> str:
-    """Rewrite an SSH GitHub URL so it can be queried without an SSH key."""
-    match = re.match(r"^(?:ssh://)?git@github\.com[:/](.+?)(?:\.git)?$", url)
-    return f"https://github.com/{match.group(1)}" if match else url
-
-
 # ---------------------------------------------------------------------------- #
 #                                    Upgrade                                   #
 # ---------------------------------------------------------------------------- #
@@ -152,36 +144,6 @@ def replace_in_file(path: Path, pattern: re.Pattern[str], replacement: str) -> i
     if count:
         path.write_text(updated)
     return count
-
-
-def fork_publish_workflow(project: Path) -> Path | None:
-    """The publish workflow of an addon fork, which is bumped in place of a pin."""
-    path = project / ".github" / "workflows" / "publish.yaml"
-    if path.is_file() and "godot-infra/package-addon@" in path.read_text():
-        return path
-    return None
-
-
-def upgrade_fork(workflow: Path, new: Version, summary: Summary) -> None:
-    """Retarget the fork's published branch; precedent pins the bare minor."""
-    text = workflow.read_text()
-    text = re.sub(
-        r'^(\s*target-branch:\s*"?)godot-v\d+\.\d+',
-        rf"\g<1>godot-v{new.major_minor}",
-        text,
-        flags=re.MULTILINE,
-    )
-    text = re.sub(
-        r'^(\s*godot-editor-version:\s*"?)v\d+\.\d+(?:\.\d+)?-stable',
-        rf"\g<1>v{new.major_minor}-stable",
-        text,
-        flags=re.MULTILINE,
-    )
-    workflow.write_text(text)
-    summary.changes.append(
-        f"publish.yaml: target-branch godot-v{new.major_minor},"
-        f" godot-editor-version v{new.major_minor}-stable"
-    )
 
 
 def upgrade_pin(project: Path, new: Version, summary: Summary) -> None:
@@ -211,123 +173,6 @@ def upgrade_features(
         )
 
 
-def upgrade_submodules(
-    project: Path, old: Version, new: Version, summary: Summary
-) -> None:
-    gitmodules = project / ".gitmodules"
-    if not gitmodules.is_file():
-        return
-
-    old_branch, new_branch = f"godot-v{old.major_minor}", f"godot-v{new.major_minor}"
-    # 'git config' exits 1 when nothing matches; that is the warning below.
-    tracking = run(
-        "git",
-        "config",
-        "-f",
-        ".gitmodules",
-        "--get-regexp",
-        "--fixed-value",
-        r"^submodule\..*\.branch$",
-        old_branch,
-        cwd=project,
-        check=False,
-    ).splitlines()
-    if not tracking:
-        summary.warnings.append(
-            f".gitmodules: no submodule tracks '{old_branch}'; left as is"
-        )
-        return
-
-    # Resolve every new branch before writing anything, so a missing branch
-    # fails the upgrade as a whole and leaves the tree untouched. A clone would
-    # let 'git submodule update --remote' do this, but a shallow clone is
-    # single-branch and a full one pulls every packaged binary in the fork.
-    resolved = []
-    missing = []
-    for line in tracking:
-        key = line.split()[0].removesuffix(".branch")
-        path = run("git", "config", "-f", ".gitmodules", f"{key}.path", cwd=project)
-        url = run("git", "config", "-f", ".gitmodules", f"{key}.url", cwd=project)
-        path, url = path.strip(), url.strip()
-        output = run(
-            "git", "ls-remote", "--heads", to_https(url), f"refs/heads/{new_branch}"
-        )
-        if not output:
-            missing.append(f"{url} has no '{new_branch}' branch")
-            continue
-        before = run("git", "rev-parse", f"HEAD:{path}", cwd=project).strip()
-        resolved.append((path, before, output.split()[0]))
-    if missing:
-        raise RuntimeError(
-            "submodule branches are not published yet:\n  " + "\n  ".join(missing)
-        )
-
-    # 'git submodule set-branch' would do this, but it re-indents the line.
-    replace_in_file(
-        gitmodules,
-        re.compile(
-            rf"^([ \t]*branch[ \t]*=[ \t]*){re.escape(old_branch)}[ \t]*$",
-            re.MULTILINE,
-        ),
-        rf"\g<1>{new_branch}",
-    )
-    for path, before, after in resolved:
-        run(
-            "git",
-            "update-index",
-            "--add",
-            "--cacheinfo",
-            f"160000,{after},{path}",
-            cwd=project,
-        )
-        summary.changes.append(
-            f"{path}: {old_branch}@{before[:7]} -> {new_branch}@{after[:7]}"
-        )
-
-
-def bump_release_tag(tag: str) -> str:
-    """'v4' -> 'v5'; 'v0.2' -> 'v0.3' (pre-1.0 plugins bump the minor)."""
-    parts = tag.removeprefix("v").split(".")
-    parts[-1] = str(int(parts[-1]) + 1)
-    return "v" + ".".join(parts)
-
-
-def upgrade_readme(project: Path, old: Version, new: Version, summary: Summary) -> None:
-    """Rewrite the plugin README's version table, if it is in the known format:
-
-    - `main` / `godot-v4.6` (`v4`): `v4.6`
-    - `godot-v4.5` (`v3`): `v4.5`
-    """
-    path = project / "README.md"
-    if not path.is_file():
-        return
-    pattern = re.compile(
-        r"^- `main` / `godot-v"
-        + re.escape(old.major_minor)
-        + r"` \(`(v[\d.]+)`\): `v"
-        + re.escape(old.major_minor)
-        + r"`$",
-        re.MULTILINE,
-    )
-    text = path.read_text()
-    match = pattern.search(text)
-    if not match:
-        if f"godot-v{old.major_minor}" in text:
-            summary.warnings.append(
-                f"README.md: mentions godot-v{old.major_minor} outside the known"
-                " version table format; left as is"
-            )
-        return
-    release = match.group(1)
-    new_release, new_branch = bump_release_tag(release), f"godot-v{new.major_minor}"
-    rows = (
-        f"- `main` / `{new_branch}` (`{new_release}`): `v{new.major_minor}`\n"
-        f"- `godot-v{old.major_minor}` (`{release}`): `v{old.major_minor}`"
-    )
-    path.write_text(text[: match.start()] + rows + text[match.end() :])
-    summary.changes.append(f"README.md: version table gains godot-v{new.major_minor}")
-
-
 def resolve_requested(requested: str) -> Version:
     """The '--godot-version' given, as a full stable release."""
     return resolve_target(requested, list_stable_releases())
@@ -342,61 +187,38 @@ def run_resolve(args: argparse.Namespace) -> int:
 def run_upgrade(args: argparse.Namespace) -> int:
     project = Path(args.project).resolve()
     pin_path = project / ".godot-version"
-    publish = fork_publish_workflow(project)
-    if pin_path.is_file():
-        old = Version.parse(pin_path.read_text())
-    elif publish:
-        match = re.search(r'target-branch:\s*"?godot-v(\d+\.\d+)', publish.read_text())
-        if not match:
-            print(
-                f"error: {publish} names no 'godot-vX.Y' target branch",
-                file=sys.stderr,
-            )
-            return 1
-        old = Version.parse(match.group(1))
-    else:
-        print(
-            f"error: {project} has neither a .godot-version nor a publish workflow",
-            file=sys.stderr,
-        )
+    if not pin_path.is_file():
+        print(f"error: {project} has no .godot-version pin", file=sys.stderr)
         return 1
 
+    old = Version.parse(pin_path.read_text())
     new = resolve_requested(args.godot_version)
-    is_fork = publish is not None and not pin_path.is_file()
 
-    older = (new.major, new.minor) < (old.major, old.minor)
-    if older or (not is_fork and new < old):
+    if new < old:
         print(f"error: {new.tag} is older than the pinned {old.tag}", file=sys.stderr)
         return 1
-    if (new.major, new.minor) == (old.major, old.minor):
-        # A fork tracks a minor, so a patch release changes nothing there.
-        route = "none" if is_fork or new == old else "patch"
+    if new == old:
+        route = "none"
+    elif (new.major, new.minor) == (old.major, old.minor):
+        route = "patch"
     else:
-        route = "fork" if is_fork else "minor"
+        route = "minor"
 
-    if route in ("patch", "minor") and shutil.which("gdenv") is None:
+    if route != "none" and shutil.which("gdenv") is None:
         print("error: 'gdenv' is not installed", file=sys.stderr)
         return 1
 
     if route == "minor":
-        title = f"chore!: update to Godot `v{new.major_minor}`"
-    elif route == "fork":
-        title = f"chore: target Godot `v{new.major_minor}`"
+        title = f"chore: update to Godot `v{new.major_minor}`"
     else:
         title = f"chore: upgrade Godot to `v{new.tag}`"
     summary = Summary(title, new.tag, old.tag, route)
     print(f"route: {route} (v{old.tag} -> v{new.tag})")
 
-    # Every remote lookup that can fail happens before the first write.
-    if route == "fork":
-        upgrade_fork(publish, new, summary)
-    if route == "minor":
-        upgrade_submodules(project, old, new, summary)
-    if route in ("patch", "minor"):
+    if route != "none":
         upgrade_pin(project, new, summary)
     if route == "minor":
         upgrade_features(project, old, new, summary)
-        upgrade_readme(project, old, new, summary)
 
     for change in summary.changes:
         print(f"changed: {change}")
