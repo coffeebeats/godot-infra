@@ -1,5 +1,16 @@
 # Changelog
 
+## 6.5.0 (2026-09-14)
+
+## What's Changed
+* feat(package-addon): publish addons to an append-only 'dist' branch by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/610
+* feat(check-project): test against additional Godot versions by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/611
+* feat(scripts): protect 'dist' and allow merge commits in instantiate by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/612
+* refactor(scripts): drop branch-moving upgrade routes by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/613
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.4.0...v6.5.0
+
 ## 6.4.0 (2026-09-13)
 
 ## What's Changed
