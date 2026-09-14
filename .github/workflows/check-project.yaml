@@ -28,6 +28,11 @@ on:
         description: "Whether to boot the project headless for 30 seconds as a smoke test."
         required: false
         default: false
+      test-godot-versions:
+        type: string
+        description: "A newline-delimited list of Godot versions (e.g. '4.6.3-stable') to also run the tests with; the '.godot-version' pin is always tested."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -50,6 +55,7 @@ jobs:
       has_translations: "${{ steps.tools.outputs.translations == 'true' }}"
       has_check_script: "${{ steps.tools.outputs.check-script == 'true' }}"
       changed-png-files: "${{ steps.check-png.outputs.all_changed_files }}"
+      test-godot-versions: "${{ steps.test-versions.outputs.value }}"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -116,6 +122,21 @@ jobs:
           if [[ -f tools/check.gd ]]; then
             echo "check-script=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # NOTE: Versions are written without a 'v' prefix, as 'setup-godot' and
+      # the job names show them, and a version listed twice is tested once.
+      - name: Resolve the Godot versions to test with
+        id: test-versions
+        env:
+          EXTRA_VERSIONS: ${{ inputs.test-godot-versions }}
+        run: |
+          VERSIONS="$(
+            printf '%s\n' "$(cat .godot-version)" "$EXTRA_VERSIONS" |
+              sed -E 's/^[[:space:]]*v?//; s/[[:space:]]*$//' |
+              awk 'NF && !seen[$0]++'
+          )"
+
+          echo "value=$(jq -Rnc '[inputs]' <<<"$VERSIONS")" >> "$GITHUB_OUTPUT"
 
   format-and-lint:
     needs: ["changes"]
@@ -319,6 +340,12 @@ jobs:
     needs: ["changes"]
     if: needs.changes.outputs.has_change == 'true'
 
+    # NOTE: The tests commit nothing back, so each version runs in parallel.
+    strategy:
+      fail-fast: false
+      matrix:
+        godot-version: ${{ fromJson(needs.changes.outputs.test-godot-versions) }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -327,14 +354,9 @@ jobs:
         with:
           submodules: true
 
-      - uses: $/.github/actions/parse-godot-version
-        id: version
-        with:
-          gdenv-pin-path: .godot-version
-
       - uses: $/.github/actions/setup-godot
         with:
-          version: ${{ steps.version.outputs.semantic }}
+          version: ${{ matrix.godot-version }}
 
       - name: Initialize project imports
         run: godot --verbose --headless --quit --import
