@@ -126,8 +126,6 @@ jobs:
 
 Available workflows: `check-project.yaml` (games and addons), `publish-game.yaml` (exports and packages one target; the itch.io upload is opt-in), `compile-editor.yaml` (games).
 
-An addon repository composes its own release on `actions/package-addon`, which publishes the addon as a commit on its `dist` branch. An authored plugin runs `release-please` first and passes `tag: dist/<release tag>`; a fork publishes on each push to its default branch. Consumers track the branch with `branch = dist` in `.gitmodules`.
-
 A job inside a reusable workflow reports as `<caller-job> / <job>`, so a branch ruleset that requires a bare context needs that job declared in the calling repository rather than here.
 
 #### **Actions**
