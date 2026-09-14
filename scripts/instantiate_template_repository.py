@@ -827,8 +827,6 @@ def apply_repository_settings(args: argparse.Namespace, target: str) -> None:
         {
             "squash_merge_commit_title": "PR_TITLE",
             "squash_merge_commit_message": "COMMIT_MESSAGES",
-            "merge_commit_title": "MERGE_MESSAGE",
-            "merge_commit_message": "PR_TITLE",
         },
     )
 
