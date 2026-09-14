@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.6.0 (2026-09-14)
+
+## What's Changed
+* feat(plugins): add a 'godot' agent plugin with the shared project checker by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/618
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.5.1...v6.6.0
+
 ## 6.5.1 (2026-09-14)
 
 ## What's Changed
