@@ -53,7 +53,6 @@ jobs:
       has_po_change: "${{ steps.check-po.outputs.any_modified == 'true' }}"
       has_python: "${{ steps.tools.outputs.python == 'true' }}"
       has_translations: "${{ steps.tools.outputs.translations == 'true' }}"
-      has_check_script: "${{ steps.tools.outputs.check-script == 'true' }}"
       changed-png-files: "${{ steps.check-png.outputs.all_changed_files }}"
       test-godot-versions: "${{ steps.test-versions.outputs.value }}"
 
@@ -117,10 +116,6 @@ jobs:
 
           if [[ -x tools/sync-translations.sh ]]; then
             echo "translations=true" >> "$GITHUB_OUTPUT"
-          fi
-
-          if [[ -f tools/check.gd ]]; then
-            echo "check-script=true" >> "$GITHUB_OUTPUT"
           fi
 
       # NOTE: Versions drop any 'v' prefix, so a version listed twice runs once.
@@ -364,9 +359,8 @@ jobs:
         if: inputs.smoke-test
         run: godot --headless --quit-after 30
 
-      - name: Check project files
-        if: needs.changes.outputs.has_check_script == 'true'
-        run: godot --headless -s tools/check.gd
+      # This runs before GUT, so a project that fails to load reports one clear line.
+      - uses: $/.github/actions/check-godot-files
 
       - name: Test source code
         env:

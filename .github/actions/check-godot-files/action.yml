@@ -1,0 +1,22 @@
+name: "✅ Check: Godot project files"
+description: "Run the 'godot' agent plugin's project checker over every file in a Godot project."
+
+inputs:
+  path:
+    description: "Path to the Godot project."
+    required: false
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check project files
+      shell: bash
+      env:
+        PROJECT_PATH: ${{ inputs.path }}
+      run: |
+        # NOTE: A plugin cannot reach files outside its own directory, so the
+        # checker lives in the agent plugin and CI runs that copy.
+        CHECKER="$(realpath "$GITHUB_ACTION_PATH/../../../plugins/godot/checker/check.gd")"
+
+        godot --headless --path "$PROJECT_PATH" -s "$CHECKER"
