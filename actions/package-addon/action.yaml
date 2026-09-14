@@ -1,23 +1,29 @@
 name: "📦🔧 Package: Addon"
-description: "Packages a plugin or compiled gdextension directory and pushes it to a branch."
+description: "Packages a plugin or compiled gdextension directory and publishes it as a commit on a distribution branch."
 
 inputs:
   subfolder:
     description: "The subfolder under 'addons' that the plugin should be placed."
     required: true
   target-branch:
-    description: "The name of the branch to push the packaged addon to."
-    required: true
+    description: "The branch to publish the packaged addon to. Each run commits on top of it; a missing branch starts without history."
+    required: false
+    default: dist
   path:
     description: "The path to the addon's root directory."
     required: false
     default: .
   godot-editor-version:
-    description: "The godot editor version to use for reimporting (e.g. 'v4.7.2-stable')."
-    required: true
+    description: "The Godot editor version to use for reimporting (e.g. 'v4.7.2-stable'; default: the '.godot-version' pin)."
+    required: false
+    default: ""
   file-excludes:
     description: "A comma or newline-delimited list of glob patterns to exclude addon files."
     required: false
+  tag:
+    description: "A tag to create on the published commit (e.g. 'dist/v1.2.3'). An existing tag must already point at that commit."
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -27,9 +33,15 @@ runs:
       shell: bash
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+    - uses: $/.github/actions/parse-godot-version
+      if: inputs.godot-editor-version == ''
+      id: version
+      with:
+        gdenv-pin-path: .godot-version
+
     - uses: $/.github/actions/setup-godot
       with:
-        version: ${{ inputs.godot-editor-version }}
+        version: ${{ inputs.godot-editor-version || steps.version.outputs.semantic }}
 
     - name: Construct addon directory
       id: addon
@@ -40,6 +52,8 @@ runs:
         PACKAGE_DIR="${{ runner.temp }}/addon"
         echo "Constructing addon directory: $PACKAGE_DIR"
 
+        # NOTE: A previous run in the same job leaves this directory behind.
+        rm -rf "$PACKAGE_DIR"
         mkdir "$PACKAGE_DIR"
 
         # Set options to enable more extensive globbing.
@@ -167,17 +181,20 @@ runs:
         git restore .
         git clean -fd
 
-    - name: Push the latest changes to the target branch
+    - name: Replace the target branch's contents
       shell: bash
+      env:
+        PACKAGE_DIR: ${{ runner.temp }}/addon
+        TARGET_BRANCH: ${{ inputs.target-branch }}
       run: |
-        # Check out to target branch
-        BRANCHES=$(git ls-remote --heads origin ${{ inputs.target-branch }})
-
-        if [[ -z "$BRANCHES" ]]; then
-          git checkout -b ${{ inputs.target-branch }}
+        # NOTE: A new branch starts without history, so the packaged branch
+        # never carries the source repository's history or its binaries.
+        if [[ -z "$(git ls-remote --heads origin "$TARGET_BRANCH")" ]]; then
+          git checkout --orphan "$TARGET_BRANCH"
         else
-          git fetch origin +refs/heads/${{ inputs.target-branch }}:refs/heads/${{ inputs.target-branch }}
-          git checkout ${{ inputs.target-branch }}
+          # NOTE: Committing on top of the branch only needs its tip.
+          git fetch --depth=1 origin "+refs/heads/$TARGET_BRANCH:refs/heads/$TARGET_BRANCH"
+          git checkout "$TARGET_BRANCH"
         fi
 
         # Set options to enable more extensive globbing.
@@ -189,12 +206,33 @@ runs:
         echo "Target addon workspace (before):"
         tree -lha --dirsfirst -I .git
 
-        cp -r ${{ runner.temp }}/addon/* ${{ runner.temp }}/addon/.gitignore .
+        cp -r "$PACKAGE_DIR"/* "$PACKAGE_DIR/.gitignore" .
 
         echo "Target addon workspace (after):"
         tree -lha --dirsfirst -I .git
 
     - uses: $/actions/commit-changes
       with:
-        description: "updating \\`${{ inputs.subfolder }}\\` to ${{ steps.commit.outputs.sha_short }}"
+        description: "updating \\`${{ inputs.subfolder }}\\` to ${{ inputs.tag || steps.commit.outputs.sha_short }}"
         target-branch: ${{ inputs.target-branch }}
+
+    - name: Tag the published commit
+      if: inputs.tag != ''
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+      run: |
+        # NOTE: An annotated tag lists its commit last, as '<tag>^{}'.
+        EXISTING="$(git ls-remote origin "refs/tags/$TAG" "refs/tags/$TAG^{}" | awk '{ sha = $1 } END { print sha }')"
+        HEAD_SHA="$(git rev-parse HEAD)"
+
+        # NOTE: Tags never move, but a re-run can find its tag on this commit.
+        if [[ -z "$EXISTING" ]]; then
+          git tag "$TAG"
+          git push origin "refs/tags/$TAG"
+        elif [[ "$EXISTING" == "$HEAD_SHA" ]]; then
+          echo "Tag '$TAG' already points at $HEAD_SHA; skipping."
+        else
+          echo "Tag '$TAG' points at $EXISTING, not $HEAD_SHA; tags are immutable."
+          exit 1
+        fi
