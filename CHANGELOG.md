@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.7.0 (2026-09-15)
+
+## What's Changed
+* feat(plugins): configure the project checker with a '.gdcheckrc' by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/622
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.6.1...v6.7.0
+
 ## 6.6.1 (2026-09-15)
 
 ## What's Changed
