@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.8.0 (2026-09-15)
+
+## What's Changed
+* feat(plugins): add an 'upgrade-godot-project' skill for engine upgrades by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/624
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.7.0...v6.8.0
+
 ## 6.7.0 (2026-09-15)
 
 ## What's Changed
