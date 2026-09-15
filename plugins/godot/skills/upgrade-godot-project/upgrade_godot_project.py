@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """Rewrite a Godot project's version pins for a new Godot release.
 
-The mechanical half of an upgrade. 'upgrade' reads the project's '.godot-version'
-pin, resolves the requested target release, and picks one route:
+The mechanical half of an upgrade; the rest is 'SKILL.md' beside this file.
+'upgrade' reads the project's '.godot-version' pin, resolves the requested
+target release, and picks one route:
 
   none   the pin is already current; nothing changes
   patch  '.godot-version' only
   minor  patch, plus 'config/features' in 'project.godot'
 
 The pin is written by 'gdenv pin'. Addon submodules track their 'dist' branch
-and move with their own releases, so no route touches them. 'godot-infra' is not
-involved either; its actions and workflows select toolchain images from the pin
-at run time.
+and move with their own releases, so no route touches them.
 
 What changed is written as JSON to '--output'. Reimporting and committing are
 the caller's job. 'resolve' prints the target release without touching the
@@ -46,7 +45,7 @@ class Version:
 
     @property
     def full(self) -> str:
-        """The version as Godot tags it: no patch component for '.0'."""
+        """The version as Godot tags it, with no patch component for '.0'."""
         return (
             self.major_minor if self.patch == 0 else f"{self.major_minor}.{self.patch}"
         )
@@ -98,7 +97,7 @@ def list_stable_releases() -> list[Version]:
 def resolve_target(requested: str, releases: list[Version]) -> Version:
     """Resolve 'X.Y' (newest patch of X.Y) or 'X.Y.Z' (as given).
 
-    A full tag is taken as given too: 'X.Y-stable' is how Godot names X.Y.0.
+    A full tag is taken as given too, since 'X.Y-stable' is how Godot names X.Y.0.
     """
     requested = requested.strip().removeprefix("v")
     is_tag = requested.endswith("-stable")
