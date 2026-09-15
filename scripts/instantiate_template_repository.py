@@ -1271,7 +1271,27 @@ def run_checks(
     check_status_checks(args, workflows, checklist)
     check_workflow_permissions(workflows, checklist)
     check_code_owners(args, repo, checklist)
-    check_template_links(repo, source, checklist)
+
+    # A reconciled repository has no template, so nothing can still refer to one.
+    if source:
+        check_template_links(repo, source, checklist)
+
+
+def check_existing(
+    args: argparse.Namespace,
+    source: str,
+    target: str,
+    name: str,
+    checklist: Checklist,
+) -> None:
+    """check_existing runs the content checks over a shallow checkout of an
+    existing repository, which reconciliation never clones.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        repo = Path(tmpdir) / name
+        info(f"Checking the contents of: {target}")
+        gh("repo", "clone", target, str(repo), "--", "--depth=1")
+        run_checks(args, repo, source, target, checklist)
 
 
 # ---------------------------------------------------------------------------- #
@@ -1515,6 +1535,8 @@ def main(argv: list[str]) -> int:
         configure(args, target)
 
         if args.existing:
+            check_existing(args, source, target, name, checklist)
+
             names = sorted(configured_secrets(target))
             info(f"Secrets currently set: {', '.join(names) if names else 'none'}")
 
