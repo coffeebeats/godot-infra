@@ -14,6 +14,9 @@
 ##   godot --headless -s <checker> -- --fix a.tscn       # repair, then re-check
 ##   godot --headless -s <checker> -- --list             # print the rule registry
 ##
+## Reads `res://.gdcheckrc`, when present, for files to exclude and for the GDExtensions
+## that may not load; see `Config`.
+##
 ## Exits 1 when a problem is found or a repair applied, and 0 otherwise.
 ##
 
@@ -21,8 +24,26 @@ extends SceneTree
 
 # -- DEFINITIONS --------------------------------------------------------------------- #
 
+## CONFIG_ALL names the config section that applies to every rule.
+const CONFIG_ALL := "all"
+
+## CONFIG_PATH is the project's checker config; see `Config`.
+const CONFIG_PATH := "res://.gdcheckrc"
+
 ## DEPENDENCY_PATTERN captures the path an `[ext_resource]` header points at.
 const DEPENDENCY_PATTERN := 'path="([^"]+)"'
+
+## NAME_BOUNDARY keeps a name from matching as a member, a node path, or the tail of a
+## longer identifier.
+const NAME_BOUNDARY := "(?<![\\w.$%])"
+
+## NON_CODE_PATTERN matches a comment or a string literal. A string matches from its
+## opening quote, so a `#` inside one is never taken for a comment.
+const NON_CODE_PATTERN := (
+	"(?s)\\x22{3}(?:\\\\.|[^\\\\])*?\\x22{3}|\\x27{3}(?:\\\\.|[^\\\\])*?\\x27{3}"
+	+ "|\\x22(?:\\\\.|[^\\x22\\\\\\n])*\\x22|\\x27(?:\\\\.|[^\\x27\\\\\\n])*\\x27"
+	+ "|#[^\\n]*"
+)
 
 ## SCAN_ROOT is the fallback root for rules that declare none of their own.
 const SCAN_ROOT: Array[String] = ["res://"]
@@ -31,15 +52,19 @@ const SCAN_ROOT: Array[String] = ["res://"]
 ## check, and script templates hold `_BASE_` placeholders that do not compile.
 const SCAN_EXCLUDE: Array[String] = ["addons", "script_templates"]
 
-## KNOWN_EXTENSIONS maps a GDExtension to a pattern matching the scripts that name its
-## API; see `_missing_extensions`.
-##
-## TODO(#617): Replace this hard-coded list with a general way to exclude files.
-const KNOWN_EXTENSIONS: Dictionary = {
-	"res://addons/godotsteam/godotsteam.gdextension": "\\bSteam\\.",
-}
+## SCRIPT_DEPENDENCY_PATTERN captures the path a script `preload`s or `extends`.
+const SCRIPT_DEPENDENCY_PATTERN := (
+	"(?m)(?:\\bpreload\\s*\\(\\s*|^(?:class_name\\s+\\w+\\s+)?extends\\s+)"
+	+ "[\\x22\\x27]([^\\x22\\x27]+)[\\x22\\x27]"
+)
+
+## _blocked_cache maps each file a walk has settled to whether it reaches a script using
+## a name from an extension that did not load; see `_blocked`.
+var _blocked_cache: Dictionary = {}
 
 var _dependency := RegEx.create_from_string(DEPENDENCY_PATTERN)
+var _non_code := RegEx.create_from_string(NON_CODE_PATTERN)
+var _script_dependency := RegEx.create_from_string(SCRIPT_DEPENDENCY_PATTERN)
 
 
 ## Problem is one rule violation. It formats as `path:line: [rule] message` so a
@@ -67,6 +92,123 @@ class Problem:
 			return "%s:%d: [%s] %s" % [path, line, rule, message]
 
 		return "%s: [%s] %s" % [path, rule, message]
+
+
+## Config is the project's `.gdcheckrc`, in `ConfigFile` syntax. Section `all` applies
+## to every rule and any other section to the rule it names. `excludes` lists `res://`
+## globs of files to skip; `extensions`, only under `all`, maps each GDExtension the
+## project uses to the global names it defines. A project without the file has an
+## empty config.
+class Config:
+	extends RefCounted
+
+	## EXTENSIONS_SHAPE describes the value `extensions` must hold.
+	const EXTENSIONS_SHAPE := "a dictionary of .gdextension paths to arrays of names"
+
+	## excludes maps a section to the globs of the files it skips.
+	var excludes: Dictionary = {}
+
+	## extensions maps a `.gdextension` path to the global names it defines.
+	var extensions: Dictionary = {}
+
+	## problems holds every error found in the file.
+	var problems: Array[Problem] = []
+
+	## parse reads `CONFIG_PATH`, accepting `all` and each of `rule_names` as a section.
+	static func parse(rule_names: PackedStringArray) -> Config:
+		var config := Config.new()
+		if not FileAccess.file_exists(CONFIG_PATH):
+			return config
+
+		var file := ConfigFile.new()
+		var err := file.load(CONFIG_PATH)
+		if err != OK:
+			config._error("does not parse: %s" % error_string(err))
+			return config
+
+		for section in file.get_sections():
+			if section != CONFIG_ALL and section not in rule_names:
+				config._error("unknown section [%s]" % section)
+				continue
+
+			for key in file.get_section_keys(section):
+				var value: Variant = file.get_value(section, key)
+
+				if key == "excludes":
+					config._parse_excludes(section, value)
+				elif key == "extensions" and section == CONFIG_ALL:
+					config._parse_extensions(value)
+				elif key == "extensions":
+					config._error("[%s] extensions belongs under [all]" % section)
+				else:
+					config._error("unknown key `%s` in [%s]" % [key, section])
+
+		return config
+
+	## excluded reports whether the given section skips the file.
+	func excluded(section: String, file_path: String) -> bool:
+		var patterns: PackedStringArray = excludes.get(section, PackedStringArray())
+
+		for pattern in patterns:
+			if file_path.match(pattern):
+				return true
+
+		return false
+
+	func _error(message: String) -> void:
+		problems.append(Problem.new(CONFIG_PATH, 0, &"config", message))
+
+	func _parse_excludes(section: String, value: Variant) -> void:
+		if not _is_strings(value):
+			_error("[%s] excludes must be an array of strings" % section)
+			return
+
+		var patterns := PackedStringArray()
+
+		for pattern: String in value:
+			if not pattern.begins_with("res://"):
+				_error("[%s] exclude must start with res://: %s" % [section, pattern])
+				continue
+
+			patterns.append(pattern)
+
+		excludes[section] = patterns
+
+	func _parse_extensions(value: Variant) -> void:
+		if not (value is Dictionary):
+			_error("[all] extensions must be %s" % EXTENSIONS_SHAPE)
+			return
+
+		var entries: Dictionary = value
+
+		for extension: Variant in entries:
+			var names: Variant = entries[extension]
+
+			if not (extension is String) or not _is_strings(names):
+				_error("[all] extensions must be %s" % EXTENSIONS_SHAPE)
+				continue
+
+			# NOTE: An empty list would compile to a pattern matching every script.
+			if names.is_empty():
+				_error("[all] extension defines no names: %s" % extension)
+				continue
+
+			for identifier: String in names:
+				if not identifier.is_valid_ascii_identifier():
+					_error("[all] not an identifier: %s" % identifier)
+
+			extensions[extension] = PackedStringArray(names)
+
+	## _is_strings reports whether a value is an array holding only strings.
+	static func _is_strings(value: Variant) -> bool:
+		if not (value is Array or value is PackedStringArray):
+			return false
+
+		for element: Variant in value:
+			if not (element is String):
+				return false
+
+		return true
 
 
 ## SourceFile is the per-file context every rule shares. The text is read once and the
@@ -643,13 +785,28 @@ func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var rules := _registry()
 
+	var rule_names := PackedStringArray()
+	for rule in rules:
+		rule_names.append(rule.name)
+
+	var config := Config.parse(rule_names)
+
+	if not config.problems.is_empty():
+		for problem in config.problems:
+			print("  ", problem.format())
+
+		print("checked 0 file(s); fix %s first" % CONFIG_PATH)
+		quit(1)
+		return
+
 	if args.has("--list"):
 		_list(rules)
 		quit(0)
 		return
 
 	var should_fix := args.has("--fix")
-	var missing := _missing_extensions()
+	var missing := _missing_extensions(config)
+	var blocking := _blocking_pattern(missing)
 
 	var paths: Array[String] = []
 	var expanded := {}
@@ -677,17 +834,30 @@ func _initialize() -> void:
 	if paths.is_empty():
 		paths = _discover(rules)
 
+	# NOTE: A file excluded from every rule is dropped before checking, whether it was
+	# discovered or named, so it is neither fixed nor counted.
+	var excluded := 0
+	var kept: Array[String] = []
+
+	for path in paths:
+		if config.excluded(CONFIG_ALL, path):
+			excluded += 1
+		else:
+			kept.append(path)
+
+	paths = kept
+
 	var problems: Array[Problem] = []
 	var fixed := 0
-	var skipped := 0
+	var skipped: Array[String] = []
 
 	for path in paths:
 		var file := SourceFile.new(path)
-		var unloadable := _needs_missing_extension(path, missing)
+		var unloadable := blocking != null and _blocked(path, blocking)
 		var held := false
 
 		for rule in rules:
-			if not rule.applies(path):
+			if not rule.applies(path) or config.excluded(rule.name, path):
 				continue
 
 			if unloadable and rule.loads_file():
@@ -705,7 +875,7 @@ func _initialize() -> void:
 			problems.append_array(found)
 
 		if held:
-			skipped += 1
+			skipped.append(path)
 
 		file.release()
 
@@ -714,23 +884,30 @@ func _initialize() -> void:
 
 	print("checked %d file(s), %d problem(s)" % [paths.size(), problems.size()])
 
-	if skipped > 0:
+	if excluded > 0:
+		print("excluded %d file(s) through %s" % [excluded, CONFIG_PATH])
+
+	var unloaded := ", ".join(PackedStringArray(missing.keys()))
+
+	if not skipped.is_empty():
 		print(
 			(
 				"skipped the loading rules for %d file(s): %s not loaded"
-				% [skipped, ", ".join(PackedStringArray(missing.keys()))]
+				% [skipped.size(), unloaded]
 			)
 		)
+
+		for path in skipped:
+			print("  ", path)
 
 	if not problems.is_empty() and not missing.is_empty():
 		print(
 			(
 				(
-					"note: %s is not loaded here, so a problem above may be that"
-					% ", ".join(PackedStringArray(missing.keys()))
+					"note: %s is not loaded here; if a script above uses a name it"
+					% unloaded
 				)
-				+ " rather than a defect; scripts naming its API are matched through"
-				+ " KNOWN_EXTENSIONS"
+				+ " defines, add the name under `extensions` in %s" % CONFIG_PATH
 			)
 		)
 
@@ -745,6 +922,68 @@ func _initialize() -> void:
 
 
 # -- PRIVATE METHODS ----------------------------------------------------------------- #
+
+
+## _blocked reports whether a file is a script using a name `names` matches, or depends
+## on one to any depth; see `_dependencies`.
+##
+## NOTE: A scene naming a blocked script in a header still loads and instantiates, so
+## without the walk every rule would pass it unchecked.
+func _blocked(path: String, names: RegEx) -> bool:
+	var visited := {}
+
+	if _reaches_blocked(path, names, visited):
+		return true
+
+	# NOTE: A walk that finds nothing proves every file it visited clean. One that finds a
+	# blocked script stops early, so only the files on the way to it are settled.
+	for visited_path: String in visited:
+		_blocked_cache[visited_path] = false
+
+	return false
+
+
+## _blocking_pattern returns a pattern matching a use of any name a missing extension
+## defines, or null when no extension is missing.
+func _blocking_pattern(missing: Dictionary) -> RegEx:
+	if missing.is_empty():
+		return null
+
+	var names := PackedStringArray()
+
+	for extension: String in missing:
+		names.append_array(missing[extension])
+
+	return RegEx.create_from_string(NAME_BOUNDARY + ("(?:%s)\\b" % "|".join(names)))
+
+
+## _dependencies returns the files a file needs in order to load: the `[ext_resource]`
+## headers of a scene or resource, and the paths a script `preload`s or `extends`.
+##
+## NOTE: A script referring to another only by its `class_name` is not followed.
+func _dependencies(path: String, text: String) -> PackedStringArray:
+	var found := PackedStringArray()
+
+	if path.get_extension() == "gd":
+		for result: RegExMatch in _script_dependency.search_all(text):
+			var target := result.get_string(1)
+
+			if not target.contains("://"):
+				target = path.get_base_dir().path_join(target).simplify_path()
+
+			found.append(target)
+
+		return found
+
+	for line in text.split("\n"):
+		if not line.begins_with("[ext_resource "):
+			continue
+
+		var result := _dependency.search(line)
+		if result != null:
+			found.append(result.get_string(1))
+
+	return found
 
 
 ## _discover returns every file any rule covers, sorted and free of duplicates.
@@ -802,69 +1041,46 @@ func _localize(path: String) -> String:
 	return "res://" + path.simplify_path()
 
 
-## _missing_extensions returns each `KNOWN_EXTENSIONS` entry whose GDExtension is in the
-## project but was not loaded by this process, mapped to its compiled pattern.
+## _missing_extensions returns each extension in the config that this process did not
+## load, mapped to the names it defines. An extension absent from the checkout, such as
+## an uninitialized submodule, counts as not loaded.
 ##
 ## NOTE: A GDExtension with no binary for the platform does not load, so scripts naming
 ## its API fail to parse. GodotSteam ships no Linux binary.
-func _missing_extensions() -> Dictionary:
+func _missing_extensions(config: Config) -> Dictionary:
 	var missing := {}
 
-	for extension: String in KNOWN_EXTENSIONS:
-		if not FileAccess.file_exists(extension):
-			continue
-
-		if GDExtensionManager.is_extension_loaded(extension):
-			continue
-
-		missing[extension] = RegEx.create_from_string(KNOWN_EXTENSIONS[extension])
+	for extension: String in config.extensions:
+		if not GDExtensionManager.is_extension_loaded(extension):
+			missing[extension] = config.extensions[extension]
 
 	return missing
 
 
-## _needs_missing_extension reports whether loading the file reaches a script naming
-## the API of an extension that did not load.
-func _needs_missing_extension(path: String, missing: Dictionary) -> bool:
-	if missing.is_empty():
+## _reaches_blocked walks a file's dependencies depth-first, settling each file it finds
+## to reach a blocked script.
+func _reaches_blocked(path: String, names: RegEx, visited: Dictionary) -> bool:
+	if path in _blocked_cache:
+		return _blocked_cache[path]
+
+	if path in visited:
 		return false
 
-	return _reaches_blocked(path, missing.values(), {})
-
-
-## _reaches_blocked reports whether a file is a script matching one of the patterns or
-## depends on one, following `[ext_resource]` headers to any depth.
-##
-## NOTE: A scene naming a blocked script in a header still loads and instantiates, so
-## without the walk every rule would pass it unchecked.
-func _reaches_blocked(path: String, patterns: Array, seen: Dictionary) -> bool:
-	if path in seen:
-		return false
-
-	seen[path] = true
+	visited[path] = true
 
 	var extension := path.get_extension()
-
-	if extension == "gd":
-		var text := FileAccess.get_file_as_string(path)
-
-		for pattern: RegEx in patterns:
-			if pattern.search(text) != null:
-				return true
-
+	if extension not in ["gd", "tscn", "tres"]:
 		return false
 
-	if extension not in ["tscn", "tres"]:
-		return false
+	var text := FileAccess.get_file_as_string(path)
 
-	for line in FileAccess.get_file_as_string(path).split("\n"):
-		if not line.begins_with("[ext_resource "):
-			continue
+	if extension == "gd" and names.search(_non_code.sub(text, " ", true)) != null:
+		_blocked_cache[path] = true
+		return true
 
-		var found := _dependency.search(line)
-		if found == null:
-			continue
-
-		if _reaches_blocked(found.get_string(1), patterns, seen):
+	for dependency in _dependencies(path, text):
+		if _reaches_blocked(dependency, names, visited):
+			_blocked_cache[path] = true
 			return true
 
 	return false
