@@ -25,7 +25,7 @@ project root.
 | `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
 
 Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
-directories and any directory holding a `.gdignore`. It exits 1 for a problem or a
+directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes. It exits 1 for a problem or a
 repair alike, since the engine cannot return a code that tells them apart. Follow
 `--fix` with `godot --import --headless` so the assigned uids resolve.
 
@@ -37,18 +37,42 @@ that enables the plugin, so it must hold for any Godot project.
 Booting the project costs 1.17s, against about 10ms for every rule checking one file.
 One boot runs every rule, and the edit hook must not add another.
 
+## Configuration
+
+A project can carry a `.gdcheckrc` at its root. It uses Godot's `ConfigFile` syntax, the
+format of `project.godot`, not the YAML of `.gdlintrc` and `.gdformatrc`.
+
+```ini
+[all]
+excludes=["res://project/scratch/*"]
+extensions={"res://addons/godotsteam/godotsteam.gdextension": ["Steam"]}
+
+[nodepath]
+excludes=["res://project/menus/legacy.tscn"]
+```
+
+Section `[all]` applies to every rule, and any other section to the rule it names, as
+`godot-check --list` prints it.
+
+- `excludes` lists `res://` globs, where `*` also matches `/`. A file excluded under
+  `[all]` is never checked, fixed, or counted, even when named on the command line, so
+  the edit hook stays quiet on it. Under a rule's section, only that rule skips it.
+- `extensions`, under `[all]` only, maps each GDExtension the project uses to the global
+  names it defines.
+
+An invalid config is reported against `res://.gdcheckrc`, and nothing else is checked.
+
 ## GDExtensions that did not load
 
 A script naming the API of a GDExtension that did not load fails to parse, which reports
 the machine rather than the script. GodotSteam has no Linux build, so a Linux runner has
 no `Steam` singleton.
 
-`KNOWN_EXTENSIONS` in `check.gd` maps each such extension to a pattern for the scripts
-naming its API; GodotSteam's is `\bSteam\.`. While the extension is unloaded, a matching
-script and any file reaching one through its `[ext_resource]` headers skip the rules
-that load files, and the count is printed. Text-only rules still run. The list is
-hard-coded until [#617](https://github.com/coffeebeats/godot-infra/issues/617)
-generalizes exclusions.
+While an extension listed under `extensions` is unloaded, the rules that load files skip
+each script using one of its names in code, outside comments and strings, and each file
+depending on such a script through `[ext_resource]` headers or a `preload` or `extends`
+path. The skipped files are listed. Text-only rules still run. A script referring to a
+skipped one only by its `class_name` is not followed.
 
 ## Warnings
 
