@@ -10,7 +10,7 @@ Add Godot `$ARGUMENTS` to `godot-infra`. A supported minor is one line in `godot
 Which kind of release needs what:
 
 - **A patch** (`4.7.2` to `4.7.3`) needs no change here. Image tags name the minor only, and `scripts/resolve_godot_versions.py` resolves each listed minor to its newest stable tag, so `check-commit` compiles and exports against a new patch on its next run — including on a pull request that has nothing to do with it. A patch that turns the self-test red is fixed here, not in a consumer.
-- **A minor or a major** is this skill. `5.0` follows `4.11` exactly as `4.8` follows `4.7`: image tags and `godot-versions.txt` lines are both `X.Y`.
+- **A minor or a major** is this skill's job. `5.0` follows `4.11` exactly as `4.8` follows `4.7`: image tags and `godot-versions.txt` lines are both `X.Y`.
 - **Neither bumps this repository's major.** A `godot-infra` release is independent of the Godot version (README, "Supported Godot versions"), so the commit below is a `chore:`.
 
 Consumers move with the `upgrade-godot-project` skill in `plugins/godot`, which every repository loading the `godot` plugin already has. Step 7 is the order they move in.

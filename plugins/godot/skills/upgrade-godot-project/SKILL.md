@@ -14,7 +14,7 @@ The pin is the only engine version a repository stores. `config/features` in
 `project.godot` names the minor too, and the script below rewrites it; anything else that
 needs a hand edit is a bug in this pipeline, not a step to add here.
 
-A major release is a minor: `5.0` follows `4.11` the way `4.8` follows `4.7`.
+A major release is a minor. `5.0` follows `4.11` the way `4.8` follows `4.7`.
 
 Not every step applies to every repository:
 
@@ -41,9 +41,9 @@ repository that compiles or exports — a game, or `godot-prototypes`. The publi
 are the lines of
 [`godot-versions.txt`](https://github.com/coffeebeats/godot-infra/blob/v6/godot-versions.txt);
 add one with the `upgrade-godot` skill there. Moving first fails the compile job with
-`Toolchain image not found: …`. A repository that never compiles or exports — std, the
-plugin template, the forks — needs nothing published: `check-project` and `package-addon`
-both install the editor with `gdenv`.
+`Toolchain image not found: …`. std, the plugin template, and the forks never compile or
+export, so they need nothing published; `check-project` and `package-addon` both install
+the editor with `gdenv`.
 
 ## 2. Rewrite the pins
 
@@ -74,8 +74,7 @@ godot --verbose --headless --quit --import
 godot-check
 ```
 
-`.godot/` is gitignored, so this is local proof rather than a diff: the new editor either
-imports every resource and passes the checker, or it does not. The checker skips
+`.godot/` is gitignored, so this is local proof rather than a diff. The checker skips
 `addons/`, so in an addon repository it has nothing to report; `GodotSteam` has no
 `project.godot` at all, and `package-addon` does its reimport itself.
 
@@ -129,9 +128,9 @@ runs a GUT built for the new one.
 ## 7. Breaking changes
 
 A minor that breaks the project's own code is fixed in the same pull request; the checker
-and the tests are what find it. `godot-plugin-std` has one extra decision: raising the
-Godot version its README declares is a `feat!` release, and a game left on the old minor
-stops receiving std updates, so raise it only when std's own code needs the new minor.
+and the tests find it. In `godot-plugin-std`, raising the Godot version its README declares
+is a `feat!` release, and a game left on the old minor stops receiving std updates, so
+raise it only when std's own code needs the new minor.
 
 ## 8. Commit
 
