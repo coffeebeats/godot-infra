@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.6.1 (2026-09-15)
+
+## What's Changed
+* refactor(skills): fold the upgrade skills into one for v6 by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/620
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.6.0...v6.6.1
+
 ## 6.6.0 (2026-09-14)
 
 ## What's Changed
