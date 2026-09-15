@@ -1290,7 +1290,15 @@ def check_existing(
     with tempfile.TemporaryDirectory() as tmpdir:
         repo = Path(tmpdir) / name
         info(f"Checking the contents of: {target}")
-        gh("repo", "clone", target, str(repo), "--", "--depth=1")
+
+        # The settings are already applied, so an unreadable checkout is a warning
+        # rather than a failure.
+        try:
+            gh("repo", "clone", target, str(repo), "--", "--depth=1")
+        except subprocess.CalledProcessError:
+            warn(f"could not clone '{target}'; its contents go unchecked")
+            return
+
         run_checks(args, repo, source, target, checklist)
 
 
