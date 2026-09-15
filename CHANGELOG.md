@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.9.0 (2026-09-15)
+
+## What's Changed
+* feat(scripts): check repository contents when reconciling with '--existing' by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/626
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.8.0...v6.9.0
+
 ## 6.8.0 (2026-09-15)
 
 ## What's Changed
