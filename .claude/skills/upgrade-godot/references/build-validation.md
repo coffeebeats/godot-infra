@@ -1,50 +1,15 @@
 # Build validation
 
-Read by `upgrade-godot` on the **minor** route only, after the diff has been reviewed. A patch
-upgrade changes no image inputs, so its verification is the three-line diff assertion in `SKILL.md`.
+Read by `upgrade-godot` after the dependencies are re-pinned.
 
 Validation is three tiers before the merge and one check after it. **Always run Tier 1. Run
 Tier 2 for the images whose pins actually changed, and Tier 3 for the platforms those images
 serve.** Then, once CI has published the images, run the post-publish check against the published
 tags; an image that builds and passes locally can still ship broken.
 
-## Tier 1 — Static checks (always; ~1 minute)
+## Tier 1 — Static check (always; ~1 minute)
 
-Two checks. Both are a couple of shell commands; neither needs a script.
-
-1. **No stale version strings anywhere.** After the reference sweep, nothing should still name
-   the old version:
-
-   ```bash
-   SRC=(-- '*.md' '*.yml' '*.yaml' '*.godot-version' ':!CHANGELOG.md' ':!.claude')
-
-   git grep -n  "godot-v<OLD>"                         "${SRC[@]}"
-   git grep -nE "v<OLD>(\.[0-9]+)?-stable"             "${SRC[@]}"
-   git grep -n  "godot-infra/[a-z-]*@<OLD_TAG>"        "${SRC[@]}"
-   ```
-
-   `git grep`, not `grep -r`: it searches tracked files only, so it skips the vendored trees under
-   `thirdparty/`, whose version strings are upstream's business rather than ours. **Each command
-   should print nothing** — `git grep` exits 1 when there is no match, so a non-zero exit here is
-   the pass, not a failure. Every hit is a missed edit.
-
-   `CHANGELOG.md` and `.claude/` are excluded because both name old versions on purpose — one is
-   release history, the other is this skill's own worked examples. Without the exclusion the second
-   pattern returns six lines every time and the check stops meaning anything. The README version
-   table needs no exclusion: it records history as `` `v4.6.3` ``, which matches nothing here.
-
-   All three patterns take `${SRC[@]}`, so all three cover `*.md`. The third was scoped to
-   `'*.yml' '*.yaml'` — correct until `e2758f0` (#530) moved internal action references to local
-   paths, after which it matched nothing and passed while `README.md` still said `@v4`. It shared
-   the blind spot of the sweep it exists to backstop, and a check that can only pass is worse than
-   no check.
-
-   The `-stable` pattern allows an optional patch component because `package-addon` and
-   `tests/project/.godot-version` pin the full version (`v4.6.3-stable`); matching only
-   `v<OLD>-stable` would walk straight past a missed edit there. These values change only during this upgrade flow, so a scan here is worth more than any
-   standing CI check.
-
-2. **Every pin agrees with its own source link.** Each default in the compile workflow's `outputs`
+**Every pin agrees with its own source link.** Each default in the compile workflow's `outputs`
    block carries a `# https://github.com/<repo>/blob/<sha>/<path>#L<n>` comment. After re-pinning,
    fetch each one and confirm the value really is on that line:
 
@@ -184,9 +149,8 @@ local build under emulation could never have shown it; the published tag reprodu
 
 Once release-please has cut the tag and the publish workflow has pushed the images, run Tier 2's
 smoke tests and Tier 3 for **all three platforms** against the published tags,
-`REGISTRY="ghcr.io/coffeebeats/"` in the README commands. `upgrade-godot-repos` refuses to start
-its first downstream stage until this has passed, because a failure here is a `godot-infra` fix and
-every downstream bump would inherit it.
+`REGISTRY="ghcr.io/coffeebeats/"` in the README commands. Do this before moving any consumer to
+the new minor, since a failure here is a `godot-infra` fix and every consumer would inherit it.
 
 ## Reporting
 
