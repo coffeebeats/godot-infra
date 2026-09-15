@@ -1,6 +1,6 @@
 {
   "name": "godot",
-  "description": "Checks Godot project files on every edit and looks up exact engine and project APIs.",
+  "description": "Checks Godot project files on every edit, looks up exact engine and project APIs, and moves a project to a new Godot release.",
   "author": {
     "name": "coffeebeats"
   }

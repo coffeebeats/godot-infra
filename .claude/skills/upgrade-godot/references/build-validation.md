@@ -4,8 +4,8 @@ Read by `upgrade-godot` after the dependencies are re-pinned.
 
 Validation is three tiers before the merge and one check after it. **Always run Tier 1. Run
 Tier 2 for the images whose pins actually changed, and Tier 3 for the platforms those images
-serve.** Then, once CI has published the images, run the post-publish check against the published
-tags; an image that builds and passes locally can still ship broken.
+serve.** Then, once the merge has published the images, run the post-publish check against the
+published tags; an image that builds and passes locally can still ship broken.
 
 ## Tier 1 — Static check (always; ~1 minute)
 
@@ -147,8 +147,9 @@ whose CPU had instructions that other runners and local emulation lack, so it cr
 `Illegal instruction` on every compile on some runners while the same image passed on others. A
 local build under emulation could never have shown it; the published tag reproduced it in seconds.
 
-Once release-please has cut the tag and the publish workflow has pushed the images, run Tier 2's
-smoke tests and Tier 3 for **all three platforms** against the published tags,
+`publish-image-godot-infra.yaml` runs on every push to `main`, so the images publish when the pull
+request merges; no release is involved. Once it has pushed them, run Tier 2's smoke tests and
+Tier 3 for **all three platforms** against the published tags,
 `REGISTRY="ghcr.io/coffeebeats/"` in the README commands. Do this before moving any consumer to
 the new minor, since a failure here is a `godot-infra` fix and every consumer would inherit it.
 

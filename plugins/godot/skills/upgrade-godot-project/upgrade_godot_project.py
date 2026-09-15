@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Rewrite a Godot project's version pins for a new Godot release.
 
-The mechanical half of an upgrade. 'upgrade' reads the project's '.godot-version'
-pin, resolves the requested target release, and picks one route:
+The mechanical half of an upgrade; the rest is 'SKILL.md' beside this file.
+'upgrade' reads the project's '.godot-version' pin, resolves the requested
+target release, and picks one route:
 
   none   the pin is already current; nothing changes
   patch  '.godot-version' only
