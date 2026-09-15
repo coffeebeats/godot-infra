@@ -26,7 +26,7 @@ The references use four placeholders. `<NEW>` is the minor being added and `<NEW
 
    `sort -V` ranks `4.8-stable` below `4.8.1-stable`; the API's own order does not.
 
-2. **Branch** `chore/godot/upgrade` off `main` and append `<NEW>` to `godot-versions.txt`. The file holds the two newest minors, matching the two Godot patches at a time, so drop the oldest line when appending would make three. Dropping a line stops the self-test and the image rebuilds for that minor; its published tags are never deleted, so a project pinned there keeps building.
+2. **Branch** `chore/godot/upgrade` off `main` and append `<NEW>` to `godot-versions.txt`. The file holds the two newest minors, matching the two that upstream still patches, so drop the oldest line when appending would make three; by then every active repository is on one of the two that remain. Dropping a line stops the self-test and the image rebuilds for that minor; its published tags are never deleted, so a project pinned there keeps building.
 
 3. **Re-pin the dependencies.** Work `references/dependency-research.md` in full. Its second half diffs upstream's build configuration for options that newly default to on, which is how the 4.7 upgrade shipped without AccessKit or WinRT while every pin was correct.
 
@@ -37,10 +37,10 @@ The references use four placeholders. `<NEW>` is the minor being added and `<NEW
    - the six `-t <image>:godot-v<minor>-<platform>` tags in "Building images locally";
    - `GODOT_VERSION` in "Testing the toolchain end to end", which names a full release.
 
-   The `--build-arg` values inside those same code blocks belong to step 4 of `references/dependency-research.md`; do both in one pass.
+   The `--build-arg` values inside those same code blocks belong to "Applying updates" in `references/dependency-research.md`; do both in one pass.
 
 5. **Validate the builds.** Work `references/build-validation.md` through Tier 3 before opening the PR, and its post-publish check once the merge has published the images.
 
 6. **Commit** one line naming the release, `chore: support Godot <NEW_FULL>`, with no body or trailers.
 
-7. **Roll it out.** Merging publishes the images, so nothing that compiles or exports can move before that. Then, in order, with `upgrade-godot-project` in each: the `gut` and `GodotSteam` forks, since their `dist` branches are reimported at their own pins; `godot-plugin-std`, whose matrix is what shows an addon break; `godot-project-template`, `godot-prototypes`, and `godot-plugin-template`; then the games, which bump their addon gitlinks along with the pin. No consumer waits on a `godot-infra` release — release-please will cut one for the `chore:` commit, but the images publish on the merge itself — and no consumer file changes but `.godot-version` and `config/features`.
+7. **Roll it out.** Merging publishes the images, so nothing that compiles or exports can move before that. Then, in order, with `upgrade-godot-project` in each: the `gut` and `GodotSteam` forks, since their `dist` branches are reimported at their own pins; `godot-plugin-std`, whose matrix is what shows an addon break; `godot-project-template`, `godot-prototypes`, and `godot-plugin-template`; then the games, which bump their addon gitlinks along with the pin. No consumer waits on a `godot-infra` release, since the images publish on the merge itself, and nothing changes in a consumer but `.godot-version`, `config/features`, and the addon gitlinks.

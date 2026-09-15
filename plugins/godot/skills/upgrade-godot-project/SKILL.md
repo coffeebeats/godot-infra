@@ -117,8 +117,9 @@ A pull request runs `check-project`, which is the tests and the checker at the n
 not the export pipeline. Dispatch the repository's publish workflow with `ref: <branch>`
 for one target and confirm it produces an artifact: `publish-game.yaml` in a game,
 `deploy-template.yaml` in `godot-prototypes`. That is the only pre-merge proof that the
-toolchain, the patches, and the export presets still work together. The custom editors
-rebuild after the merge, on push to `main`.
+toolchain, the patches, and the export presets still work together. A repository that
+carries engine patches also rebuilds its custom editors after the merge, on push to
+`main`; one whose patch directory is empty does not.
 
 `check-project` also takes `test-godot-versions`, which runs the tests at further versions
 as well as at the pin. Use it to keep the old minor covered while other repositories are
@@ -135,5 +136,5 @@ stops receiving std updates, so raise it only when std's own code needs the new 
 ## 8. Commit
 
 One line, the summary's `commit_title`, with no body or trailers. Open the pull request
-with its `changes` and `warnings` as the body. The forks have
-no pull request: push to `main`, and `publish.yaml` republishes `dist`.
+with its `changes` and `warnings` as the body. The forks have no pull request: push to
+`main`, and `publish.yaml` republishes `dist`.
