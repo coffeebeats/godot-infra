@@ -1,6 +1,6 @@
 # Dependency version updates
 
-Read by `upgrade-godot` on the **minor** route only. A patch upgrade changes no dependency pins.
+Read by `upgrade-godot` when adding a Godot minor.
 
 Two workflow files contain dependency version defaults:
 
