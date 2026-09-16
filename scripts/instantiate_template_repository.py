@@ -75,13 +75,13 @@ RELEASE_MARKER = re.compile(
 VERSION_PREFIX = re.compile(r"^(?P<prefix>\D*)\d+\.\d+\.\d+$")
 
 SECRET_REFERENCE = re.compile(r"secrets\.([A-Za-z_][A-Za-z0-9_]*)")
+USES_REFERENCE = re.compile(r"^\s*(?:-\s+)?uses:\s*['\"]?([^\s'\"]+)", re.MULTILINE)
+JOB_ID = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
+TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:", re.MULTILINE)
 
 # SECRETS_INHERIT marks a caller that forwards every repository secret to the
 # reusable workflows it calls, which makes their secrets the caller's to set.
 SECRETS_INHERIT = re.compile(r"^[ \t]*secrets:[ \t]*inherit[ \t]*$", re.MULTILINE)
-USES_REFERENCE = re.compile(r"^\s*(?:-\s+)?uses:\s*['\"]?([^\s'\"]+)", re.MULTILINE)
-JOB_ID = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
-TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:", re.MULTILINE)
 
 # TEMPLATE_PLACEHOLDER matches the example values a template leaves in 'plugin.cfg'.
 TEMPLATE_PLACEHOLDER = re.compile(
@@ -1075,6 +1075,8 @@ def check_secrets(
         text = workflow.read_text(encoding="utf-8")
         wanted |= set(SECRET_REFERENCE.findall(text))
 
+        # NOTE: The marker is read per file, so a workflow with one inheriting
+        # job contributes the secrets of every workflow it calls.
         if not SECRETS_INHERIT.search(text):
             continue
 
@@ -1298,7 +1300,9 @@ def check_template_scaffolding(repo: Path, name: str, checklist: Checklist) -> N
     tests have something to run against, which an instantiated repository
     rarely wants.
     """
-    examples = sorted(path.name for path in repo.glob("example*"))
+    # NOTE: An addon may ship an 'example' directory, which 'package-addon'
+    # strips at publish time, so only a file is the template's own.
+    examples = sorted(path.name for path in repo.glob("example*") if path.is_file())
     if examples:
         checklist.add(
             f"delete the template's example addon ({', '.join(examples)}), which it "
@@ -1323,6 +1327,11 @@ def check_template_scaffolding(repo: Path, name: str, checklist: Checklist) -> N
     for match in SUBMODULE_LINE.finditer(readme.read_text(encoding="utf-8")):
         fields = match.group("rest").split()
         if not fields:
+            continue
+
+        # NOTE: A README documents a dependency's submodule the same way, so
+        # the line has to name this repository before its path means anything.
+        if not any(name in field for field in fields[:-1]):
             continue
 
         path = fields[-1]
