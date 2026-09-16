@@ -79,6 +79,15 @@ USES_REFERENCE = re.compile(r"^\s*(?:-\s+)?uses:\s*['\"]?([^\s'\"]+)", re.MULTIL
 JOB_ID = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
 TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:", re.MULTILINE)
 
+# TEMPLATE_PLACEHOLDER matches the example values a template leaves in 'plugin.cfg'.
+TEMPLATE_PLACEHOLDER = re.compile(
+    r'^\s*(?:name|description|script)\s*=\s*"[^"]*[Ee]xample[^"]*"', re.MULTILINE
+)
+
+# SUBMODULE_LINE captures a README's install instruction, whose last field is
+# the path the addon installs at.
+SUBMODULE_LINE = re.compile(r"^[ \t]*git submodule add\b(?P<rest>[^\n]*)", re.MULTILINE)
+
 
 # ---------------------------------------------------------------------------- #
 #                                    Output                                    #
@@ -1250,6 +1259,48 @@ def check_template_links(repo: Path, source: str, checklist: Checklist) -> None:
         checklist.add(f"'{path}' still refers to '{source}'")
 
 
+def check_template_scaffolding(repo: Path, name: str, checklist: Checklist) -> None:
+    """check_template_scaffolding adds the template's own example content to
+    `checklist`. A template ships an example addon so that its workflows and
+    tests have something to run against, which an instantiated repository
+    rarely wants.
+    """
+    examples = sorted(path.name for path in repo.glob("example*"))
+    if examples:
+        checklist.add(
+            f"delete the template's example addon ({', '.join(examples)}), which it "
+            "ships so that its own workflows have something to run against"
+        )
+
+    plugin = repo / "plugin.cfg"
+    if plugin.is_file() and TEMPLATE_PLACEHOLDER.search(
+        plugin.read_text(encoding="utf-8")
+    ):
+        checklist.add(
+            "update 'plugin.cfg', which still holds the template's placeholder "
+            "values, or delete it; Godot needs one only for an 'EditorPlugin'"
+        )
+
+    readme = repo / "README.md"
+    if not readme.is_file():
+        return
+
+    # NOTE: Rewriting the template's links covers the repository URL but not the
+    # path the addon installs at, which a template names after itself.
+    for match in SUBMODULE_LINE.finditer(readme.read_text(encoding="utf-8")):
+        fields = match.group("rest").split()
+        if not fields:
+            continue
+
+        path = fields[-1]
+        addon = path.rpartition("/")[2]
+        if addon and addon not in name:
+            checklist.add(
+                f"'README.md' installs the addon at '{path}', which does not match "
+                f"'{name}'"
+            )
+
+
 def run_checks(
     args: argparse.Namespace,
     repo: Path,
@@ -1258,9 +1309,11 @@ def run_checks(
     checklist: Checklist,
 ) -> None:
     """run_checks marks content checks as attempted and collects findings from
-    `repo`. A repository with no workflow files skips all checks.
+    `repo`. A repository with no workflow files skips the checks that read one.
     """
     checklist.ran = True
+
+    check_template_scaffolding(repo, target.rpartition("/")[2], checklist)
 
     workflows = workflow_files(repo)
     if not workflows:
