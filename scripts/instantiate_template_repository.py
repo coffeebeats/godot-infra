@@ -75,6 +75,10 @@ RELEASE_MARKER = re.compile(
 VERSION_PREFIX = re.compile(r"^(?P<prefix>\D*)\d+\.\d+\.\d+$")
 
 SECRET_REFERENCE = re.compile(r"secrets\.([A-Za-z_][A-Za-z0-9_]*)")
+
+# SECRETS_INHERIT marks a caller that forwards every repository secret to the
+# reusable workflows it calls, which makes their secrets the caller's to set.
+SECRETS_INHERIT = re.compile(r"^[ \t]*secrets:[ \t]*inherit[ \t]*$", re.MULTILINE)
 USES_REFERENCE = re.compile(r"^\s*(?:-\s+)?uses:\s*['\"]?([^\s'\"]+)", re.MULTILINE)
 JOB_ID = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
 TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:", re.MULTILINE)
@@ -1059,13 +1063,25 @@ def configured_secrets(target: str) -> set[str]:
     return {secret["name"] for secret in secrets or []}
 
 
-def check_secrets(target: str, workflows: list[Path], checklist: Checklist) -> None:
+def check_secrets(
+    repo: Path, target: str, workflows: list[Path], checklist: Checklist
+) -> None:
     """check_secrets adds missing workflow secret names to `checklist`, excluding
-    the built-in GITHUB_TOKEN.
+    the built-in GITHUB_TOKEN. A caller passing 'secrets: inherit' forwards every
+    repository secret, so the reusable workflows it calls are read as well.
     """
     wanted: set[str] = set()
     for workflow in workflows:
-        wanted |= set(SECRET_REFERENCE.findall(workflow.read_text(encoding="utf-8")))
+        text = workflow.read_text(encoding="utf-8")
+        wanted |= set(SECRET_REFERENCE.findall(text))
+
+        if not SECRETS_INHERIT.search(text):
+            continue
+
+        for reference in USES_REFERENCE.findall(text):
+            called = read_reusable_workflow(repo, reference)
+            if called is not None:
+                wanted |= set(SECRET_REFERENCE.findall(called))
 
     wanted -= {"GITHUB_TOKEN"}
     missing = sorted(wanted - configured_secrets(target))
@@ -1113,6 +1129,23 @@ def read_uses_target(
             return result.stdout
 
     return None
+
+
+def read_reusable_workflow(repo: Path, reference: str) -> str | None:
+    """read_reusable_workflow returns the workflow a `uses:` reference names,
+    or None when the reference names an action rather than a workflow.
+    """
+    path, _, ref = reference.partition("@")
+    if not path.endswith((".yml", ".yaml")):
+        return None
+
+    # NOTE: Both './' and '$/' resolve against the caller, which is the checkout.
+    if path.startswith(("./", "$/")):
+        return read_uses_target(repo, None, path[2:])
+
+    owner, _, rest = path.partition("/")
+    repository, _, subpath = rest.partition("/")
+    return read_uses_target(repo, (f"{owner}/{repository}", ref), subpath)
 
 
 def check_third_party_actions(
@@ -1319,7 +1352,7 @@ def run_checks(
     if not workflows:
         return
 
-    check_secrets(target, workflows, checklist)
+    check_secrets(repo, target, workflows, checklist)
     check_third_party_actions(args, repo, target, workflows, checklist)
     check_status_checks(args, workflows, checklist)
     check_workflow_permissions(workflows, checklist)
