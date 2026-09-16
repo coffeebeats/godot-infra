@@ -79,6 +79,19 @@ USES_REFERENCE = re.compile(r"^\s*(?:-\s+)?uses:\s*['\"]?([^\s'\"]+)", re.MULTIL
 JOB_ID = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
 TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:", re.MULTILINE)
 
+# SECRETS_INHERIT marks a caller that forwards every repository secret to the
+# reusable workflows it calls, which makes their secrets the caller's to set.
+SECRETS_INHERIT = re.compile(r"^[ \t]*secrets:[ \t]*inherit[ \t]*$", re.MULTILINE)
+
+# TEMPLATE_PLACEHOLDER matches the example values a template leaves in 'plugin.cfg'.
+TEMPLATE_PLACEHOLDER = re.compile(
+    r'^\s*(?:name|description|script)\s*=\s*"[^"]*[Ee]xample[^"]*"', re.MULTILINE
+)
+
+# SUBMODULE_LINE captures a README's install instruction, whose last field is
+# the path the addon installs at.
+SUBMODULE_LINE = re.compile(r"^[ \t]*git submodule add\b(?P<rest>[^\n]*)", re.MULTILINE)
+
 
 # ---------------------------------------------------------------------------- #
 #                                    Output                                    #
@@ -1050,13 +1063,27 @@ def configured_secrets(target: str) -> set[str]:
     return {secret["name"] for secret in secrets or []}
 
 
-def check_secrets(target: str, workflows: list[Path], checklist: Checklist) -> None:
+def check_secrets(
+    repo: Path, target: str, workflows: list[Path], checklist: Checklist
+) -> None:
     """check_secrets adds missing workflow secret names to `checklist`, excluding
-    the built-in GITHUB_TOKEN.
+    the built-in GITHUB_TOKEN. A caller passing 'secrets: inherit' forwards every
+    repository secret, so the reusable workflows it calls are read as well.
     """
     wanted: set[str] = set()
     for workflow in workflows:
-        wanted |= set(SECRET_REFERENCE.findall(workflow.read_text(encoding="utf-8")))
+        text = workflow.read_text(encoding="utf-8")
+        wanted |= set(SECRET_REFERENCE.findall(text))
+
+        # NOTE: The marker is read per file, so a workflow with one inheriting
+        # job contributes the secrets of every workflow it calls.
+        if not SECRETS_INHERIT.search(text):
+            continue
+
+        for reference in USES_REFERENCE.findall(text):
+            called = read_reusable_workflow(repo, reference)
+            if called is not None:
+                wanted |= set(SECRET_REFERENCE.findall(called))
 
     wanted -= {"GITHUB_TOKEN"}
     missing = sorted(wanted - configured_secrets(target))
@@ -1104,6 +1131,23 @@ def read_uses_target(
             return result.stdout
 
     return None
+
+
+def read_reusable_workflow(repo: Path, reference: str) -> str | None:
+    """read_reusable_workflow returns the workflow a `uses:` reference names,
+    or None when the reference names an action rather than a workflow.
+    """
+    path, _, ref = reference.partition("@")
+    if not path.endswith((".yml", ".yaml")):
+        return None
+
+    # NOTE: Both './' and '$/' resolve against the caller, which is the checkout.
+    if path.startswith(("./", "$/")):
+        return read_uses_target(repo, None, path[2:])
+
+    owner, _, rest = path.partition("/")
+    repository, _, subpath = rest.partition("/")
+    return read_uses_target(repo, (f"{owner}/{repository}", ref), subpath)
 
 
 def check_third_party_actions(
@@ -1250,6 +1294,55 @@ def check_template_links(repo: Path, source: str, checklist: Checklist) -> None:
         checklist.add(f"'{path}' still refers to '{source}'")
 
 
+def check_template_scaffolding(repo: Path, name: str, checklist: Checklist) -> None:
+    """check_template_scaffolding adds the template's own example content to
+    `checklist`. A template ships an example addon so that its workflows and
+    tests have something to run against, which an instantiated repository
+    rarely wants.
+    """
+    # NOTE: An addon may ship an 'example' directory, which 'package-addon'
+    # strips at publish time, so only a file is the template's own.
+    examples = sorted(path.name for path in repo.glob("example*") if path.is_file())
+    if examples:
+        checklist.add(
+            f"delete the template's example addon ({', '.join(examples)}), which it "
+            "ships so that its own workflows have something to run against"
+        )
+
+    plugin = repo / "plugin.cfg"
+    if plugin.is_file() and TEMPLATE_PLACEHOLDER.search(
+        plugin.read_text(encoding="utf-8")
+    ):
+        checklist.add(
+            "update 'plugin.cfg', which still holds the template's placeholder "
+            "values, or delete it; Godot needs one only for an 'EditorPlugin'"
+        )
+
+    readme = repo / "README.md"
+    if not readme.is_file():
+        return
+
+    # NOTE: Rewriting the template's links covers the repository URL but not the
+    # path the addon installs at, which a template names after itself.
+    for match in SUBMODULE_LINE.finditer(readme.read_text(encoding="utf-8")):
+        fields = match.group("rest").split()
+        if not fields:
+            continue
+
+        # NOTE: A README documents a dependency's submodule the same way, so
+        # the line has to name this repository before its path means anything.
+        if not any(name in field for field in fields[:-1]):
+            continue
+
+        path = fields[-1]
+        addon = path.rpartition("/")[2]
+        if addon and addon not in name:
+            checklist.add(
+                f"'README.md' installs the addon at '{path}', which does not match "
+                f"'{name}'"
+            )
+
+
 def run_checks(
     args: argparse.Namespace,
     repo: Path,
@@ -1258,15 +1351,17 @@ def run_checks(
     checklist: Checklist,
 ) -> None:
     """run_checks marks content checks as attempted and collects findings from
-    `repo`. A repository with no workflow files skips all checks.
+    `repo`. A repository with no workflow files skips the checks that read one.
     """
     checklist.ran = True
+
+    check_template_scaffolding(repo, target.rpartition("/")[2], checklist)
 
     workflows = workflow_files(repo)
     if not workflows:
         return
 
-    check_secrets(target, workflows, checklist)
+    check_secrets(repo, target, workflows, checklist)
     check_third_party_actions(args, repo, target, workflows, checklist)
     check_status_checks(args, workflows, checklist)
     check_workflow_permissions(workflows, checklist)
