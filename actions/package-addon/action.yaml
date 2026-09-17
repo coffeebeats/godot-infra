@@ -148,9 +148,8 @@ runs:
         EOM
 
     # Rewrite resource references from the addon's development paths to the paths a
-    # consumer installs it at. Godot resolves the 'uid://' beside each reference first, so
-    # this is only the fallback, which a project with a stale UID cache is left with. The
-    # path cannot simply be dropped: the text loader rejects a reference without one.
+    # consumer installs it at. Godot resolves each 'uid://' first, so a path matters
+    # only when a project's UID cache is stale, and the loader requires one anyway.
     - name: Rewrite resource paths
       shell: bash
       run: |
@@ -175,9 +174,10 @@ runs:
           xargs -0 --no-run-if-empty sed -i -E \
             "s#path=\"res://($DIRS)/#path=\"res://$TARGET/\1/#g"
 
-        # Every remaining reference must name an addon: this one or a dependency.
+        # Every reference left in a text resource must name an addon, this one or a
+        # dependency.
         if grep -rnP 'path="res://(?!addons/)' --include='*.tscn' --include='*.tres' "$PACKAGE_DIR"; then
-          echo "::error::The resource paths above name no addon directory, so they will not resolve once the addon is installed."
+          echo "::error::The resource paths above name no addon, so they will not resolve in a consumer's project."
           exit 1
         fi
 
