@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.12.1 (2026-09-17)
+
+## What's Changed
+* fix(workflows): author release pull requests with 'RELEASE_PLEASE_TOKEN' by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/635
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.12.0...v6.12.1
+
 ## 6.12.0 (2026-09-17)
 
 ## What's Changed
