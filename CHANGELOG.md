@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.12.0 (2026-09-17)
+
+## What's Changed
+* feat(package-addon): rewrite resource paths to the consumer's install path by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/633
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.11.0...v6.12.0
+
 ## 6.11.0 (2026-09-17)
 
 ## What's Changed
