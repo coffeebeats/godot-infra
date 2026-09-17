@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.11.0 (2026-09-17)
+
+## What's Changed
+* feat(check-project): take the translation catalogue's directory as an input by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/631
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.10.0...v6.11.0
+
 ## 6.10.0 (2026-09-17)
 
 ## What's Changed
