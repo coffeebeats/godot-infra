@@ -147,6 +147,40 @@ runs:
         * text=auto eol=lf
         EOM
 
+    # Rewrite resource references from the addon's development paths to the paths a
+    # consumer installs it at. Godot resolves the 'uid://' beside each reference first, so
+    # this is only the fallback, which a project with a stale UID cache is left with. The
+    # path cannot simply be dropped: the text loader rejects a reference without one.
+    - name: Rewrite resource paths
+      shell: bash
+      run: |
+        PACKAGE_DIR="${{ runner.temp }}/addon"
+        TARGET="addons/${{ inputs.subfolder }}"
+
+        # Only the addon's own top-level directories are rewritten, so a reference to a
+        # dependency, like 'res://addons/std/...', is left alone.
+        DIRS="$(
+          find "$PACKAGE_DIR" -mindepth 1 -maxdepth 1 -type d \
+            -not -name '.*' -not -name addons -printf '%f\n' | paste -sd'|'
+        )"
+
+        if [[ -z "$DIRS" ]]; then
+          echo "No resource directories found; skipping."
+          exit 0
+        fi
+
+        echo "Rewriting resource paths to '$TARGET' for directories: $DIRS"
+
+        find "$PACKAGE_DIR" -type f \( -name '*.tscn' -o -name '*.tres' \) -print0 |
+          xargs -0 --no-run-if-empty sed -i -E \
+            "s#path=\"res://($DIRS)/#path=\"res://$TARGET/\1/#g"
+
+        # Every remaining reference must name an addon: this one or a dependency.
+        if grep -rnP 'path="res://(?!addons/)' --include='*.tscn' --include='*.tres' "$PACKAGE_DIR"; then
+          echo "::error::The resource paths above name no addon directory, so they will not resolve once the addon is installed."
+          exit 1
+        fi
+
     # Reimport assets so '*.import' files are updated.
     - name: Reimport assets
       shell: bash
