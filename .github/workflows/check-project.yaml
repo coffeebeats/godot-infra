@@ -23,6 +23,11 @@ on:
         description: "Overrides the max line length; defaults to the project's 'gdformatrc'."
         required: false
         default: ""
+      locale-dir:
+        type: string
+        description: "The directory holding the translation catalogue, relative to the repository root."
+        required: false
+        default: "project/locale"
       smoke-test:
         type: boolean
         description: "Whether to boot the project headless for 30 seconds as a smoke test."
@@ -94,16 +99,16 @@ jobs:
         with:
           exclude_submodules: true
           files: |
-            project/locale/*.pot
-            project/locale/en_US.po
+            ${{ inputs.locale-dir }}/*.pot
+            ${{ inputs.locale-dir }}/en_US.po
 
       - name: Check for non-template translation file changes
         id: check-po
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
         with:
           exclude_submodules: true
-          files: "project/locale/*.po"
-          files_ignore: "project/locale/*.pot"
+          files: "${{ inputs.locale-dir }}/*.po"
+          files_ignore: "${{ inputs.locale-dir }}/*.pot"
 
       # NOTE: Not every project carries these, and a job that assumed one
       # would fail rather than skip where it is absent.
@@ -257,6 +262,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
+    env:
+      LOCALE_DIR: ${{ inputs.locale-dir }}
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -301,7 +309,7 @@ jobs:
       - name: Check for fuzzy translations before release
         if: "${{ contains( github.event.pull_request.labels.*.name, 'autorelease: pending') }}"
         run: |
-          for f in project/locale/*.po; do
+          for f in "$LOCALE_DIR"/*.po; do
             [[ -e "$f" ]] || continue
 
             if grep -q '#,' "$f"; then
