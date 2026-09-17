@@ -1,5 +1,14 @@
 # Changelog
 
+## 6.10.0 (2026-09-17)
+
+## What's Changed
+* feat(scripts): report template leftovers and inherited secrets by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/628
+* fix(package-addon): pin published text files to LF line endings by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/630
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.9.0...v6.10.0
+
 ## 6.9.0 (2026-09-15)
 
 ## What's Changed
