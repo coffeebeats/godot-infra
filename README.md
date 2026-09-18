@@ -181,7 +181,7 @@ This repository is also a [Claude Code plugin marketplace](https://code.claude.c
 - The `godot-api` skill, which dumps engine, addon and project class references for lookups.
 - `godot-locale`, which updates a gettext catalogue from its message template, compiles the `.mo` files the engine loads, and validates both — including that each translation keeps the placeholders its English text declares, which gettext cannot check for a catalogue keyed by message ID. Set `LOCALE_DIR` where the catalogue is not `project/locale`.
 
-The `test` job of `check-project.yaml` runs the same checker, and its `check-translations` job runs the same catalogue tooling, so a new rule reaches CI and the hook together and no repository needs a copy of either. A repository gets the translation job by having a catalogue directory, named by the workflow's `locale-dir` input.
+The `test` job of `check-project.yaml` runs the same checker, and its `check-translations` job runs the same catalogue tooling, so a new rule reaches CI and the hook together and no repository needs a copy of either. A repository gets the translation job by having a `messages.pot` under the workflow's `locale-dir`.
 
 A repository enables the plugin in its `.claude/settings.json`:
 

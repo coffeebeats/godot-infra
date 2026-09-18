@@ -15,6 +15,10 @@
 #
 # Dependencies: msgfmt, msgmerge (gettext), and uv, which fetches poswap and pofilter
 # from translate-toolkit.
+#
+# NOTE: gettext wraps long and non-ASCII '.po' lines differently between releases, so
+# 'update' and 'compile' rewrite a catalogue that CI produced with another version.
+# Match the version CI installs, or leave those two to CI; 'validate' is unaffected.
 
 set -euo pipefail
 
@@ -39,10 +43,14 @@ _require_cmd() {
 	fi
 }
 
+# NOTE: Pin translate-toolkit exactly. poswap's output lands in committed '.po' files, so
+# a version bump rewrites catalogues and has to be its own commit.
+TRANSLATE_TOOLKIT="translate-toolkit==3.20.0"
+
 # Run a translate-toolkit command without depending on the project's environment, so a
 # repository needs no 'translate-toolkit' of its own.
 _toolkit() {
-	uv run --no-project --with translate-toolkit "$@"
+	uv run --no-project --with "$TRANSLATE_TOOLKIT" "$@"
 }
 
 get_mo_filepath() {
@@ -95,9 +103,12 @@ _check_placeholders() {
 
 		echo "Checking placeholders: $f"
 
-		report="$(_toolkit pofilter -t printf "$f" 2>/dev/null)"
+		report="$(_toolkit pofilter -t printf "$f")"
 
-		if echo "$report" | grep -q '^# (pofilter)'; then
+		# NOTE: Match with a here-string, not a pipe. Under 'pipefail' a pipe reports the
+		# SIGPIPE that killing the writer produces once grep exits on an early match, so a
+		# report long enough to still be writing would read as no findings at all.
+		if grep -q '^# (pofilter)' <<<"$report"; then
 			echo "Error: a translation does not match its placeholders: $f" >&2
 			echo "$report" >&2
 			exit 1
