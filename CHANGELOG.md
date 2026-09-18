@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.13.0 (2026-09-18)
+
+## What's Changed
+* feat(plugins): own the translation catalogue tooling by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/637
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.12.1...v6.13.0
+
 ## 6.12.1 (2026-09-17)
 
 ## What's Changed
