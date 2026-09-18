@@ -5,15 +5,16 @@
 # template, compiling '.po' to '.mo', and validating what is there. Run it from the
 # project root:
 #
-#   godot-locale validate            # every '.pot' and '.po' compiles
+#   godot-locale validate            # every '.pot' and '.po' compiles and keeps the
+#                                    # placeholders its English text declares
 #   godot-locale update              # merge 'messages.pot' into every '.po'
 #   godot-locale compile             # build the '.mo' files the engine loads
 #   godot-locale compile --verify    # also assert the transform is deterministic
 #
 # Set LOCALE_DIR to the catalogue's directory; it defaults to 'project/locale'.
 #
-# Dependencies: msgfmt, msgmerge (gettext), and uv, which fetches poswap from
-# translate-toolkit.
+# Dependencies: msgfmt, msgmerge (gettext), and uv, which fetches poswap and pofilter
+# from translate-toolkit.
 
 set -euo pipefail
 
@@ -78,12 +79,40 @@ _verify_stable() {
 
 # -------------------------------- Subcommands ------------------------------- #
 
+# Report a translation that drops or doubles a placeholder its English text declares.
+# pofilter exits 0 whatever it finds, so the report it prints is the only signal.
+#
+# NOTE: 'en_US.po' is keyed by message ID rather than by English text, so an entry whose
+# translation carries a '%s' reads as a mismatch against a key that cannot. Only the
+# locales poswap has rewritten can be checked, which is every locale a translator edits.
+_check_placeholders() {
+	local f
+	local report
+
+	for f in "$LOCALE_DIR"/*.po; do
+		[ -f "$f" ] || continue
+		[ "$(basename "$f")" = "en_US.po" ] && continue
+
+		echo "Checking placeholders: $f"
+
+		report="$(_toolkit pofilter -t printf "$f" 2>/dev/null)"
+
+		if echo "$report" | grep -q '^# (pofilter)'; then
+			echo "Error: a translation does not match its placeholders: $f" >&2
+			echo "$report" >&2
+			exit 1
+		fi
+	done
+}
+
 cmd_validate() {
 	for f in "$LOCALE_DIR"/*.pot "$LOCALE_DIR"/*.po; do
 		[ -f "$f" ] || continue
 		echo "Validating: $f"
 		msgfmt --check -o /dev/null "$f"
 	done
+
+	_check_placeholders
 }
 
 _update_non_english_po() {
@@ -173,6 +202,7 @@ done
 case "$COMMAND" in
 	validate)
 		_require_cmd msgfmt "Install gettext."
+		_require_cmd uv "Install uv; it fetches pofilter from translate-toolkit."
 		cmd_validate
 		;;
 	update)
