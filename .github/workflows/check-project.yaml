@@ -119,7 +119,7 @@ jobs:
             echo "python=true" >> "$GITHUB_OUTPUT"
           fi
 
-          if [[ -x tools/sync-translations.sh ]]; then
+          if [[ -d "${{ inputs.locale-dir }}" ]]; then
             echo "translations=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -296,15 +296,14 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install Python tools
-        run: uv sync
-
       # 2. Validate translation files.
 
       # NOTE: While we could just check the changed ones, because this will also
       # be run on release branches, it's better to just check all of them.
-      - name: Validate translation files
-        run: ./tools/sync-translations.sh validate
+      - uses: $/.github/actions/sync-translations
+        with:
+          command: validate
+          locale-dir: ${{ inputs.locale-dir }}
 
       - name: Check for fuzzy translations before release
         if: "${{ contains( github.event.pull_request.labels.*.name, 'autorelease: pending') }}"
@@ -323,13 +322,19 @@ jobs:
       # Non-english 'po' files use the intermediate English translations as
       # their source language. Ensure these are updated if any of the template
       # files were changed.
-      - name: Update modified 'po' files
+      - uses: $/.github/actions/sync-translations
         if: needs.changes.outputs.has_pot_change == 'true'
-        run: ./tools/sync-translations.sh update --verify
+        with:
+          command: update
+          locale-dir: ${{ inputs.locale-dir }}
+          verify: "true"
 
-      - name: Compile modified 'po' files
+      - uses: $/.github/actions/sync-translations
         if: needs.changes.outputs.has_pot_change == 'true' || needs.changes.outputs.has_po_change == 'true'
-        run: ./tools/sync-translations.sh compile --verify
+        with:
+          command: compile
+          locale-dir: ${{ inputs.locale-dir }}
+          verify: "true"
 
       - uses: $/actions/commit-changes
         if: |

@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+# plugins/godot/bin/godot-locale
+#
+# Manages a Godot project's gettext catalogue: updating '.po' files from the message
+# template, compiling '.po' to '.mo', and validating what is there. Run it from the
+# project root:
+#
+#   godot-locale validate            # every '.pot' and '.po' compiles
+#   godot-locale update              # merge 'messages.pot' into every '.po'
+#   godot-locale compile             # build the '.mo' files the engine loads
+#   godot-locale compile --verify    # also assert the transform is deterministic
+#
+# Set LOCALE_DIR to the catalogue's directory; it defaults to 'project/locale'.
+#
+# Dependencies: msgfmt, msgmerge (gettext), and uv, which fetches poswap from
+# translate-toolkit.
+
+set -euo pipefail
+
+LOCALE_DIR="${LOCALE_DIR:-project/locale}"
+
+cleanup() {
+	rm -f "$LOCALE_DIR"/*.po.tmp
+}
+trap cleanup EXIT
+
+EN_US_PO="$LOCALE_DIR/en_US.po"
+POT_FILE="$LOCALE_DIR/messages.pot"
+VERIFY=0
+
+# ---------------------------------- Helpers --------------------------------- #
+
+# Check that a command is available or exit with an install hint.
+_require_cmd() {
+	if ! command -v "$1" >/dev/null 2>&1; then
+		echo "Error: '$1' not found. $2" >&2
+		exit 1
+	fi
+}
+
+# Run a translate-toolkit command without depending on the project's environment, so a
+# repository needs no 'translate-toolkit' of its own.
+_toolkit() {
+	uv run --no-project --with translate-toolkit "$@"
+}
+
+get_mo_filepath() {
+	echo "${1%.po}.mo"
+}
+
+_checksum() {
+	if command -v sha1sum >/dev/null 2>&1; then
+		sha1sum "$@"
+	else
+		shasum -a1 "$@"
+	fi
+}
+
+# Runs a function twice on the same file and asserts the output is identical.
+# Only used when VERIFY=1 to catch non-deterministic transformations.
+#
+# Arguments:
+#   $1 - function to call (receives $2 as its argument)
+#   $2 - input file path
+#   $3 - output file path to checksum
+_verify_stable() {
+	local func="$1"
+	local file="$2"
+	local check_file="$3"
+
+	"$func" "$file"
+	local checksum
+	checksum=$(_checksum "$check_file")
+
+	"$func" "$file"
+	echo "$checksum" | _checksum -c
+}
+
+# -------------------------------- Subcommands ------------------------------- #
+
+cmd_validate() {
+	for f in "$LOCALE_DIR"/*.pot "$LOCALE_DIR"/*.po; do
+		[ -f "$f" ] || continue
+		echo "Validating: $f"
+		msgfmt --check -o /dev/null "$f"
+	done
+}
+
+_update_non_english_po() {
+	local f="$1"
+	_toolkit poswap "$EN_US_PO" -t "$f" "${f}.tmp"
+	msgmerge --update --backup=none "$f" "${f}.tmp"
+	rm "${f}.tmp"
+
+	# poswap embeds the input path in a "No translation found" comment using
+	# the host's path separator; normalize '\' to '/' so Windows matches CI.
+	sed '\|^#\. No translation found in| s|\\|/|g' "$f" >"${f}.tmp"
+	mv "${f}.tmp" "$f"
+}
+
+cmd_update() {
+	# Update en_US.po from the message template.
+	echo "Updating: $EN_US_PO"
+	msgmerge --update --backup=none "$EN_US_PO" "$POT_FILE"
+
+	# Update non-English .po files via poswap.
+	for f in "$LOCALE_DIR"/*.po; do
+		[ "$(basename "$f")" = "en_US.po" ] && continue
+
+		echo "Updating: $f"
+
+		if [ "$VERIFY" -eq 1 ]; then
+			_verify_stable _update_non_english_po "$f" "$f"
+		else
+			_update_non_english_po "$f"
+		fi
+	done
+}
+
+_compile_non_english_po() {
+	local f="$1"
+	local mo
+	mo="$(get_mo_filepath "$f")"
+
+	# Reverse poswap so msgids match the template for compilation.
+	_toolkit poswap --reverse "$EN_US_PO" -t "$f" -o "${f}.tmp"
+
+	# poswap drops the header; merge it back from the original.
+	msgmerge "$f" "${f}.tmp" -o "${f}.tmp"
+
+	# NOTE: Merging the header marks some translations fuzzy; use -f to keep them.
+	msgfmt --no-hash -f "${f}.tmp" -o "$mo"
+	rm "${f}.tmp"
+}
+
+cmd_compile() {
+	# Compile en_US.po.
+	echo "Compiling: $EN_US_PO"
+	msgfmt --no-hash "$EN_US_PO" -o "$(get_mo_filepath "$EN_US_PO")"
+
+	# Compile non-English .po files.
+	for f in "$LOCALE_DIR"/*.po; do
+		[ "$(basename "$f")" = "en_US.po" ] && continue
+
+		echo "Compiling: $f"
+
+		if [ "$VERIFY" -eq 1 ]; then
+			_verify_stable _compile_non_english_po "$f" "$(get_mo_filepath "$f")"
+		else
+			_compile_non_english_po "$f"
+		fi
+	done
+}
+
+# ----------------------------------- Main ----------------------------------- #
+
+if [ ! -d "$LOCALE_DIR" ]; then
+	echo "Error: '$LOCALE_DIR' not found. Run from the repository root." >&2
+	exit 1
+fi
+
+# Parse arguments.
+COMMAND="${1:-}"
+shift || true
+
+for arg in "$@"; do
+	case "$arg" in
+		--verify) VERIFY=1 ;;
+		*) echo "Unknown option: $arg" >&2; exit 1 ;;
+	esac
+done
+
+case "$COMMAND" in
+	validate)
+		_require_cmd msgfmt "Install gettext."
+		cmd_validate
+		;;
+	update)
+		_require_cmd msgmerge "Install gettext."
+		_require_cmd uv "Install uv; it fetches poswap from translate-toolkit."
+		cmd_update
+		;;
+	compile)
+		_require_cmd msgfmt "Install gettext."
+		_require_cmd msgmerge "Install gettext."
+		_require_cmd uv "Install uv; it fetches poswap from translate-toolkit."
+		cmd_compile
+		;;
+	*)
+		echo "Usage: $0 <validate|update|compile> [--verify]" >&2
+		exit 1
+		;;
+esac
