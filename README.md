@@ -205,12 +205,11 @@ claude plugin install godot@godot-infra --scope project
 
 The plugin declares no `version`, so each commit is its version, and it follows the floating major tag like the workflows do: a release moves `v6`, and Claude Code picks the update up in the background. A breaking change to the plugin is a major release, taken alongside the workflows' `@v7`.
 
-Two things Claude Code never reports:
+Three things the settings file cannot do.
 
-- The marketplace's `ref` is registered once per machine, at the first add. A repository that later names a newer ref keeps installing from the old one until the machine runs `claude plugin marketplace remove godot-infra` and then `claude plugin marketplace add coffeebeats/godot-infra#<ref>`, where `<ref>` is the one in the repository's `.claude/settings.json`. Every major release needs this on every machine.
-- The install is keyed to the repository's path. A moved or renamed clone keeps the plugin enabled in its settings but not installed, and the hook, `godot-check` and the skills go missing. Run the install again from the new path.
-
-If `godot-check` is not on Claude's `PATH`, one of these is the cause.
+- It registers the marketplace only when the folder is first trusted, so a machine that already knows the name keeps its old `ref` after a major release. Run `claude plugin marketplace remove godot-infra`, then `claude plugin marketplace add coffeebeats/godot-infra#<ref>` with the ref from `.claude/settings.json`. The remove also deletes that entry from the file and uninstalls the marketplace's plugins, so restore the file with git and install again.
+- It enables the plugin but does not install it, and a project-scope install is keyed to the repository's path. A moved or renamed clone loads the skills but not the hook, and the only trace is an entry in the `/plugin` Errors tab. Run the install again from the new path.
+- It does not update an install that already exists. `claude plugin update godot@godot-infra --scope project` does.
 
 ## **Development**
 
