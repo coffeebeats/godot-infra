@@ -205,12 +205,7 @@ claude plugin install godot@godot-infra --scope project
 
 The plugin declares no `version`, so each commit is its version, and it follows the floating major tag like the workflows do: a release moves `v6`, and Claude Code picks the update up in the background. A breaking change to the plugin is a major release, taken alongside the workflows' `@v7`.
 
-Two things Claude Code never reports:
-
-- The marketplace's `ref` is registered once per machine, at the first add. A repository that later names a newer ref keeps installing from the old one until the machine runs `claude plugin marketplace remove godot-infra` and then `claude plugin marketplace add coffeebeats/godot-infra#<ref>`, where `<ref>` is the one in the repository's `.claude/settings.json`. Every major release needs this on every machine.
-- The install is keyed to the repository's path. A moved or renamed clone keeps the plugin enabled in its settings but not installed, and the hook, `godot-check` and the skills go missing. Run the install again from the new path.
-
-If `godot-check` is not on Claude's `PATH`, one of these is the cause.
+The project file registers a marketplace only when the machine does not already know it, so a repository that moves to a newer `ref` keeps installing from the old one until the machine runs `claude plugin marketplace remove godot-infra` and then `claude plugin marketplace add coffeebeats/godot-infra#<ref>`, with `<ref>` from the repository's `.claude/settings.json`. Nothing reports this. A project-scope install is also keyed to the repository's path, so a moved or renamed clone reports the plugin as not installed and prints the install command to run from the new path.
 
 ## **Development**
 
