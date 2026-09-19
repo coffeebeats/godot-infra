@@ -1,5 +1,14 @@
 # Changelog
 
+## 6.14.1 (2026-09-19)
+
+## What's Changed
+* docs(plugins): explain the marketplace ref and install path caveats by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/641
+* docs(readme): state the three plugin steps the settings file cannot do by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/643
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.14.0...v6.14.1
+
 ## 6.14.0 (2026-09-19)
 
 ## What's Changed
