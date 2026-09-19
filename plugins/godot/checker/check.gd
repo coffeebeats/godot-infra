@@ -295,8 +295,8 @@ class Rule:
 	var name: StringName = &""
 	var extensions: Array[String] = []
 
-	## files limits the rule to these exact paths, which the scan takes in place of the
-	## extension walk; an empty list covers every file the walk finds.
+	## files limits the rule to these exact paths, whether or not a walk would reach
+	## them; an empty list covers every file with a matching extension.
 	var files: Array[String] = []
 
 	## roots limits the rule to these directories; an empty list covers the whole scan.
@@ -786,22 +786,21 @@ class NodePathRule:
 
 
 ## ExportOverridesRule reports export presets whose values differ from the ones
-## `res://export_overrides.cfg` declares, and writes them. A section of that file names
-## the presets it covers as a glob over their names, so one declaration serves every
-## storefront, platform, component and architecture. A project without the file is left
-## alone.
+## `res://export_overrides.cfg` declares, and writes them. Each of its sections covers
+## the presets its name globs, so one declaration serves every storefront, platform,
+## component and architecture. A project without the file is left alone.
 ##
 ## NOTE: The editor caches presets at startup and writes them back when the export
 ## dialog opens or it exits, so run `--fix` with the editor closed.
 ##
-## NOTE: A glob is checked against the files present, so a checkout without its
+## NOTE: The rule checks each glob against the files present, so a checkout without its
 ## submodules reports every addon glob as matching nothing.
 class ExportOverridesRule:
 	extends Rule
 
-	## LIST_KEY accumulates across every section matching a preset. It is the one preset
-	## key whose value composes; for every other key the last matching section wins.
-	const LIST_KEY := "exclude_filter"
+	## LIST_KEYS name the preset keys declared as a list and accumulated across every
+	## section matching a preset, which is every key holding a comma-separated glob.
+	const LIST_KEYS := ["exclude_filter", "include_filter"]
 
 	## OPTIONS_PREFIX marks a declared key belonging to a preset's options block.
 	const OPTIONS_PREFIX := "options/"
@@ -845,8 +844,8 @@ class ExportOverridesRule:
 		var differences := _check_presets(file, presets, overrides, names)
 		problems.append_array(differences)
 
-		# NOTE: Reported only alongside a difference, since a file nothing needs written
-		# to is no problem however it is spelled.
+		# NOTE: Reported only alongside a difference, since a file the rule never needs
+		# to write is fine in any form.
 		if not differences.is_empty() and not _reproducible(file.text(), presets):
 			var message := (
 				"not in the form the editor writes, so --fix would drop part of it;"
@@ -867,10 +866,11 @@ class ExportOverridesRule:
 		if presets.load(file.path) != OK or not _reproducible(text, presets):
 			return false
 
+		var names := _preset_names(presets)
 		var changed := false
 
-		for section: String in _preset_names(presets):
-			var declared := _assemble(_preset_names(presets)[section], overrides)
+		for section: String in names:
+			var declared := _assemble(names[section], overrides)
 
 			for key: String in declared:
 				var target_section := _target_section(section, key)
@@ -880,12 +880,12 @@ class ExportOverridesRule:
 					continue
 
 				var current: Variant = presets.get_value(target_section, target_key)
-				if _equal(current, declared[key]):
+				var wanted: Variant = _coerced(current, declared[key])
+
+				if typeof(wanted) != typeof(current) or current == wanted:
 					continue
 
-				presets.set_value(
-					target_section, target_key, _coerced(current, declared[key])
-				)
+				presets.set_value(target_section, target_key, wanted)
 				changed = true
 
 		if not changed:
@@ -896,10 +896,11 @@ class ExportOverridesRule:
 	func fixable() -> bool:
 		return true
 
-	## _assemble returns every key the sections matching a preset name declare for it.
+	## _assemble returns every key the sections matching a preset name declare for it,
+	## each `LIST_KEYS` entry accumulated into the glob string the preset holds.
 	func _assemble(preset_name: String, overrides: ConfigFile) -> Dictionary:
 		var declared := {}
-		var globs := PackedStringArray()
+		var lists := {}
 
 		for section in overrides.get_sections():
 			if not preset_name.match(section):
@@ -908,20 +909,24 @@ class ExportOverridesRule:
 			for key in overrides.get_section_keys(section):
 				var value: Variant = overrides.get_value(section, key)
 
-				if key != LIST_KEY:
+				if key not in LIST_KEYS:
 					declared[key] = value
 					continue
 
 				if not Config._is_strings(value):
 					continue
 
+				var globs: PackedStringArray = lists.get(key, PackedStringArray())
+
 				for entry: String in value:
 					var glob := _to_glob(entry)
 					if glob != "" and glob not in globs:
 						globs.append(glob)
 
-		if not globs.is_empty():
-			declared[LIST_KEY] = ",".join(globs)
+				lists[key] = globs
+
+		for key: String in lists:
+			declared[key] = ",".join(lists[key])
 
 		return declared
 
@@ -931,31 +936,34 @@ class ExportOverridesRule:
 		var lines := _lines(OVERRIDES_PATH)
 
 		for section in overrides.get_sections():
-			if not overrides.has_section_key(section, LIST_KEY):
-				continue
-
-			var line := _line_of(lines, section, LIST_KEY)
-			var value: Variant = overrides.get_value(section, LIST_KEY)
-
-			if not Config._is_strings(value):
-				var shape := "[%s] %s must be an array of strings" % [section, LIST_KEY]
-				problems.append(Problem.new(OVERRIDES_PATH, line, name, shape))
-				continue
-
-			for entry: String in value:
-				var glob := _to_glob(entry)
-
-				if glob == "":
-					var missing := (
-						"[%s] `%s` names no file or directory in the project"
-						% [section, entry]
-					)
-					problems.append(Problem.new(OVERRIDES_PATH, line, name, missing))
+			for key: String in LIST_KEYS:
+				if not overrides.has_section_key(section, key):
 					continue
 
-				if not _matches_any(glob):
-					var empty := "[%s] `%s` matches no file" % [section, entry]
-					problems.append(Problem.new(OVERRIDES_PATH, line, name, empty))
+				var line := _line_of(lines, section, key)
+				var value: Variant = overrides.get_value(section, key)
+
+				if not Config._is_strings(value):
+					var shape := "[%s] %s must be an array of strings" % [section, key]
+					problems.append(Problem.new(OVERRIDES_PATH, line, name, shape))
+					continue
+
+				for entry: String in value:
+					var glob := _to_glob(entry)
+
+					if glob == "":
+						var missing := (
+							"[%s] `%s` names no file or directory in the project"
+							% [section, entry]
+						)
+						problems.append(
+							Problem.new(OVERRIDES_PATH, line, name, missing)
+						)
+						continue
+
+					if not _matches_any(glob):
+						var empty := "[%s] `%s` matches no file" % [section, entry]
+						problems.append(Problem.new(OVERRIDES_PATH, line, name, empty))
 
 		return problems
 
@@ -985,14 +993,32 @@ class ExportOverridesRule:
 					problems.append(Problem.new(file.path, 0, name, absent))
 					continue
 
-				if _equal(presets.get_value(target_section, target_key), declared[key]):
+				var current: Variant = presets.get_value(target_section, target_key)
+				var wanted: Variant = _coerced(current, declared[key])
+				var line := _line_of(lines, target_section, target_key)
+
+				# NOTE: Writing a value of another type would leave the preset holding
+				# something the editor cannot read back, so it is reported instead.
+				if typeof(wanted) != typeof(current):
+					var mismatch := (
+						"%s: `%s` is declared as %s but the preset holds %s"
+						% [
+							preset_name,
+							key,
+							type_string(typeof(wanted)),
+							type_string(typeof(current)),
+						]
+					)
+					problems.append(Problem.new(file.path, line, name, mismatch))
+					continue
+
+				if current == wanted:
 					continue
 
 				var message := (
 					"%s: `%s` differs from %s; re-run with --fix"
 					% [preset_name, key, OVERRIDES_PATH]
 				)
-				var line := _line_of(lines, target_section, target_key)
 				problems.append(Problem.new(file.path, line, name, message))
 
 		return problems
@@ -1027,8 +1053,8 @@ class ExportOverridesRule:
 
 		return _tree
 
-	## _matches_any reports whether any file matches a glob, testing both the spellings
-	## the exporter tests.
+	## _matches_any reports whether any file matches a glob, trying it against both the
+	## bare path and the `res://` one, as the exporter does.
 	func _matches_any(glob: String) -> bool:
 		for path in _files():
 			if path.matchn(glob) or ("res://" + path).matchn(glob):
@@ -1036,8 +1062,9 @@ class ExportOverridesRule:
 
 		return false
 
-	## _collect appends every file under a directory, skipping the ones the exporter
-	## skips: those whose name begins with a period, and those holding a `.gdignore`.
+	## _collect appends every file under a directory, passing over the directories the
+	## exporter ignores, those named with a leading period and those holding a
+	## `.gdignore`.
 	static func _collect(dir_path: String, found: PackedStringArray) -> void:
 		var dir := DirAccess.open(dir_path)
 		if dir == null or dir.file_exists(".gdignore"):
@@ -1060,7 +1087,7 @@ class ExportOverridesRule:
 		dir.list_dir_end()
 
 	## _declaration returns the project's declaration, or null when it is absent or does
-	## not parse; `check` reports the second case.
+	## not parse. `check` reports a declaration that does not parse.
 	static func _declaration() -> ConfigFile:
 		if not FileAccess.file_exists(OVERRIDES_PATH):
 			return null
@@ -1090,14 +1117,6 @@ class ExportOverridesRule:
 			return PackedStringArray(declared)
 
 		return declared
-
-	## _equal reports whether a preset's value matches a declared one, treating an array
-	## and the packed array the editor writes as the same value.
-	static func _equal(current: Variant, declared: Variant) -> bool:
-		if current is PackedStringArray and declared is Array:
-			return current == PackedStringArray(declared)
-
-		return current == declared
 
 	## _line_of returns the 1-based line a key sits on within a section, or the section's
 	## own header when `key` is empty, and 0 when neither is there.
@@ -1149,8 +1168,8 @@ class ExportOverridesRule:
 		return normalized.replace("\n", "\r\n")
 
 	## _reproducible reports whether writing the config back would reproduce the file
-	## byte for byte, which proves it holds nothing a write would drop, a comment or
-	## hand-placed spacing among them, and that the line ending is carried exactly.
+	## byte for byte, which is what proves a write would drop nothing the file holds and
+	## would carry its line ending exactly.
 	static func _reproducible(text: String, presets: ConfigFile) -> bool:
 		return _render(text, presets.encode_to_text()) == text
 
@@ -1162,9 +1181,8 @@ class ExportOverridesRule:
 	static func _target_section(section: String, key: String) -> String:
 		return section + ".options" if key.begins_with(OPTIONS_PREFIX) else section
 
-	## _to_glob returns the exporter glob an entry names: a directory becomes a recursive
-	## glob, a file and a pattern stand as written, and an entry naming nothing in the
-	## project returns an empty string.
+	## _to_glob returns the exporter glob an entry names, recursive for a directory and
+	## as written for a file or a pattern, or an empty string when it names nothing.
 	static func _to_glob(entry: String) -> String:
 		if entry.contains("*") or entry.contains("?"):
 			return entry
@@ -1224,10 +1242,12 @@ func _initialize() -> void:
 		if DirAccess.dir_exists_absolute(path):
 			_scan(path, _extensions(rules), expanded)
 
+			var prefix := path if path.ends_with("/") else path + "/"
+
 			for rule in rules:
 				for rule_file: String in rule.files:
 					if (
-						rule_file.begins_with(path)
+						rule_file.begins_with(prefix)
 						and FileAccess.file_exists(rule_file)
 					):
 						expanded[rule_file] = true
