@@ -18,7 +18,10 @@ inputs:
     description: "The path to the Godot export template."
     required: true
   extra-bundled-files:
-    description: "A comma, space, or newline-delimited list of filepath patterns (must be absolute) to include alongside the final game artifact."
+    description: "A comma, space, or newline-delimited list of filepath patterns to include alongside the final game artifact. A relative pattern resolves against the project directory and must match a file."
+    required: false
+  post-export-command:
+    description: "A command run in the export container after the export, from the project directory with 'godot' on 'PATH', before bundled files are collected."
     required: false
 
   pck-only:
@@ -307,10 +310,30 @@ runs:
           -e GODOT_WINDOWS_CODESIGN_PASSWORD \
           "$IMAGE" "/action/$PLATFORM/export.sh"
 
+    # NOTE: The command runs in the export container so that it sees the same
+    # editor and the import cache the export just wrote, with the same owner.
+    - name: Run the post-export command
+      if: inputs.post-export-command != ''
+      shell: bash
+      env:
+        IMAGE: ${{ steps.image.outputs.value }}
+        EDITOR_DIR: ${{ steps.editor.outputs.path }}/bin
+        PROJECT_PATH: ${{ steps.project.outputs.dir }}
+        COMMAND: ${{ inputs.post-export-command }}
+      run: |
+        docker run --rm \
+          -v "$GITHUB_WORKSPACE:/github/workspace" \
+          -w "/github/workspace/$PROJECT_PATH" \
+          -e EDITOR_DIR -e COMMAND \
+          "$IMAGE" bash -c 'export PATH="/github/workspace/$EDITOR_DIR:$PATH"; eval "$COMMAND"'
+
     # ----------------------- Collect export artifacts ----------------------- #
 
+    # NOTE: A relative pattern is a file the project produced, so it must match.
     - name: Move extra bundled files
       shell: bash
+      env:
+        PROJECT_PATH: ${{ steps.project.outputs.dir }}
       run: |
         set -f
 
@@ -318,11 +341,18 @@ runs:
             set -f
             echo "${{ inputs.extra-bundled-files }}" | tr ',' '\n' | sed -E 's/\\n/ /'
         ); do
+            if [[ "$pattern" != /* ]]; then
+                pattern="$GITHUB_WORKSPACE/$PROJECT_PATH/$pattern"
+                shopt -s failglob
+            fi
+
             echo "Moving files that match pattern: $pattern"
             (
                 set +f
                 mv $pattern $GITHUB_WORKSPACE/dist
             )
+
+            shopt -u failglob
         done
 
         set +f

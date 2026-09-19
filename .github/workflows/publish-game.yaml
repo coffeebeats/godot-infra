@@ -57,6 +57,16 @@ on:
         description: "Whether to keep the compiled export template as a run artifact for the repository's retention period."
         required: false
         default: false
+      post-export-command:
+        type: string
+        description: "A command run in the export container after each preset exports, from the project directory with 'godot' on 'PATH', before bundled files are collected."
+        required: false
+        default: ""
+      extra-bundled-files:
+        type: string
+        description: "A comma, space, or newline-delimited list of filepath patterns, relative to the project directory, to include alongside the exported game; each must match a file."
+        required: false
+        default: ""
 
       # itch.io inputs
       publish-to-itchio:
@@ -296,12 +306,14 @@ jobs:
       # ----------------------- Export required presets ---------------------- #
 
       # NOTE: The 'compile' job emits bundle filepaths relative to the template
-      # directory, so this step makes them absolute.
+      # directory, so this step makes them absolute; the caller's patterns stay
+      # relative and the action resolves them against the project.
       - name: Compute 'extra-bundled-files'
         id: bundle
         env:
           BUILD_DIR: ${{ runner.temp }}/build
           PATTERNS: ${{ needs.compile.outputs.extra-bundled-files }}
+          PROJECT_PATTERNS: ${{ inputs.extra-bundled-files }}
         run: |
           # The compile action emits a space-delimited list, so splitting is
           # intended; 'read -ra' splits without letting a name reach the shell.
@@ -313,6 +325,8 @@ jobs:
             for NAME in "${NAMES[@]}"; do
               echo "$BUILD_DIR/$NAME"
             done
+
+            echo "$PROJECT_PATTERNS"
 
             echo "EOM"
           } >> "$GITHUB_OUTPUT"
@@ -330,6 +344,7 @@ jobs:
           godot-editor-version: ${{ needs.config.outputs.godot-version }}
           export-template-path: "${{ runner.temp }}/build/${{ needs.compile.outputs.export-template-filename }}"
           extra-bundled-files: ${{ steps.bundle.outputs.files }}
+          post-export-command: ${{ inputs.post-export-command }}
 
           profile: ${{ inputs.profile }}
 
