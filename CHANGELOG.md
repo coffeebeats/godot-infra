@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.14.0 (2026-09-19)
+
+## What's Changed
+* feat(publish-game): run a command after export and bundle files from the project by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/639
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.13.0...v6.14.0
+
 ## 6.13.0 (2026-09-18)
 
 ## What's Changed
