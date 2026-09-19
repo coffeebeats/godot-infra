@@ -23,11 +23,14 @@ project root.
 | `load` | `.tscn` `.tres` | a file that does not parse or instantiate | |
 | `script-order` | `.tscn` `.tres` | a property assigned ahead of `script =` | |
 | `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
+| `export-overrides` | `export_presets.cfg` | a preset value differing from `export_overrides.cfg` | yes |
 
 Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
-directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes. It exits 1 for a problem or a
-repair alike, since the engine cannot return a code that tells them apart. Follow
-`--fix` with `godot --import --headless` so the assigned uids resolve.
+directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
+`export-overrides` is the exception: it covers one file and reads the whole project,
+`addons/` included, to decide whether a glob still matches anything. The checker exits 1
+for a problem or a repair alike, since the engine cannot return a code that tells them
+apart. Follow `--fix` with `godot --import --headless` so the assigned uids resolve.
 
 Add a rule only after a pitfall has bitten twice. A rule applies to every repository
 that enables the plugin, so it must hold for any Godot project.
@@ -61,6 +64,77 @@ Section `[all]` applies to every rule, and any other section to the rule it name
   names it defines.
 
 An invalid config is reported against `res://.gdcheckrc`, and nothing else is checked.
+
+## Export overrides
+
+Godot has no way to share a value between export presets, so a project that ships
+several keeps the same decision in each of them by hand and nothing notices when one
+drifts. A project can instead declare those values once in an `export_overrides.cfg`
+beside `export_presets.cfg`, and the `export-overrides` rule writes them into every
+preset they name. A project without the file is left alone.
+
+The file uses `ConfigFile` syntax, like `.gdcheckrc`. A section name is a glob over
+preset names, so the usual `[component-]arch-platform-storefront` convention gives a
+section per storefront, platform, component or architecture for free. Keys are preset
+keys, and a key in a preset's options block carries an `options/` prefix. Values are
+written as the presets file writes them.
+
+```ini
+[*]
+export_filter="all_resources"
+export_files=PackedStringArray()
+exclude_filter=["addons/gut", "*_test.gd", "*/tests/*"]
+
+[*-unknown]
+exclude_filter=["addons/godotsteam"]
+
+[*-macos-*]
+options/application/bundle_identifier="com.example.game"
+```
+
+A preset takes every section whose glob matches its name, in file order. `exclude_filter`
+is a list and accumulates across them, deduplicated and comma-joined; every other key is
+a value and the last matching section wins. It is the one preset key whose value
+composes, which is why it is the one key written as a list.
+
+An `exclude_filter` entry is a path or a pattern, not a gitignore rule:
+
+| Entry | Written as | Because |
+| --- | --- | --- |
+| `addons/gut` | `addons/gut/*` | it names a directory in the project |
+| `icon.svg` | `icon.svg` | it names a file |
+| `*_test.gd` | as written | it contains a wildcard |
+
+Godot's own glob semantics decide the rest, and they are not the ones a `.gitignore`
+trains you to expect. `*` crosses `/`, so one star is recursive and `**` buys nothing. A
+pattern is tested against files, never directories, so `**/tests` matches nothing while
+`*/tests/*` matches everything under one. And the exporter drops text files before any
+filter runs, so `*.md` and `LICENSE.*` exclude nothing that was going to ship.
+
+Those are the mistakes that silently ship files, so the rule reports an entry that names
+nothing in the project and a glob that matches no file. Both need the tree, so run it
+with submodules checked out; without them every addon glob looks dead.
+
+The rule never adds a key to a preset. The editor writes every key its platform defines
+and drops the rest on load, so a declared key a preset does not carry is reported rather
+than written, and the report is a prompt to check the key against that platform.
+
+Everything a preset holds that the declaration does not name stays the editor's.
+
+### Running it
+
+`godot-check --fix` writes the presets, **with the editor closed**. The editor caches
+presets at startup and writes them back when the export dialog opens or it exits, so a
+fix made underneath a running editor is undone
+([godotengine/godot#39681](https://github.com/godotengine/godot/issues/39681)). CI only
+reports; the fix is a local command and its result is committed, as it is for every
+other rule here.
+
+The rule writes through `ConfigFile`, the editor's own writer, and only after proving it
+reproduces the file byte for byte. That proof is what keeps the ~200 editor-written
+defaults per options block, and the file's line ending, exactly as they are. It also
+means a file carrying something `ConfigFile` cannot keep, a comment or hand-placed
+spacing, is reported and left alone rather than rewritten.
 
 ## GDExtensions that did not load
 
@@ -120,3 +194,6 @@ Each of these returns a plausible wrong answer rather than an error.
 `hooks/on_edit.sh` fires on `Edit` and `Write` only, so run `godot-check` after a move
 or any other change it never sees. Its feedback goes to stderr, since stdout never
 reaches the agent; a hook that writes there shows up as "No stderr output".
+
+An edit to `export_overrides.cfg` is checked against `export_presets.cfg`, since that is
+the file the rule covers and the pair is meaningless apart.

@@ -53,8 +53,14 @@ case "$rel_path" in
   addons/*) exit 0 ;;
 esac
 
+# The export declaration and the presets are one unit, and the rule reads both from the
+# presets file, so an edit to either is checked there.
 case "$rel_path" in
-  *.gd | *.tscn | *.tres) ;;
+  *.gd | *.tscn | *.tres) check_path="$rel_path" ;;
+  export_presets.cfg | export_overrides.cfg)
+    [ -f "$project_dir/export_presets.cfg" ] || exit 0
+    check_path="export_presets.cfg"
+    ;;
   *) exit 0 ;;
 esac
 
@@ -90,7 +96,7 @@ esac
 
 # The engine cannot tell a problem from a repair through its exit code, so the label
 # stays neutral.
-godot --headless --path "$project_dir" -s "$checker" -- --fix "$rel_path" \
+godot --headless --path "$project_dir" -s "$checker" -- --fix "$check_path" \
   >"$out" 2>&1 || report "project check reported"
 
 # GUT boots Godot again, so the test beside the edited script runs only when it exists;
