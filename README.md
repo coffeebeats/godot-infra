@@ -205,7 +205,11 @@ claude plugin install godot@godot-infra --scope project
 
 The plugin declares no `version`, so each commit is its version, and it follows the floating major tag like the workflows do: a release moves `v6`, and Claude Code picks the update up in the background. A breaking change to the plugin is a major release, taken alongside the workflows' `@v7`.
 
-The project file registers a marketplace only when the machine does not already know it, so a repository that moves to a newer `ref` keeps installing from the old one until the machine runs `claude plugin marketplace remove godot-infra` and then `claude plugin marketplace add coffeebeats/godot-infra#<ref>`, with `<ref>` from the repository's `.claude/settings.json`. Nothing reports this. A project-scope install is also keyed to the repository's path, so a moved or renamed clone reports the plugin as not installed and prints the install command to run from the new path.
+Three things the settings file cannot do.
+
+- It registers the marketplace only when the folder is first trusted, so a machine that already knows the name keeps its old `ref` after a major release. Run `claude plugin marketplace remove godot-infra`, then `claude plugin marketplace add coffeebeats/godot-infra#<ref>` with the ref from `.claude/settings.json`. The remove also deletes that entry from the file and uninstalls the marketplace's plugins, so restore the file with git and install again.
+- It enables the plugin but does not install it, and a project-scope install is keyed to the repository's path. A moved or renamed clone loads the skills but not the hook, and the only trace is an entry in the `/plugin` Errors tab. Run the install again from the new path.
+- It does not update an install that already exists. `claude plugin update godot@godot-infra --scope project` does.
 
 ## **Development**
 
