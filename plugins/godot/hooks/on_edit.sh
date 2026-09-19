@@ -53,8 +53,8 @@ case "$rel_path" in
   addons/*) exit 0 ;;
 esac
 
-# The export declaration and the presets are one unit, and the rule reads both from the
-# presets file, so an edit to either is checked there.
+# The export rule reads the declaration and the presets from the presets file, so an
+# edit to either is checked there.
 case "$rel_path" in
   *.gd | *.tscn | *.tres) check_path="$rel_path" ;;
   export_presets.cfg | export_overrides.cfg)

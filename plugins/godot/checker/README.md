@@ -67,17 +67,17 @@ An invalid config is reported against `res://.gdcheckrc`, and nothing else is ch
 
 ## Export overrides
 
-Godot has no way to share a value between export presets, so a project that ships
-several keeps the same decision in each of them by hand and nothing notices when one
-drifts. A project can instead declare those values once in an `export_overrides.cfg`
-beside `export_presets.cfg`, and the `export-overrides` rule writes them into every
-preset they name. A project without the file is left alone.
+Godot has no way to share a value between export presets. A project shipping several
+keeps the same decision in each of them by hand, and nothing notices when one drifts. A
+project can instead declare those values once in an `export_overrides.cfg` beside
+`export_presets.cfg`, and the `export-overrides` rule writes them into every preset they
+name. A project without the file is left alone.
 
 The file uses `ConfigFile` syntax, like `.gdcheckrc`. A section name is a glob over
-preset names, so the usual `[component-]arch-platform-storefront` convention gives a
-section per storefront, platform, component or architecture for free. Keys are preset
-keys, and a key in a preset's options block carries an `options/` prefix. Values are
-written as the presets file writes them.
+preset names, so a naming convention such as `[component-]arch-platform-storefront`
+gives a section per storefront, platform, component or architecture. Keys are preset
+keys in the presets file's own syntax, and a key in a preset's options block carries an
+`options/` prefix.
 
 ```ini
 [*]
@@ -92,12 +92,17 @@ exclude_filter=["addons/godotsteam"]
 options/application/bundle_identifier="com.example.game"
 ```
 
-A preset takes every section whose glob matches its name, in file order. `exclude_filter`
-is a list and accumulates across them, deduplicated and comma-joined; every other key is
-a value and the last matching section wins. It is the one preset key whose value
-composes, which is why it is the one key written as a list.
+A preset takes every section whose glob matches its name, in file order.
+`exclude_filter` and `include_filter` accumulate across those sections, deduplicated and
+comma-joined, because a comma-separated glob string is the only preset value that
+composes. Every other key is a value, and the last matching section wins.
 
-An `exclude_filter` entry is a path or a pattern, not a gitignore rule:
+A declared value must be the type the preset already holds. A value of any other type is
+reported rather than written, since the editor cannot read back a key whose type it did
+not write.
+
+A filter entry names a path or a pattern, and the rule writes it as the glob Godot
+needs:
 
 | Entry | Written as | Because |
 | --- | --- | --- |
@@ -105,21 +110,20 @@ An `exclude_filter` entry is a path or a pattern, not a gitignore rule:
 | `icon.svg` | `icon.svg` | it names a file |
 | `*_test.gd` | as written | it contains a wildcard |
 
-Godot's own glob semantics decide the rest, and they are not the ones a `.gitignore`
-trains you to expect. `*` crosses `/`, so one star is recursive and `**` buys nothing. A
-pattern is tested against files, never directories, so `**/tests` matches nothing while
-`*/tests/*` matches everything under one. And the exporter drops text files before any
-filter runs, so `*.md` and `LICENSE.*` exclude nothing that was going to ship.
+Godot's globs are not a `.gitignore`'s. `*` crosses `/`, so one star is recursive and
+`**` buys nothing. A pattern is tested against files, never directories, so `**/tests`
+matches nothing while `*/tests/*` matches everything under one. The exporter also drops
+text files before any filter runs, so `*.md` and `LICENSE.*` exclude nothing that was
+going to ship.
 
-Those are the mistakes that silently ship files, so the rule reports an entry that names
-nothing in the project and a glob that matches no file. Both need the tree, so run it
-with submodules checked out; without them every addon glob looks dead.
+The rule reports an entry that names nothing in the project, and a glob that matches no
+file. Both read the tree, so run it with submodules checked out; without them every
+addon glob looks dead.
 
 The rule never adds a key to a preset. The editor writes every key its platform defines
-and drops the rest on load, so a declared key a preset does not carry is reported rather
-than written, and the report is a prompt to check the key against that platform.
-
-Everything a preset holds that the declaration does not name stays the editor's.
+and drops the rest on load, so a declared key a preset does not carry is reported
+instead. Everything a preset holds that the declaration does not name stays the
+editor's.
 
 ### Running it
 
@@ -131,10 +135,10 @@ reports; the fix is a local command and its result is committed, as it is for ev
 other rule here.
 
 The rule writes through `ConfigFile`, the editor's own writer, and only after proving it
-reproduces the file byte for byte. That proof is what keeps the ~200 editor-written
-defaults per options block, and the file's line ending, exactly as they are. It also
-means a file carrying something `ConfigFile` cannot keep, a comment or hand-placed
-spacing, is reported and left alone rather than rewritten.
+reproduces the file byte for byte. That proof keeps every option the editor wrote, and
+the file's line ending, exactly as they are. It also means the rule reports and leaves
+alone a file holding something `ConfigFile` cannot keep, such as a comment or
+hand-placed spacing.
 
 ## GDExtensions that did not load
 
