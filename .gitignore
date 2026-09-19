@@ -25,6 +25,7 @@ thirdparty/moltenvk/*
 /godot/
 # Everything the editor generates inside the sample project; only its sources are tracked.
 tests/project/*
+!tests/project/export_overrides.cfg
 !tests/project/export_presets.cfg
 !tests/project/main.tscn
 !tests/project/project.godot
