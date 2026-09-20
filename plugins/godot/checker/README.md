@@ -25,6 +25,7 @@ project root.
 | `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
 | `export-overrides` | `export_presets.cfg` | a preset value differing from `export_overrides.cfg` | yes |
 | `export-ref` | `export_presets.cfg` | a file a preset keeps whose dependency that same preset excludes | |
+| `disable-3d` | `.gd` `.tscn` `.tres` | a 3D type named in a file the shipped template must load | |
 
 Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
 directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
@@ -209,6 +210,44 @@ path. Measured against the header's own text, this rule would read a file that m
 
 It is keyed on `export_presets.cfg`, so the edit hook runs it when the presets change
 and the whole-project run catches a crossing introduced by editing a scene.
+
+## A stripped export template
+
+A game whose template is built with `disable_3d` ships an engine defining no `Node3D`
+and nothing below it. A script naming one parses in the editor and fails in the export,
+taking every script that depends on it down with it, so the game launches a window with
+no game in it. Nothing else here catches that, because the editor, this checker and
+the tests all run on a full build.
+
+`disable-3d` reports a 3D class named in code, in a scene's node types, or in a
+resource. It skips four kinds of file, which a stripped template never has to load:
+
+- one named `*_3d`, such as `world_tracker_3d.gd`,
+- one under a `3d/` directory, such as `map/3d/scene.tscn`,
+- one under an `editor/` directory, which an export excludes,
+- one named `*_test`, which every export excludes too.
+
+That makes the file's name its declaration. A 2D game does not load the 3D half of an
+addon, and a game that wants it builds its template without the flag; a project that is
+3D throughout excludes `res://*` under `[disable-3d]`.
+
+`Transform3D` and `Vector3` are Variant types, which the flag keeps, and a constant
+such as `TEMPLATE_3D` is a name rather than a type. None of them is reported. In a
+scene only a `type=` value counts, so a node named `Player3D` is a label and is not
+reported either.
+
+The flag removes 158 classes in Godot 4.7.2. All but 36 are named `*3D`, which the rule
+matches by shape; the rest are listed by name in `STRIPPED_NAMES`, among them `BoxMesh`,
+`PrimitiveMesh`, `TextMesh`, `MeshLibrary`, `GridMap`, `WorldEnvironment`, `Decal`,
+`ReflectionProbe`, `VoxelGI` and `Skin`. The list comes from the `_3D_DISABLED` guards
+around the class registrations in the engine source, since a running editor has no way
+to report which classes a flag it was not built with would remove. Regenerate it when
+the engine pin moves, with `scripts/list_stripped_classes.py` in this repository.
+
+The other half of a stripped template, `deprecated = "no"`, has no name pattern to
+match on. A removed method reads like any other, and the source guards it by
+compatibility block rather than by name. Only running the exported game finds those,
+which is what the `boot` job in `publish-game.yaml` is for.
 
 ## GDExtensions that did not load
 

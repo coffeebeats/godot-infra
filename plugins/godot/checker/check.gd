@@ -833,6 +833,169 @@ class NodePathRule:
 		return problems
 
 
+## Disable3DRule reports a file naming a 3D type although the game ships on a template
+## built with `disable_3d`, which defines none of them. Such a script fails to parse in
+## the shipped game and takes everything depending on it down with it, while the editor,
+## this checker and the tests all pass, since none of them runs on that engine.
+##
+## NOTE: A file declares itself 3D-only by name or directory, and the consts below say
+## which. A project that is 3D throughout excludes `res://*` under `[disable-3d]`.
+class Disable3DRule:
+	extends Rule
+
+	## DECLARED_3D_DIR is the directory name under which a 3D-only file may live.
+	const DECLARED_3D_DIR := "3d"
+
+	## DECLARED_3D_SUFFIX marks a 3D-only file by name.
+	const DECLARED_3D_SUFFIX := "_3d"
+
+	## EDITOR_DIR is the directory name for code an export leaves behind, which a
+	## template therefore never loads whatever it names.
+	const EDITOR_DIR := "editor"
+
+	## STRIPPED_NAMES are the classes the flag removes whose names do not end in `3D`.
+	## They are the registrations guarded by `_3D_DISABLED` in Godot 4.7.2, taken from
+	## the engine source, since nothing in a running editor reports them.
+	const STRIPPED_NAMES := [
+		"BoxMesh",
+		"CapsuleMesh",
+		"CylinderMesh",
+		"Decal",
+		"FogMaterial",
+		"FogVolume",
+		"GridMap",
+		"GridMapEditorPlugin",
+		"ImporterMesh",
+		"LightmapGI",
+		"LightmapGIData",
+		"LightmapProbe",
+		"Lightmapper",
+		"LightmapperRD",
+		"MeshLibrary",
+		"Node3DGizmo",
+		"PanoramaSkyMaterial",
+		"PhysicalSkyMaterial",
+		"PlaneMesh",
+		"PointMesh",
+		"PrimitiveMesh",
+		"PrismMesh",
+		"ProceduralSkyMaterial",
+		"QuadMesh",
+		"ReflectionProbe",
+		"RibbonTrailMesh",
+		"RootMotionView",
+		"Skin",
+		"SkinReference",
+		"SphereMesh",
+		"TextMesh",
+		"TorusMesh",
+		"TubeTrailMesh",
+		"VoxelGI",
+		"VoxelGIData",
+		"WorldEnvironment",
+	]
+
+	## STRIPPED_SUFFIX_PATTERN captures a class name ending in `3D`, as the other 122 the
+	## flag removes all are. `Transform3D` is a Variant type it keeps, and no class name
+	## carries an underscore, so a constant like `TEMPLATE_3D` reads as a name.
+	const STRIPPED_SUFFIX_PATTERN := "(?!Transform3D)[A-Z][A-Za-z0-9]*3D"
+
+	## TEST_SUFFIX marks a test script, which every export excludes and which is the one
+	## place a 2D game exercises a 3D type.
+	const TEST_SUFFIX := "_test"
+
+	## TYPE_PATTERN captures the class a scene or resource header names as a node's, a
+	## sub-resource's or a dependency's type. Nothing else in such a file resolves to a
+	## class, so a node named `Player3D` is a label rather than a use.
+	const TYPE_PATTERN := 'type="([^"]+)"'
+
+	var _non_code := RegEx.create_from_string(NON_CODE_PATTERN)
+	var _stripped: RegEx = null
+	var _type := RegEx.create_from_string(TYPE_PATTERN)
+
+	func _init() -> void:
+		name = &"disable-3d"
+		extensions = ["gd", "tscn", "tres"]
+
+		var alternatives := (
+			"%s|%s" % [STRIPPED_SUFFIX_PATTERN, "|".join(STRIPPED_NAMES)]
+		)
+		_stripped = RegEx.create_from_string(NAME_BOUNDARY + "(%s)\\b" % alternatives)
+
+	func applies(path: String) -> bool:
+		if not super(path):
+			return false
+
+		if path.get_file().get_basename().ends_with(TEST_SUFFIX):
+			return false
+
+		return not _unshipped(path)
+
+	func check(file: SourceFile) -> Array[Problem]:
+		var problems: Array[Problem] = []
+		var lines := _code(file)
+
+		for i in lines.size():
+			for found in _stripped.search_all(lines[i]):
+				var message := (
+					"names `%s`, which a `disable_3d` template does not define"
+					% found.get_string(1)
+				)
+				problems.append(Problem.new(file.path, i + 1, name, message))
+
+		return problems
+
+	## _code returns the names a stripped template has to resolve. A script's comments
+	## and string literals are blanked, since a type named in prose resolves to nothing,
+	## and a scene or resource keeps only the types its headers declare.
+	func _code(file: SourceFile) -> PackedStringArray:
+		if file.path.get_extension() != "gd":
+			return _declared(file.lines())
+
+		var text := file.text().replace("\r\n", "\n")
+		var code := ""
+		var last := 0
+
+		# NOTE: Each stripped run leaves its newlines behind, so a problem still reports
+		# the line it was found on.
+		for found in _non_code.search_all(text):
+			var start := found.get_start()
+			var run := text.substr(start, found.get_end() - start)
+
+			code += text.substr(last, start - last)
+			code += "\n".repeat(run.count("\n"))
+
+			last = found.get_end()
+
+		code += text.substr(last)
+
+		return code.split("\n")
+
+	## _declared returns the types each line's headers name, joined, one entry per line.
+	func _declared(lines: PackedStringArray) -> PackedStringArray:
+		var out := PackedStringArray()
+
+		for line in lines:
+			var names := PackedStringArray()
+
+			for found in _type.search_all(line):
+				names.append(found.get_string(1))
+
+			out.append(" ".join(names))
+
+		return out
+
+	## _unshipped reports whether a file's name or location says a stripped template
+	## never has to load it, because it is 3D-only or editor-only.
+	static func _unshipped(path: String) -> bool:
+		if path.get_file().get_basename().ends_with(DECLARED_3D_SUFFIX):
+			return true
+
+		var directories := path.get_base_dir().split("/")
+
+		return DECLARED_3D_DIR in directories or EDITOR_DIR in directories
+
+
 ## ExportOverridesRule reports export presets whose values differ from the ones
 ## `res://export_overrides.cfg` declares, and writes them. Each of its sections covers
 ## the presets its name globs, so one declaration serves every storefront, platform,
@@ -1740,6 +1903,7 @@ func _registry() -> Array[Rule]:
 	rules.append(NodePathRule.new())
 	rules.append(ExportOverridesRule.new())
 	rules.append(ExportRefRule.new())
+	rules.append(Disable3DRule.new())
 
 	return rules
 

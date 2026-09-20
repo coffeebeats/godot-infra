@@ -32,6 +32,10 @@ tests/project/*
 !tests/project/editor/leftover.gd.uid
 !tests/project/label_settings.tres
 !tests/project/main.tscn
+!tests/project/marker.gd
+!tests/project/marker.gd.uid
+!tests/project/marker_3d.gd
+!tests/project/marker_3d.gd.uid
 !tests/project/project.godot
 
 # Python-related ignores
