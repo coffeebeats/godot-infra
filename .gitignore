@@ -23,20 +23,8 @@ thirdparty/moltenvk/*
 /build/
 /dist/
 /godot/
-# Everything the editor generates inside the sample project; only its sources are tracked.
-tests/project/*
-!tests/project/export_overrides.cfg
-!tests/project/export_presets.cfg
-!tests/project/editor/
-!tests/project/editor/leftover.gd
-!tests/project/editor/leftover.gd.uid
-!tests/project/label_settings.tres
-!tests/project/main.tscn
-!tests/project/marker.gd
-!tests/project/marker.gd.uid
-!tests/project/marker_3d.gd
-!tests/project/marker_3d.gd.uid
-!tests/project/project.godot
+# What a local export writes into the sample project; '.godot/' is covered above.
+/tests/project/Game.*
 
 # Python-related ignores
 __pycache__/
