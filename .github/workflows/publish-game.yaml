@@ -504,8 +504,11 @@ jobs:
           # NOTE: 'failglob' turns an empty download into an error.
           shopt -s failglob
 
+          # NOTE: The archive arrives on stdin because a Windows runner's path
+          # starts 'D:', which GNU tar reads as a remote host and fails to
+          # resolve. bsdtar on macOS has no --force-local to match.
           for ARCHIVE in "$EXPORTS_DIR"/*.tar; do
-            tar -xf "$ARCHIVE" -C "$GAME_DIR"
+            tar -xf - -C "$GAME_DIR" < "$ARCHIVE"
           done
 
       - uses: $/actions/boot-godot-project
