@@ -1,0 +1,106 @@
+name: "🚀 Boot: Boot an exported Godot game"
+description: "Launches an exported game headlessly and fails if it logs a failure while booting."
+
+inputs:
+  path:
+    description: "Path to the directory holding the exported game."
+    required: true
+  platform:
+    description: "The platform the game was exported for ('windows', 'macos' or 'linux')."
+    required: true
+  frames:
+    description: "How many frames to run before quitting."
+    required: false
+    default: "300"
+
+runs:
+  using: "composite"
+  steps:
+    # NOTE: macOS ships bash 3.2, so this action avoids 'mapfile' throughout.
+    - name: Locate the exported game
+      id: game
+      shell: bash
+      env:
+        GAME_DIR: ${{ inputs.path }}
+        PLATFORM: ${{ inputs.platform }}
+      run: |
+        # A preset exports macOS as a bundle or as a zipped one, so the zip is
+        # unpacked beside itself and one search finds both shapes.
+        case "$PLATFORM" in
+          windows)
+            FILTER=(-type f -name '*.exe')
+            ;;
+          macos)
+            while IFS= read -r ARCHIVE; do
+              unzip -q "$ARCHIVE" -d "$(dirname "$ARCHIVE")"
+            done < <(find "$GAME_DIR" -maxdepth 3 -type f -name '*.zip')
+
+            FILTER=(-type f -perm -u+x -path '*.app/Contents/MacOS/*')
+            ;;
+          linux)
+            FILTER=(-type f -perm -u+x ! -name '*.so' ! -name '*.pck' ! -name '*.sh')
+            ;;
+          *)
+            echo "::error::Cannot boot a game exported for '$PLATFORM'."
+            exit 1
+            ;;
+        esac
+
+        GAMES=()
+        while IFS= read -r FOUND; do
+          GAMES+=("$FOUND")
+        done < <(find "$GAME_DIR" -maxdepth 5 "${FILTER[@]}")
+
+        if [[ ${#GAMES[@]} -ne 1 ]]; then
+          echo "::error::Expected one game executable, found ${#GAMES[@]}."
+          printf '%s\n' "${GAMES[@]}"
+          exit 1
+        fi
+
+        echo "path=${GAMES[0]}" >> "$GITHUB_OUTPUT"
+
+    - name: Boot the game
+      shell: bash
+      env:
+        GAME: ${{ steps.game.outputs.path }}
+        FRAMES: ${{ inputs.frames }}
+        LOG_PATH: ${{ runner.temp }}/boot.log
+        REPORT_PATH: ${{ runner.temp }}/boot-report.log
+      run: |
+        # A script the template cannot parse takes down everything depending on
+        # it, and the engine keeps running regardless: it logs the error, drops
+        # the main scene and carries on. The log decides, and the exit code only
+        # confirms.
+        #
+        # NOISE is the teardown boilerplate a clean run still prints, matching
+        # what 'plugins/godot/hooks/on_edit.sh' filters.
+        NOISE='^WARNING: [0-9]+ ObjectDB instances were leaked|^   at: cleanup '
+        NOISE="$NOISE|^ERROR: [0-9]+ resources still in use at exit|^   at: clear "
+
+        FAILURE='^(SCRIPT ERROR|USER SCRIPT ERROR|ERROR):'
+        FAILURE="$FAILURE|Parse Error|Compile Error"
+        FAILURE="$FAILURE|Failed to load script|Failed to instantiate"
+
+        # NOTE: 300 frames covers autoloads, the main scene and a first draw.
+        # The run is uncapped headless, so it costs a moment.
+        set +e
+        "$GAME" --headless --quit-after "$FRAMES" >"$LOG_PATH" 2>&1
+        CODE=$?
+        set -e
+
+        cat "$LOG_PATH"
+
+        # NOTE: Filtering into a file keeps 'grep -q' out of a pipeline, where
+        # it can close the pipe early and leave 'pipefail' reporting 141.
+        grep -Ev "$NOISE" "$LOG_PATH" >"$REPORT_PATH" || true
+
+        if grep -qE "$FAILURE" "$REPORT_PATH"; then
+          echo "::error::The exported game logged a failure while booting."
+          grep -nE "$FAILURE" "$REPORT_PATH"
+          exit 1
+        fi
+
+        if [[ $CODE -ne 0 ]]; then
+          echo "::error::The exported game exited with code $CODE."
+          exit 1
+        fi

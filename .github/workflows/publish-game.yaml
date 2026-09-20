@@ -471,20 +471,18 @@ jobs:
           api-key: ${{ secrets.BUTLER_API_KEY }}
 
   # The game ships on a template compiled from the project's 'custom.py', which
-  # defines less than the editor does. A script naming something the template
-  # drops parses in the editor and fails in the export, so the game opens a
-  # window with nothing in it. This is the only check that runs on the engine
-  # the game ships on; the editor, the checker and the tests all run on a full
-  # build. It gates 'package', so a game that cannot boot is never published.
+  # defines less than the editor does, so a script naming something the template
+  # drops parses in the editor and opens an empty window in the export. Nothing
+  # else here runs on that engine. This gates 'package', so a game that cannot
+  # boot is never published.
   #
-  # NOTE: Only the Windows 'unknown' build boots. What this catches is decided
-  # at compile time rather than per platform, so one target covers them all,
-  # and a storefront build wants its client running to get past startup.
+  # NOTE: A web export needs a browser to boot, and a storefront build wants its
+  # client running to get past startup, so neither is booted here.
   boot:
     needs: ["config", "export"]
-    if: inputs.platform == 'windows' && inputs.storefront == 'unknown'
+    if: inputs.platform != 'web' && inputs.storefront == 'unknown'
 
-    runs-on: windows-latest
+    runs-on: ${{ inputs.platform == 'macos' && 'macos-latest' || inputs.platform == 'windows' && 'windows-latest' || 'ubuntu-latest' }}
     timeout-minutes: 10
 
     steps:
@@ -510,41 +508,7 @@ jobs:
             tar -xf "$ARCHIVE" -C "$GAME_DIR"
           done
 
-      - name: Boot the game
-        env:
-          GAME_DIR: ${{ runner.temp }}/game
-          LOG_PATH: ${{ runner.temp }}/boot.log
-        run: |-
-          # A script the template cannot parse takes down everything that
-          # depends on it, and the engine reports that without failing. It
-          # logs the parse error, drops the main scene and keeps running, so
-          # the log decides and the exit code only confirms.
-          FAILURES='Parse Error|Compile Error|Failed to load script|Failed to instantiate|^ *ERROR:'
-
-          mapfile -t GAMES < <(find "$GAME_DIR" -maxdepth 2 -name '*.exe' -type f)
-
-          if [[ ${#GAMES[@]} -ne 1 ]]; then
-            echo "::error::Expected one game executable, found ${#GAMES[@]}."
-            printf '%s\n' "${GAMES[@]}"
-            exit 1
-          fi
-
-          # NOTE: 300 frames is long enough for autoloads, the main scene and a
-          # first draw, and the run is uncapped headless, so it costs a moment.
-          set +e
-          "${GAMES[0]}" --headless --quit-after 300 >"$LOG_PATH" 2>&1
-          CODE=$?
-          set -e
-
-          cat "$LOG_PATH"
-
-          if grep -qE "$FAILURES" "$LOG_PATH"; then
-            echo "::error::The exported game logged a failure while booting."
-            grep -nE "$FAILURES" "$LOG_PATH"
-            exit 1
-          fi
-
-          if [[ $CODE -ne 0 ]]; then
-            echo "::error::The exported game exited with code $CODE."
-            exit 1
-          fi
+      - uses: $/actions/boot-godot-project
+        with:
+          path: ${{ runner.temp }}/game
+          platform: ${{ inputs.platform }}
