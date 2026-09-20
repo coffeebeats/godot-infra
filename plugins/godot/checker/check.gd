@@ -424,18 +424,21 @@ class UidRule:
 		return not lines.is_empty() and lines[0].contains(' uid="')
 
 
-## PathRefRule reports references in a scene or resource that do not resolve, and
-## `res://` strings that should be uid references.
+## PathRefRule reports references in a scene or resource that do not resolve,
+## `res://` strings that should be uid references, and a dependency whose `path`
+## names a different file than its `uid`.
 ##
 ## NOTE: A move rewrites `ext_resource` headers but not `res://` strings in properties,
-## which then point at nothing; a `uid://` reference survives the move.
+## which then point at nothing, while a `uid://` reference survives it. A move made
+## outside the editor rewrites neither, and the uid then hides the path left behind.
 ##
 ## NOTE: A scene with a missing `[ext_resource]` target still loads, so `load` never
 ## catches it.
 class PathRefRule:
 	extends Rule
 
-	## EXT_RESOURCE_PREFIX marks a dependency header, which this rule never rewrites.
+	## EXT_RESOURCE_PREFIX marks a dependency header, whose `path` this rule rewrites
+	## to agree with its uid, and whose uid it leaves alone.
 	const EXT_RESOURCE_PREFIX := "[ext_resource "
 
 	## REFERENCE_PATTERN matches one quoted `res://` or `uid://` string literal.
@@ -482,16 +485,23 @@ class PathRefRule:
 
 		for i in lines.size():
 			var line: String = lines[i]
-			if _is_engine_owned(line):
+			if _is_self_header(line):
 				continue
 
 			var replaced := line
 
-			for found in _reference.search_all(line):
-				var ref := found.get_string(1)
-				var uid := _preferred_uid(ref)
-				if uid != "":
-					replaced = replaced.replace('"%s"' % ref, '"%s"' % uid)
+			if line.begins_with(EXT_RESOURCE_PREFIX):
+				# NOTE: Only the path moves. The uid is what the engine reads, so rewriting
+				# it would repoint the dependency rather than correct how it reads.
+				var drift := _drift(line)
+				if not drift.is_empty():
+					replaced = line.replace('"%s"' % drift[0], '"%s"' % drift[1])
+			else:
+				for found in _reference.search_all(line):
+					var ref := found.get_string(1)
+					var uid := _preferred_uid(ref)
+					if uid != "":
+						replaced = replaced.replace('"%s"' % ref, '"%s"' % uid)
 
 			if replaced != line:
 				lines[i] = replaced
@@ -521,22 +531,63 @@ class PathRefRule:
 		return _describe_path(ref)
 
 	## _describe_dependency returns what is wrong with an `[ext_resource]` header, or an
-	## empty string. One resolving reference on the line is enough, since the engine falls
-	## back from the uid to the path.
+	## empty string. One resolving reference on the line is enough for the dependency to
+	## load, since the engine falls back from the uid to the path; a header that loads
+	## can still name two different files.
 	func _describe_dependency(line: String) -> String:
 		var references := PackedStringArray()
+		var resolved := false
 
 		for found in _reference.search_all(line):
 			var ref := found.get_string(1)
 			if _resolves(ref):
-				return ""
+				resolved = true
 
 			references.append(ref)
 
 		if references.is_empty():
 			return ""
 
-		return "dependency does not resolve: %s" % " ".join(references)
+		if not resolved:
+			return "dependency does not resolve: %s" % " ".join(references)
+
+		var drift := _drift(line)
+		if drift.is_empty():
+			return ""
+
+		return "path names %s but uid resolves to %s" % [drift[0], drift[1]]
+
+	## _drift returns the stale `res://` path a dependency header carries and the path
+	## its uid resolves to, in that order, or an empty array when the header carries no
+	## uid, no path, or two that already agree.
+	func _drift(line: String) -> PackedStringArray:
+		var carried := ""
+		var resolved := ""
+
+		for found in _reference.search_all(line):
+			var ref := found.get_string(1)
+
+			if ref.begins_with("uid://"):
+				resolved = _uid_path(ref)
+			elif ref.begins_with("res://"):
+				carried = ref
+
+		if carried == "" or resolved == "" or carried == resolved:
+			return PackedStringArray()
+
+		return PackedStringArray([carried, resolved])
+
+	## _uid_path returns the file a `uid://` reference resolves to, or an empty string
+	## when it resolves to nothing. A uid naming a missing file is `_describe_uid`'s to
+	## report, so it is not drift.
+	func _uid_path(ref: String) -> String:
+		var id := ResourceUID.text_to_id(ref)
+		if id == ResourceUID.INVALID_ID or not ResourceUID.has_id(id):
+			return ""
+
+		var target := ResourceUID.get_id_path(id)
+
+		return target if FileAccess.file_exists(target) else ""
 
 	## _describe_path returns what is wrong with a `res://` reference, or an empty string.
 	func _describe_path(ref: String) -> String:
@@ -560,10 +611,6 @@ class PathRefRule:
 			return "uid resolves to a missing file: %s" % target
 
 		return ""
-
-	## _is_engine_owned reports whether the line is a header this rule never rewrites.
-	func _is_engine_owned(line: String) -> bool:
-		return line.begins_with(EXT_RESOURCE_PREFIX) or _is_self_header(line)
 
 	## _is_self_header reports whether the line is the file's own resource header.
 	func _is_self_header(line: String) -> bool:

@@ -19,7 +19,7 @@ project root.
 | --- | --- | --- | --- |
 | `compile` | `.gd` | a script that does not compile, a promoted warning included | |
 | `uid` | `.tscn` `.tres` | a header carrying no `uid=` | yes |
-| `path-ref` | `.tscn` `.tres` | a reference that does not resolve, and a `res://` string that should be a uid | yes |
+| `path-ref` | `.tscn` `.tres` | a reference that does not resolve, a `res://` string that should be a uid, and a dependency whose `path` disagrees with its `uid` | yes |
 | `load` | `.tscn` `.tres` | a file that does not parse or instantiate | |
 | `script-order` | `.tscn` `.tres` | a property assigned ahead of `script =` | |
 | `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
