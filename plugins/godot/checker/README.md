@@ -130,6 +130,8 @@ are not a `.gitignore`'s, in three ways worth knowing before writing one:
   the icon named by `application/config/icon`, and the 4.8 MB `icudt_godot.dat` are
   unaffected by any pattern. An entry for one is reported by nothing, since the file
   does exist, so a dependency `export-ref` reports into it is the only signal.
+- `*.po` is safe to drop. `project.godot` names the compiled `.mo`, and a runtime scan
+  for a `.po` reads `user://`, never `res://`.
 
 Prefer a directory per category. `*/editor/*` drops tooling from every build, and
 `*/steam/*` under `[*-unknown]` drops a storefront from the builds that do not use it,
