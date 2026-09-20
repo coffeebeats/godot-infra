@@ -2,8 +2,8 @@
 
 A template built with 'disable_3d = "yes"' registers no class guarded by the
 engine's '_3D_DISABLED', so a script naming one parses in the editor and fails
-in the exported game. Nothing in a running editor reports them, since the
-editor was not built with the flag, so the list comes from the source.
+in the exported game. An editor is not built with the flag and so defines every
+one of them, which leaves the engine source as the only place to read the list.
 
 This prints the names the rule cannot match by shape, ready to paste over
 'STRIPPED_NAMES'. Regenerate it when the engine pin moves to a new minor.
@@ -14,12 +14,13 @@ Usage: list_stripped_classes.py TAG   (e.g. '4.7.2-stable')
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
-import tempfile
-from pathlib import Path
+import tarfile
+import urllib.request
 
-GODOT_REPOSITORY = "https://github.com/godotengine/godot"
+SOURCE_URL = (
+    "https://github.com/godotengine/godot/releases/download/{tag}/godot-{tag}.tar.xz"
+)
 
 # GUARD opens a block compiled out by 'disable_3d'. Only the engine's own 3D
 # guard counts, since 'PHYSICS_3D_DISABLED' and 'XR_DISABLED' are options a
@@ -27,25 +28,6 @@ GODOT_REPOSITORY = "https://github.com/godotengine/godot"
 GUARD = re.compile(r"^#ifndef\s+_3D_DISABLED\b")
 
 REGISTRATION = re.compile(r"GDREGISTER(?:_ABSTRACT|_INTERNAL|_VIRTUAL)?_CLASS\((\w+)\)")
-
-
-def clone(tag: str, path: Path) -> None:
-    """clone checks out one Godot release, shallow and on its own branch."""
-    subprocess.run(
-        [
-            "git",
-            "clone",
-            "--filter=blob:none",
-            "--depth",
-            "1",
-            "--branch",
-            tag,
-            "--single-branch",
-            GODOT_REPOSITORY,
-            str(path),
-        ],
-        check=True,
-    )
 
 
 def registrations(text: str) -> set[str]:
@@ -70,17 +52,30 @@ def registrations(text: str) -> set[str]:
     return found
 
 
-def stripped(source: Path) -> set[str]:
-    """stripped returns every class the engine registers inside the 3D guard."""
+def stripped(tag: str) -> set[str]:
+    """stripped returns every class the release registers inside the 3D guard.
+
+    NOTE: The archive is streamed, so members arrive in order and nothing is
+    written to disk.
+    """
     names: set[str] = set()
 
-    for path in source.rglob("*.cpp"):
-        if ".git" in path.parts or "thirdparty" in path.parts:
-            continue
+    with (
+        urllib.request.urlopen(SOURCE_URL.format(tag=tag)) as response,
+        tarfile.open(fileobj=response, mode="r|xz") as archive,
+    ):
+        for member in archive:
+            parts = member.name.split("/")
+            if not member.name.endswith(".cpp") or "thirdparty" in parts:
+                continue
 
-        text = path.read_text(encoding="utf-8", errors="replace")
-        if "_3D_DISABLED" in text and "GDREGISTER" in text:
-            names |= registrations(text)
+            source = archive.extractfile(member)
+            if source is None:
+                continue
+
+            text = source.read().decode("utf-8", errors="replace")
+            if "_3D_DISABLED" in text and "GDREGISTER" in text:
+                names |= registrations(text)
 
     return names
 
@@ -90,10 +85,7 @@ def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit(__doc__)
 
-    with tempfile.TemporaryDirectory() as tmp:
-        source = Path(tmp) / "godot"
-        clone(sys.argv[1], source)
-        names = stripped(source)
+    names = stripped(sys.argv[1])
 
     # A name ending in '3D' is matched by shape, so only the rest is listed.
     rest = sorted(name for name in names if not name.endswith("3D"))

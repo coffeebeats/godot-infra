@@ -36,7 +36,7 @@ The references use four placeholders. `<NEW>` is the minor being added and `<NEW
    uv run python scripts/list_stripped_classes.py <NEW_FULL>-stable
    ```
 
-   The script clones the release to read its `_3D_DISABLED` guards, because an editor build defines every class the flag would remove and so can never report them.
+   The script reads the `_3D_DISABLED` guards out of the release's source tarball, because an editor build defines every class the flag would remove and so can never report them.
 
 5. **Update the README's version references.** Four places name a version by hand, and nothing fails when they go stale:
 
