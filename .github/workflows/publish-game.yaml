@@ -366,7 +366,11 @@ jobs:
           notarization-apple-id-password: ${{ secrets.GODOT_MACOS_NOTARIZATION_APPLE_ID_PASSWORD }}
 
   package:
-    needs: ["config", "export"]
+    needs: ["config", "export", "boot"]
+
+    # NOTE: 'boot' covers one target, so every other one skips it, and a skipped
+    # dependency would otherwise skip this job along with it.
+    if: ${{ !cancelled() && needs.export.result == 'success' && needs.boot.result != 'failure' }}
 
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -465,3 +469,82 @@ jobs:
           itchio-project: ${{ contains(inputs.itchio-project, '/') && inputs.itchio-project || format('{0}/{1}', github.repository_owner, inputs.itchio-project) }}
           itchio-channel: "${{ inputs.component != '' && format('{0}-', inputs.component) || '' }}${{ inputs.arch }}-${{ inputs.platform }}${{ inputs.itchio-label != '' && format('-{0}', inputs.itchio-label) || '' }}"
           api-key: ${{ secrets.BUTLER_API_KEY }}
+
+  # The game ships on a template compiled from the project's 'custom.py', which
+  # defines less than the editor does. A script naming something the template
+  # drops parses in the editor and fails in the export, so the game opens a
+  # window with nothing in it. This is the only check that runs on the engine
+  # the game ships on; the editor, the checker and the tests all run on a full
+  # build. It gates 'package', so a game that cannot boot is never published.
+  #
+  # NOTE: Only the Windows 'unknown' build boots. What this catches is decided
+  # at compile time rather than per platform, so one target covers them all,
+  # and a storefront build wants its client running to get past startup.
+  boot:
+    needs: ["config", "export"]
+    if: inputs.platform == 'windows' && inputs.storefront == 'unknown'
+
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download the exported game
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          path: ${{ runner.temp }}/exports
+
+          pattern: ${{ needs.config.outputs.artifact-pattern }}
+          merge-multiple: true
+
+      - name: Unpack the exported game
+        env:
+          EXPORTS_DIR: ${{ runner.temp }}/exports
+          GAME_DIR: ${{ runner.temp }}/game
+        run: |
+          mkdir -p "$GAME_DIR"
+
+          # NOTE: 'failglob' turns an empty download into an error.
+          shopt -s failglob
+
+          for ARCHIVE in "$EXPORTS_DIR"/*.tar; do
+            tar -xf "$ARCHIVE" -C "$GAME_DIR"
+          done
+
+      - name: Boot the game
+        env:
+          GAME_DIR: ${{ runner.temp }}/game
+          LOG_PATH: ${{ runner.temp }}/boot.log
+        run: |-
+          # A script the template cannot parse takes down everything that
+          # depends on it, and the engine reports that without failing. It
+          # logs the parse error, drops the main scene and keeps running, so
+          # the log decides and the exit code only confirms.
+          FAILURES='Parse Error|Compile Error|Failed to load script|Failed to instantiate|^ *ERROR:'
+
+          mapfile -t GAMES < <(find "$GAME_DIR" -maxdepth 2 -name '*.exe' -type f)
+
+          if [[ ${#GAMES[@]} -ne 1 ]]; then
+            echo "::error::Expected one game executable, found ${#GAMES[@]}."
+            printf '%s\n' "${GAMES[@]}"
+            exit 1
+          fi
+
+          # NOTE: 300 frames is long enough for autoloads, the main scene and a
+          # first draw, and the run is uncapped headless, so it costs a moment.
+          set +e
+          "${GAMES[0]}" --headless --quit-after 300 >"$LOG_PATH" 2>&1
+          CODE=$?
+          set -e
+
+          cat "$LOG_PATH"
+
+          if grep -qE "$FAILURES" "$LOG_PATH"; then
+            echo "::error::The exported game logged a failure while booting."
+            grep -nE "$FAILURES" "$LOG_PATH"
+            exit 1
+          fi
+
+          if [[ $CODE -ne 0 ]]; then
+            echo "::error::The exported game exited with code $CODE."
+            exit 1
+          fi
