@@ -366,7 +366,11 @@ jobs:
           notarization-apple-id-password: ${{ secrets.GODOT_MACOS_NOTARIZATION_APPLE_ID_PASSWORD }}
 
   package:
-    needs: ["config", "export"]
+    needs: ["config", "export", "boot"]
+
+    # NOTE: 'boot' covers one target, so every other one skips it, and a skipped
+    # dependency would otherwise skip this job along with it.
+    if: ${{ !cancelled() && needs.export.result == 'success' && needs.boot.result != 'failure' }}
 
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -465,3 +469,32 @@ jobs:
           itchio-project: ${{ contains(inputs.itchio-project, '/') && inputs.itchio-project || format('{0}/{1}', github.repository_owner, inputs.itchio-project) }}
           itchio-channel: "${{ inputs.component != '' && format('{0}-', inputs.component) || '' }}${{ inputs.arch }}-${{ inputs.platform }}${{ inputs.itchio-label != '' && format('-{0}', inputs.itchio-label) || '' }}"
           api-key: ${{ secrets.BUTLER_API_KEY }}
+
+  # The game ships on a template compiled from the project's 'custom.py', which
+  # defines less than the editor does, so a script naming something the template
+  # drops parses in the editor and opens an empty window in the export. Nothing
+  # else here runs on that engine. This gates 'package', so a game that cannot
+  # boot is never published.
+  #
+  # NOTE: A web export needs a browser to boot, and a storefront build wants its
+  # client running to get past startup, so neither is booted here.
+  boot:
+    needs: ["config", "export"]
+    if: inputs.platform != 'web' && inputs.storefront == 'unknown'
+
+    runs-on: ${{ inputs.platform == 'macos' && 'macos-latest' || inputs.platform == 'windows' && 'windows-latest' || 'ubuntu-latest' }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Download the exported game
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          path: ${{ runner.temp }}/exports
+
+          pattern: ${{ needs.config.outputs.artifact-pattern }}
+          merge-multiple: true
+
+      - uses: $/actions/boot-godot-project
+        with:
+          path: ${{ runner.temp }}/exports
+          platform: ${{ inputs.platform }}

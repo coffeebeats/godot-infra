@@ -13,7 +13,7 @@ Which kind of release needs what:
 - **A minor or a major** is this skill's job. `5.0` follows `4.11` exactly as `4.8` follows `4.7`: image tags and `godot-versions.txt` lines are both `X.Y`.
 - **Neither bumps this repository's major.** A `godot-infra` release is independent of the Godot version (README, "Supported Godot versions"), so the commit below is a `chore:`.
 
-Consumers move with the `upgrade-godot-project` skill in `plugins/godot`, which every repository loading the `godot` plugin already has. Step 7 is the order they move in.
+Consumers move with the `upgrade-godot-project` skill in `plugins/godot`, which every repository loading the `godot` plugin already has. Step 8 is the order they move in.
 
 The references use four placeholders. `<NEW>` is the minor being added and `<NEW_FULL>` its newest stable release (e.g. `4.8.1`); `<OLD>` is the current last line of `godot-versions.txt` and `<OLD_FULL>` its newest stable release.
 

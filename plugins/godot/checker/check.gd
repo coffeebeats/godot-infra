@@ -424,18 +424,21 @@ class UidRule:
 		return not lines.is_empty() and lines[0].contains(' uid="')
 
 
-## PathRefRule reports references in a scene or resource that do not resolve, and
-## `res://` strings that should be uid references.
+## PathRefRule reports references in a scene or resource that do not resolve,
+## `res://` strings that should be uid references, and a dependency whose `path`
+## names a different file than its `uid`.
 ##
 ## NOTE: A move rewrites `ext_resource` headers but not `res://` strings in properties,
-## which then point at nothing; a `uid://` reference survives the move.
+## which then point at nothing, while a `uid://` reference survives it. A move made
+## outside the editor rewrites neither, and the uid then hides the path left behind.
 ##
 ## NOTE: A scene with a missing `[ext_resource]` target still loads, so `load` never
 ## catches it.
 class PathRefRule:
 	extends Rule
 
-	## EXT_RESOURCE_PREFIX marks a dependency header, which this rule never rewrites.
+	## EXT_RESOURCE_PREFIX marks a dependency header, whose `path` this rule rewrites
+	## to agree with its uid, and whose uid it leaves alone.
 	const EXT_RESOURCE_PREFIX := "[ext_resource "
 
 	## REFERENCE_PATTERN matches one quoted `res://` or `uid://` string literal.
@@ -482,16 +485,23 @@ class PathRefRule:
 
 		for i in lines.size():
 			var line: String = lines[i]
-			if _is_engine_owned(line):
+			if _is_self_header(line):
 				continue
 
 			var replaced := line
 
-			for found in _reference.search_all(line):
-				var ref := found.get_string(1)
-				var uid := _preferred_uid(ref)
-				if uid != "":
-					replaced = replaced.replace('"%s"' % ref, '"%s"' % uid)
+			if line.begins_with(EXT_RESOURCE_PREFIX):
+				# NOTE: Only the path moves. The uid is what the engine reads, so rewriting
+				# it would repoint the dependency rather than correct how it reads.
+				var drift := _drift(line)
+				if not drift.is_empty():
+					replaced = line.replace('"%s"' % drift[0], '"%s"' % drift[1])
+			else:
+				for found in _reference.search_all(line):
+					var ref := found.get_string(1)
+					var uid := _preferred_uid(ref)
+					if uid != "":
+						replaced = replaced.replace('"%s"' % ref, '"%s"' % uid)
 
 			if replaced != line:
 				lines[i] = replaced
@@ -521,22 +531,63 @@ class PathRefRule:
 		return _describe_path(ref)
 
 	## _describe_dependency returns what is wrong with an `[ext_resource]` header, or an
-	## empty string. One resolving reference on the line is enough, since the engine falls
-	## back from the uid to the path.
+	## empty string. One resolving reference on the line is enough for the dependency to
+	## load, since the engine falls back from the uid to the path; a header that loads
+	## can still name two different files.
 	func _describe_dependency(line: String) -> String:
 		var references := PackedStringArray()
+		var resolved := false
 
 		for found in _reference.search_all(line):
 			var ref := found.get_string(1)
 			if _resolves(ref):
-				return ""
+				resolved = true
 
 			references.append(ref)
 
 		if references.is_empty():
 			return ""
 
-		return "dependency does not resolve: %s" % " ".join(references)
+		if not resolved:
+			return "dependency does not resolve: %s" % " ".join(references)
+
+		var drift := _drift(line)
+		if drift.is_empty():
+			return ""
+
+		return "path names %s but uid resolves to %s" % [drift[0], drift[1]]
+
+	## _drift returns the stale `res://` path a dependency header carries and the path
+	## its uid resolves to, in that order, or an empty array when the header carries no
+	## uid, no path, or two that already agree.
+	func _drift(line: String) -> PackedStringArray:
+		var carried := ""
+		var resolved := ""
+
+		for found in _reference.search_all(line):
+			var ref := found.get_string(1)
+
+			if ref.begins_with("uid://"):
+				resolved = _uid_path(ref)
+			elif ref.begins_with("res://"):
+				carried = ref
+
+		if carried == "" or resolved == "" or carried == resolved:
+			return PackedStringArray()
+
+		return PackedStringArray([carried, resolved])
+
+	## _uid_path returns the file a `uid://` reference resolves to, or an empty string
+	## when it resolves to nothing. A uid naming a missing file is `_describe_uid`'s to
+	## report, so it is not drift.
+	func _uid_path(ref: String) -> String:
+		var id := ResourceUID.text_to_id(ref)
+		if id == ResourceUID.INVALID_ID or not ResourceUID.has_id(id):
+			return ""
+
+		var target := ResourceUID.get_id_path(id)
+
+		return target if FileAccess.file_exists(target) else ""
 
 	## _describe_path returns what is wrong with a `res://` reference, or an empty string.
 	func _describe_path(ref: String) -> String:
@@ -560,10 +611,6 @@ class PathRefRule:
 			return "uid resolves to a missing file: %s" % target
 
 		return ""
-
-	## _is_engine_owned reports whether the line is a header this rule never rewrites.
-	func _is_engine_owned(line: String) -> bool:
-		return line.begins_with(EXT_RESOURCE_PREFIX) or _is_self_header(line)
 
 	## _is_self_header reports whether the line is the file's own resource header.
 	func _is_self_header(line: String) -> bool:
@@ -899,7 +946,7 @@ class ExportOverridesRule:
 
 	## _assemble returns every key the sections matching a preset name declare for it,
 	## each `LIST_KEYS` entry accumulated into the glob string the preset holds.
-	func _assemble(preset_name: String, overrides: ConfigFile) -> Dictionary:
+	static func _assemble(preset_name: String, overrides: ConfigFile) -> Dictionary:
 		var declared := {}
 		var lists := {}
 
@@ -1197,6 +1244,151 @@ class ExportOverridesRule:
 			return entry
 
 		return ""
+
+
+## ExportRefRule reports a file an export keeps whose dependency that same export drops.
+## An excluded implementation is reachable only by a string the engine resolves when the
+## build allows it, such as a `uid://` on a condition loader, and never by an
+## `[ext_resource]` header, which the loader follows the moment the file is opened.
+##
+## NOTE: Keyed on `export_presets.cfg`, so the `godot` plugin's edit hook runs it when
+## the presets change rather than on each edited scene. A crossing introduced by a scene
+## edit is caught by the whole-project run.
+##
+## NOTE: A glob naming a file the exporter force-exports, such as the project icon,
+## excludes nothing; a crossing reported into one is a dead glob rather than a broken
+## reference.
+class ExportRefRule:
+	extends Rule
+
+	## EXCLUDE_KEY is the declared key whose globs decide what an export leaves out.
+	const EXCLUDE_KEY := "exclude_filter"
+
+	## REFERRING_EXTENSIONS are the files carrying `[ext_resource]` headers.
+	const REFERRING_EXTENSIONS: Array[String] = ["tscn", "tres"]
+
+	var _reference := RegEx.create_from_string(PathRefRule.REFERENCE_PATTERN)
+
+	func _init() -> void:
+		name = &"export-ref"
+		extensions = ["cfg"]
+		files = [ExportOverridesRule.PRESETS_PATH]
+
+	func check(file: SourceFile) -> Array[Problem]:
+		var problems: Array[Problem] = []
+
+		var overrides := ExportOverridesRule._declaration()
+		if overrides == null:
+			return problems
+
+		# NOTE: `export-overrides` reports a presets file that does not parse.
+		var presets := ConfigFile.new()
+		if presets.load(file.path) != OK:
+			return problems
+
+		var tree := PackedStringArray()
+		ExportOverridesRule._collect("res://", tree)
+
+		var dependencies := _dependencies(tree)
+		if dependencies.is_empty():
+			return problems
+
+		var crossings := {}
+		var names := ExportOverridesRule._preset_names(presets)
+
+		for section: String in names:
+			var preset: String = names[section]
+			var declared := ExportOverridesRule._assemble(preset, overrides)
+			var globs: String = declared.get(EXCLUDE_KEY, "")
+			if globs == "":
+				continue
+
+			var excluded := _excluded(tree, globs.split(",", false))
+			if excluded.is_empty():
+				continue
+
+			for index in dependencies.size():
+				var dependency := dependencies[index]
+
+				if dependency[&"file"] in excluded:
+					continue
+
+				if dependency[&"target"] not in excluded:
+					continue
+
+				var reported: PackedStringArray = crossings.get(
+					index, PackedStringArray()
+				)
+				reported.append(preset)
+				crossings[index] = reported
+
+		for index: int in crossings:
+			var dependency := dependencies[index]
+			var message := (
+				"dependency is excluded from %s: res://%s"
+				% [", ".join(crossings[index]), dependency[&"target"]]
+			)
+			problems.append(
+				Problem.new(
+					"res://" + dependency[&"file"], dependency[&"line"], name, message
+				)
+			)
+
+		return problems
+
+	## _dependencies returns every `[ext_resource]` header in the project, as the file
+	## carrying it, the line it sits on and the file it points at.
+	func _dependencies(tree: PackedStringArray) -> Array[Dictionary]:
+		var out: Array[Dictionary] = []
+
+		for path in tree:
+			if path.get_extension() not in REFERRING_EXTENSIONS:
+				continue
+
+			var lines := ExportOverridesRule._lines("res://" + path)
+
+			for i in lines.size():
+				if not lines[i].begins_with(PathRefRule.EXT_RESOURCE_PREFIX):
+					continue
+
+				var target := _target(lines[i])
+				if target != "":
+					out.append({&"file": path, &"line": i + 1, &"target": target})
+
+		return out
+
+	## _target returns the file a dependency header points at, without the scheme, or an
+	## empty string when it points at nothing. A uid that resolves wins, since that is
+	## what the engine loads.
+	func _target(line: String) -> String:
+		var carried := ""
+
+		for found in _reference.search_all(line):
+			var ref := found.get_string(1)
+
+			if ref.begins_with("uid://"):
+				var id := ResourceUID.text_to_id(ref)
+				if id != ResourceUID.INVALID_ID and ResourceUID.has_id(id):
+					return ResourceUID.get_id_path(id).trim_prefix("res://")
+			elif ref.begins_with("res://"):
+				carried = ref.trim_prefix("res://")
+
+		return carried
+
+	## _excluded returns the files a set of globs drops, as a set, matching them against
+	## both the bare path and the `res://` one, as the exporter does.
+	static func _excluded(
+		tree: PackedStringArray, globs: PackedStringArray
+	) -> Dictionary:
+		var out := {}
+
+		for path in tree:
+			for glob in globs:
+				if path.matchn(glob) or ("res://" + path).matchn(glob):
+					out[path] = true
+					break
+
+		return out
 
 
 # -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
@@ -1547,6 +1739,7 @@ func _registry() -> Array[Rule]:
 	rules.append(ScriptOrderRule.new())
 	rules.append(NodePathRule.new())
 	rules.append(ExportOverridesRule.new())
+	rules.append(ExportRefRule.new())
 
 	return rules
 

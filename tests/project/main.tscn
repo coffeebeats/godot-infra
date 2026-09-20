@@ -1,4 +1,8 @@
-[gd_scene format=3 uid="uid://bsp87c1e074tj"]
+[gd_scene load_steps=2 format=3 uid="uid://bsp87c1e074tj"]
+
+[ext_resource type="LabelSettings" uid="uid://b1aik67tf0yxm" path="res://label_settings.tres" id="1_label"]
 
 [node name="Main" type="Label"]
 text = "godot-infra"
+label_settings = ExtResource("1_label")
+metadata/gate = "uid://bmxu5nvm08hdu"

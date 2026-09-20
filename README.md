@@ -126,6 +126,8 @@ jobs:
 
 Available workflows: `check-project.yaml` (games and addons), `publish-game.yaml` (exports and packages one target; the itch.io upload is opt-in), `compile-editor.yaml` (games).
 
+`publish-game.yaml` boots the exported game before it packages anything, which is the only check that runs on the stripped template the game ships on rather than on an editor build. Every target boots except web, which needs a browser.
+
 A job inside a reusable workflow reports as `<caller-job> / <job>`, so a branch ruleset that requires a bare context needs that job declared in the calling repository rather than here.
 
 #### **Actions**
