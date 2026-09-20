@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.16.0 (2026-09-20)
+
+## What's Changed
+* feat: check a game against the filters and engine it actually ships with by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/646
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.15.0...v6.16.0
+
 ## 6.15.0 (2026-09-20)
 
 ## What's Changed
