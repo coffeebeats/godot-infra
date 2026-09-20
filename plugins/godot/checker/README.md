@@ -120,10 +120,18 @@ The rule reports an entry that names nothing in the project, and a glob that mat
 file. Both read the tree, so run it with submodules checked out; without them every
 addon glob looks dead.
 
-The rule never adds a key to a preset. The editor writes every key its platform defines
-and drops the rest on load, so a declared key a preset does not carry is reported
-instead. Everything a preset holds that the declaration does not name stays the
-editor's.
+Declare only the keys worth pinning. Everything else a preset holds, its `name`,
+`platform`, `export_path` and every option the declaration does not mention, stays the
+editor's and is never read or written.
+
+The rule never adds a key to a preset either, because the editor decides which keys a
+preset carries and would drop one it did not write. A declared key the preset lacks is
+reported instead, and the usual cause is that the key does not apply in that preset's
+current shape. `export_files` is the one to know: the editor writes it only under the
+`scenes`, `resources` and `exclude` filters, and omits it under `all_resources`, so
+pinning it alongside `export_filter="all_resources"` reports a missing key forever.
+Pinning `export_filter` alone is enough, since a switch back to a file-selecting mode is
+itself reported and fixed.
 
 ### Running it
 
@@ -178,8 +186,11 @@ Each of these returns a plausible wrong answer rather than an error.
 - **Re-loading the running script hangs the engine**, so `compile` skips its own path.
   `ResourceLoader.has_cached()` cannot stand in for that skip, since it reports true for
   scripts the process never loaded.
-- **A parse error in a `preload`ed script exits 0** having run nothing, which is why
-  every rule lives in one file.
+- **A `preload`ed script that names anything unresolved hangs the engine**, measured on
+  4.7.2 for an unknown global, a missing preload target and an unknown type; a plain
+  syntax error exits 1 instead. Splitting the rules out also needs
+  `ResourceLoader.load` on an absolute path, since the checker runs from outside the
+  project and `preload` cannot reach its own files. Both are why every rule lives here.
 - **`SceneTree.quit(code)` collapses every non-zero code to 1** under `-s`.
 - **A missing `[ext_resource]` target does not fail a load.** The scene loads without
   the node that needed it, so `path-ref` validates headers rather than `load`.

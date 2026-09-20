@@ -5,8 +5,9 @@
 ## repairs the ones it can. The `godot` plugin's edit hook runs it on each edited file,
 ## and `check-project.yaml` runs it over the whole project.
 ##
-## NOTE: A parse error in a `preload`ed script exits 0 having checked nothing, so keep
-## rules in this file or load them with `ResourceLoader.load`.
+## NOTE: The checker runs from outside the project, so `preload` cannot reach its own
+## files, and a preloaded script naming anything unresolved hangs the engine. Keep rules
+## in this file, or load them by absolute path with `ResourceLoader.load`.
 ##
 ## Usage, from the project root:
 ##   godot --headless -s <checker>                       # every rule, every file
