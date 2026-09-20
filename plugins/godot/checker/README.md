@@ -29,19 +29,15 @@ project root.
 
 Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
 directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
-`export-overrides` and `export-ref` are the exceptions. Each covers one file and reads
-the whole project, `addons/` included, one to decide whether a glob still matches
-anything and the other to decide what those globs leave out. The checker exits 1 for a
-problem or a repair alike, since the engine cannot return a code that tells them
-apart. Follow `--fix` with `godot --import --headless` so the assigned uids resolve.
+`export-overrides` and `export-ref` are the exceptions; each covers one file and reads
+the whole project, `addons/` included. The checker exits 1 for a problem or a repair
+alike, since the engine cannot return a code that tells them apart. Follow `--fix` with
+`godot --import --headless` so the assigned uids resolve.
 
-Add a rule only after a pitfall has bitten twice. A rule applies to every repository
-that enables the plugin, so it must hold for any Godot project.
-
-## One boot for every rule
-
-Booting the project costs 1.17s, against about 10ms for every rule checking one file.
-One boot runs every rule, and the edit hook must not add another.
+Add a rule only after a pitfall has bitten twice, and add it to this file rather than a
+second script. Booting the project costs 1.17s against about 10ms per rule per file, so
+one boot has to run everything. A rule applies to every repository that enables the
+plugin, so it must hold for any Godot project.
 
 ## Configuration
 
@@ -70,24 +66,16 @@ An invalid config is reported against `res://.gdcheckrc`, and nothing else is ch
 
 ## Export overrides
 
-Godot has no way to share a value between export presets. A project shipping several
-keeps the same decision in each of them by hand, and nothing notices when one drifts. A
-project can instead declare those values once in an `export_overrides.cfg` beside
-`export_presets.cfg`, and the `export-overrides` rule writes them into every preset they
-name. A project without the file is left alone.
+Godot has no way to share a value between export presets. A project can declare those
+values once in an `export_overrides.cfg` beside `export_presets.cfg`, and the
+`export-overrides` rule writes them into every preset they name. A project without the
+file is left alone.
 
 The file uses `ConfigFile` syntax, like `.gdcheckrc`. A section name is a glob over
 preset names, so a naming convention such as `[component-]arch-platform-storefront`
 gives a section per storefront, platform, component or architecture. Keys are preset
 keys in the presets file's own syntax, and a key in a preset's options block carries an
 `options/` prefix.
-
-Adding a preset is where that pays off. Make it in the export dialog as usual, run
-`godot-check --fix export_presets.cfg`, and it takes every value its categories declare,
-so a new storefront or architecture starts out agreeing with its siblings instead of
-being copied across by hand. Keep using the dialog for everything else; a preset's own
-values, its name, its path and every option the declaration does not mention, are never
-read or written.
 
 ```ini
 [*]
@@ -107,9 +95,21 @@ A preset takes every section whose glob matches its name, in file order.
 comma-joined, because a comma-separated glob string is the only preset value that
 composes. Every other key is a value, and the last matching section wins.
 
-A declared value must be the type the preset already holds. A value of any other type is
-reported rather than written, since the editor cannot read back a key whose type it did
-not write.
+A declared value must be the type the preset already holds, and the rule never adds a
+key the preset lacks. Both are reported instead, since the editor cannot read back a key
+it did not write. `export_files` is the one to watch, because the editor omits it under
+`all_resources`; pin `export_filter` alone and a switch back to a file-selecting mode is
+itself reported.
+
+The rule also reports an entry naming nothing in the project, and a glob matching no
+file. Both read the tree, so run it with submodules checked out, or every addon glob
+looks dead.
+
+A new preset made in the export dialog takes every value its categories declare on the
+next `godot-check --fix export_presets.cfg`. Its own name, path and unmentioned options
+are never read or written.
+
+### Export globs
 
 A filter entry names a path or a pattern, and the rule writes it as the glob Godot
 needs:
@@ -120,49 +120,21 @@ needs:
 | `icon.svg` | `icon.svg` | it names a file |
 | `*_test.gd` | as written | it contains a wildcard |
 
-Godot's globs are not a `.gitignore`'s. `*` crosses `/`, so one star is recursive and
-`**` buys nothing. A pattern is tested against files, never directories, so `**/tests`
-matches nothing while `*/tests/*` matches everything under one. The exporter also drops
-text files before any filter runs, so `*.md` and `LICENSE.*` exclude nothing that was
-going to ship.
+Godot's [export filters](https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html#resource-options)
+are not a `.gitignore`'s, in three ways worth knowing before writing one:
 
-A few files are exported whatever the filters say, because the exporter adds them after
-filtering. The project icon named by `application/config/icon` is one; `icudt_godot.dat`,
-the text server's ICU data, is another, and at 4.8 MB it is the larger by far. No
-pattern removes either. `icon.svg`, `*/icon.svg` and `*.svg` each leave the file in the
-pack, and in one filter list carrying `*.po`, `icon.svg` and `icudt_godot.dat`, only
-the `.po` entries applied. Verified on 4.7.2. An entry for such a file is reported by
-nothing, since the file does exist, so the rule cannot tell a project that it is
-wasting a line; `export-ref` reporting a dependency into one is the signal that the
-glob is dead.
+- `*` crosses `/`, so one star is recursive and `**` buys nothing.
+- A pattern is tested against files, never directories, so `**/tests` matches nothing
+  while `*/tests/*` matches everything under one.
+- The exporter drops text files before any filter runs and adds a few after, so `*.md`,
+  the icon named by `application/config/icon`, and the 4.8 MB `icudt_godot.dat` are
+  unaffected by any pattern. An entry for one is reported by nothing, since the file
+  does exist, so a dependency `export-ref` reports into it is the only signal.
 
-Directories carry the decision well, because the rule writes one entry per category and
-a name is easier to keep honest than a list of files. `*/editor/*` drops tooling from
-every build. `*/steam/*` under `[*-unknown]` drops a storefront's implementation from
-the builds that do not use it. That works only while nothing outside such a directory
-names something inside one. A storefront subtree is reached by a uid string on an
-`StdConditionLoader`, never by a `preload` or an `[ext_resource]`, so the gate
-resources and the settings property those scenes do name have to live outside it.
-`export-ref` checks that arrangement rather than leaving it to memory.
-
-A `.po` is a translation's source. `project.godot` names the compiled `.mo`, and a
-runtime scan for a `.po` reads `user://`, never `res://`. `*.po` therefore drops every
-one from the pack without changing a single lookup.
-
-The rule reports an entry that names nothing in the project, and a glob that matches no
-file. Both read the tree, so run it with submodules checked out; without them every
-addon glob looks dead.
-
-Declare only the keys worth pinning, which are the ones a whole category must agree on.
-
-The rule never adds a key to a preset, because the editor decides which keys a preset
-carries and would drop one it did not write. A declared key the preset lacks is
-reported instead, and the usual cause is that the key does not apply in that preset's
-current shape. `export_files` is the one to know: the editor writes it only under the
-`scenes`, `resources` and `exclude` filters, and omits it under `all_resources`, so
-pinning it alongside `export_filter="all_resources"` reports a missing key forever.
-Pinning `export_filter` alone is enough, since a switch back to a file-selecting mode is
-itself reported and fixed.
+Prefer a directory per category. `*/editor/*` drops tooling from every build, and
+`*/steam/*` under `[*-unknown]` drops a storefront from the builds that do not use it,
+which holds only while nothing outside such a directory names something inside one.
+`export-ref` is what keeps that honest.
 
 ### Running it
 
@@ -170,22 +142,18 @@ itself reported and fixed.
 presets at startup and writes them back when the export dialog opens or it exits, so a
 fix made underneath a running editor is undone
 ([godotengine/godot#39681](https://github.com/godotengine/godot/issues/39681)). CI only
-reports; the fix is a local command and its result is committed, as it is for every
-other rule here.
+reports; the fix is a local command and its result is committed.
 
-The rule writes through `ConfigFile`, the editor's own writer, and only after proving it
-reproduces the file byte for byte. That proof keeps every option the editor wrote, and
-the file's line ending, exactly as they are. It also means the rule reports and leaves
-alone a file holding something `ConfigFile` cannot keep, such as a comment or
-hand-placed spacing.
+The rule writes through `ConfigFile`, and only after proving it reproduces the file byte
+for byte, which keeps every option and the file's line ending as they are. It also means
+a file holding something `ConfigFile` cannot keep, such as a comment, is reported and
+left alone.
 
 ## Export references
 
-An exclusion is only half a decision. Dropping `*/steam/*` from a build is safe exactly
-while nothing that build keeps holds a hard link into it, and that second half is not
-visible in the declaration, in the preset, or in a boot of the editor, where every file
-is present. It surfaces as a broken export, or as a scene that loads with a null where
-a resource should be.
+Dropping `*/steam/*` from a build is safe exactly while nothing that build keeps holds a
+hard link into it. The declaration cannot show that, and neither can a boot of the
+editor, where every file is present.
 
 `export-ref` closes it. For each preset it assembles the same exclusion globs
 `export-overrides` writes, works out which files they drop, and reports any
@@ -197,16 +165,13 @@ res://project/main/system.tscn:9: [export-ref] dependency is excluded from
   main-x86_64-windows-unknown: res://addons/kit/system/debug/editor/bridge.tscn
 ```
 
-A header is the whole of what it reports. A `uid://` or `res://` string in a property
-is not a dependency, since the engine resolves it only when something asks. That is
-what a gated subtree is for, so a condition loader naming an excluded scene is correct
-and is left alone.
+A header is the whole of what it reports. A `uid://` or `res://` string in a property is
+not a dependency, since the engine resolves it only when something asks, so a condition
+loader naming an excluded scene is correct and is left alone.
 
 The target is the path the header's uid resolves to rather than the `path` beside it,
-which is why `path-ref` reports the two disagreeing. A move made outside the editor
-leaves the old path in the header; the engine prefers the uid and rewrites the path on
-its next save, so nothing reports the stale one, while the exporter filters on the real
-path. Measured against the header's own text, this rule would read a file that moved.
+which is why `path-ref` reports the two disagreeing. The exporter filters on the real
+path, so measuring against the header's own text would read a file that moved.
 
 It is keyed on `export_presets.cfg`, so the edit hook runs it when the presets change
 and the whole-project run catches a crossing introduced by editing a scene.
@@ -216,8 +181,8 @@ and the whole-project run catches a crossing introduced by editing a scene.
 A game whose template is built with `disable_3d` ships an engine defining no `Node3D`
 and nothing below it. A script naming one parses in the editor and fails in the export,
 taking every script that depends on it down with it, so the game launches a window with
-no game in it. Nothing else here catches that, because the editor, this checker and
-the tests all run on a full build.
+no game in it. Nothing else here catches that, because the editor, this checker and the
+tests all run on a full build.
 
 `disable-3d` reports a 3D class named in code, in a scene's node types, or in a
 resource. It skips four kinds of file, which a stripped template never has to load:
@@ -227,9 +192,7 @@ resource. It skips four kinds of file, which a stripped template never has to lo
 - one under an `editor/` directory, which an export excludes,
 - one named `*_test`, which every export excludes too.
 
-That makes the file's name its declaration. A 2D game does not load the 3D half of an
-addon, and a game that wants it builds its template without the flag; a project that is
-3D throughout excludes `res://*` under `[disable-3d]`.
+A project that is 3D throughout excludes `res://*` under `[disable-3d]` instead.
 
 `Transform3D` and `Vector3` are Variant types, which the flag keeps, and a constant
 such as `TEMPLATE_3D` is a name rather than a type. None of them is reported. In a
@@ -238,16 +201,13 @@ reported either.
 
 The flag removes 158 classes in Godot 4.7.2. All but 36 are named `*3D`, which the rule
 matches by shape; the rest are listed by name in `STRIPPED_NAMES`, among them `BoxMesh`,
-`PrimitiveMesh`, `TextMesh`, `MeshLibrary`, `GridMap`, `WorldEnvironment`, `Decal`,
-`ReflectionProbe`, `VoxelGI` and `Skin`. The list comes from the `_3D_DISABLED` guards
-around the class registrations in the engine source, since a running editor has no way
-to report which classes a flag it was not built with would remove. Regenerate it when
-the engine pin moves, with `scripts/list_stripped_classes.py` in this repository.
+`MeshLibrary`, `GridMap`, `WorldEnvironment`, `Decal` and `Skin`. Regenerate that list
+when the engine pin moves, with `scripts/list_stripped_classes.py` in this repository.
 
-The other half of a stripped template, `deprecated = "no"`, has no name pattern to
-match on. A removed method reads like any other, and the source guards it by
-compatibility block rather than by name. Only running the exported game finds those,
-which is what the `boot` job in `publish-game.yaml` is for.
+The other half of a stripped template, `deprecated = "no"`, has no name pattern to match
+on: a removed method reads like any other, and the source guards it by compatibility
+block rather than by name. Only running the exported game finds those, which is what the
+`boot` job in `publish-game.yaml` is for.
 
 ## GDExtensions that did not load
 
