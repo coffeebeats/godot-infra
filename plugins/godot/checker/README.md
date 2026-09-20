@@ -79,6 +79,13 @@ gives a section per storefront, platform, component or architecture. Keys are pr
 keys in the presets file's own syntax, and a key in a preset's options block carries an
 `options/` prefix.
 
+Adding a preset is where that pays off. Make it in the export dialog as usual, run
+`godot-check --fix export_presets.cfg`, and it takes every value its categories declare,
+so a new storefront or architecture starts out agreeing with its siblings instead of
+being copied across by hand. Keep using the dialog for everything else; a preset's own
+values, its name, its path and every option the declaration does not mention, are never
+read or written.
+
 ```ini
 [*]
 export_filter="all_resources"
@@ -120,12 +127,10 @@ The rule reports an entry that names nothing in the project, and a glob that mat
 file. Both read the tree, so run it with submodules checked out; without them every
 addon glob looks dead.
 
-Declare only the keys worth pinning. Everything else a preset holds, its `name`,
-`platform`, `export_path` and every option the declaration does not mention, stays the
-editor's and is never read or written.
+Declare only the keys worth pinning, which are the ones a whole category must agree on.
 
-The rule never adds a key to a preset either, because the editor decides which keys a
-preset carries and would drop one it did not write. A declared key the preset lacks is
+The rule never adds a key to a preset, because the editor decides which keys a preset
+carries and would drop one it did not write. A declared key the preset lacks is
 reported instead, and the usual cause is that the key does not apply in that preset's
 current shape. `export_files` is the one to know: the editor writes it only under the
 `scenes`, `resources` and `exclude` filters, and omits it under `all_resources`, so
