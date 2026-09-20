@@ -3,7 +3,7 @@ description: "Launches an exported game headlessly and fails if it logs a failur
 
 inputs:
   path:
-    description: "Path to the directory holding the exported game."
+    description: "Path to the directory holding the exported game's '.tar' archives."
     required: true
   platform:
     description: "The platform the game was exported for ('windows', 'macos' or 'linux')."
@@ -13,13 +13,31 @@ runs:
   using: "composite"
   steps:
     # NOTE: macOS ships bash 3.2, so this action avoids 'mapfile' throughout.
-    - name: Locate the exported game
+    - name: Unpack and locate the exported game
       id: game
       shell: bash
       env:
-        GAME_DIR: ${{ inputs.path }}
+        EXPORTS_DIR: ${{ inputs.path }}
+        GAME_DIR: ${{ runner.temp }}/boot-game
         PLATFORM: ${{ inputs.platform }}
       run: |
+        # NOTE: A Windows runner hands over paths like 'D:\a\_temp', which the
+        # tools below read as a host name or mangle outright, so they are
+        # converted once here rather than escaped at each call.
+        if command -v cygpath >/dev/null 2>&1; then
+          EXPORTS_DIR="$(cygpath -u "$EXPORTS_DIR")"
+          GAME_DIR="$(cygpath -u "$GAME_DIR")"
+        fi
+
+        mkdir -p "$GAME_DIR"
+
+        # NOTE: 'failglob' turns an empty download into an error.
+        shopt -s failglob
+
+        for ARCHIVE in "$EXPORTS_DIR"/*.tar; do
+          tar -xf "$ARCHIVE" -C "$GAME_DIR"
+        done
+
         # A preset exports macOS as a bundle or as a zipped one, so the zip is
         # unpacked beside itself and one search finds both shapes.
         case "$PLATFORM" in
@@ -29,8 +47,8 @@ runs:
             FILTER=(-type f -name '*.exe' ! -name '*.console.exe')
             ;;
           macos)
-            while IFS= read -r ARCHIVE; do
-              unzip -q "$ARCHIVE" -d "$(dirname "$ARCHIVE")"
+            while IFS= read -r ZIP; do
+              unzip -q "$ZIP" -d "$(dirname "$ZIP")"
             done < <(find "$GAME_DIR" -maxdepth 3 -type f -name '*.zip')
 
             FILTER=(-type f -perm -u+x -path '*.app/Contents/MacOS/*')
@@ -64,6 +82,11 @@ runs:
         LOG_PATH: ${{ runner.temp }}/boot.log
         REPORT_PATH: ${{ runner.temp }}/boot-report.log
       run: |
+        if command -v cygpath >/dev/null 2>&1; then
+          LOG_PATH="$(cygpath -u "$LOG_PATH")"
+          REPORT_PATH="$(cygpath -u "$REPORT_PATH")"
+        fi
+
         # A script the template cannot parse takes down everything depending on
         # it, and the engine keeps running regardless: it logs the error, drops
         # the main scene and carries on. The log decides, and the exit code only
