@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.15.0 (2026-09-20)
+
+## What's Changed
+* feat(checker): overlay export presets from `export_overrides.cfg` by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/644
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.14.1...v6.15.0
+
 ## 6.14.1 (2026-09-19)
 
 ## What's Changed
