@@ -8,10 +8,6 @@ inputs:
   platform:
     description: "The platform the game was exported for ('windows', 'macos' or 'linux')."
     required: true
-  frames:
-    description: "How many frames to run before quitting."
-    required: false
-    default: "300"
 
 runs:
   using: "composite"
@@ -28,7 +24,9 @@ runs:
         # unpacked beside itself and one search finds both shapes.
         case "$PLATFORM" in
           windows)
-            FILTER=(-type f -name '*.exe')
+            # NOTE: 'export_console_wrapper' writes a second '<name>.console.exe'
+            # beside the game, which is the same build with a console attached.
+            FILTER=(-type f -name '*.exe' ! -name '*.console.exe')
             ;;
           macos)
             while IFS= read -r ARCHIVE; do
@@ -63,7 +61,6 @@ runs:
       shell: bash
       env:
         GAME: ${{ steps.game.outputs.path }}
-        FRAMES: ${{ inputs.frames }}
         LOG_PATH: ${{ runner.temp }}/boot.log
         REPORT_PATH: ${{ runner.temp }}/boot-report.log
       run: |
@@ -84,7 +81,7 @@ runs:
         # NOTE: 300 frames covers autoloads, the main scene and a first draw.
         # The run is uncapped headless, so it costs a moment.
         set +e
-        "$GAME" --headless --quit-after "$FRAMES" >"$LOG_PATH" 2>&1
+        "$GAME" --headless --quit-after 300 >"$LOG_PATH" 2>&1
         CODE=$?
         set -e
 
