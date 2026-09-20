@@ -30,15 +30,7 @@ The references use four placeholders. `<NEW>` is the minor being added and `<NEW
 
 3. **Re-pin the dependencies.** Work `references/dependency-research.md` in full. Its second half diffs upstream's build configuration for options that newly default to on, which is how the 4.7 upgrade shipped without AccessKit or WinRT while every pin was correct.
 
-4. **Regenerate the checker's stripped-class list.** The `disable-3d` rule carries the classes a `disable_3d` template does not define whose names do not end in `3D`, and upstream adds and renames them between minors. Print the current list and paste it over `STRIPPED_NAMES` in `plugins/godot/checker/check.gd`, then say in the README's `A stripped export template` section how many classes the new release strips:
-
-   ```bash
-   uv run python scripts/list_stripped_classes.py <NEW_FULL>-stable
-   ```
-
-   The script reads the `_3D_DISABLED` guards out of the release's source tarball, because an editor build defines every class the flag would remove and so can never report them.
-
-5. **Update the README's version references.** Four places name a version by hand, and nothing fails when they go stale:
+4. **Update the README's version references.** Four places name a version by hand, and nothing fails when they go stale:
 
    - the `godot-<minor>` badge on line 1;
    - the `v6` row of the major-to-minors table, which mirrors `godot-versions.txt`;
@@ -47,8 +39,8 @@ The references use four placeholders. `<NEW>` is the minor being added and `<NEW
 
    The `--build-arg` values inside those same code blocks belong to "Applying updates" in `references/dependency-research.md`; do both in one pass.
 
-6. **Validate the builds.** Work `references/build-validation.md` through Tier 3 before opening the PR, and its post-publish check once the merge has published the images.
+5. **Validate the builds.** Work `references/build-validation.md` through Tier 3 before opening the PR, and its post-publish check once the merge has published the images.
 
-7. **Commit** one line naming the release, `chore: support Godot <NEW_FULL>`, with no body or trailers.
+6. **Commit** one line naming the release, `chore: support Godot <NEW_FULL>`, with no body or trailers.
 
-8. **Roll it out.** Merging publishes the images, so nothing that compiles or exports can move before that. Then, in order, with `upgrade-godot-project` in each: the `gut` and `GodotSteam` forks, since their `dist` branches are reimported at their own pins; `godot-plugin-std`, whose matrix is what shows an addon break; `godot-project-template`, `godot-prototypes`, and `godot-plugin-template`; then the games, which bump their addon gitlinks along with the pin. No consumer waits on a `godot-infra` release, since the images publish on the merge itself, and nothing changes in a consumer but `.godot-version`, `config/features`, and the addon gitlinks.
+7. **Roll it out.** Merging publishes the images, so nothing that compiles or exports can move before that. Then, in order, with `upgrade-godot-project` in each: the `gut` and `GodotSteam` forks, since their `dist` branches are reimported at their own pins; `godot-plugin-std`, whose matrix is what shows an addon break; `godot-project-template`, `godot-prototypes`, and `godot-plugin-template`; then the games, which bump their addon gitlinks along with the pin. No consumer waits on a `godot-infra` release, since the images publish on the merge itself, and nothing changes in a consumer but `.godot-version`, `config/features`, and the addon gitlinks.
