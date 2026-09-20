@@ -1,4 +1,4 @@
-name: "🚀 Boot: Boot an exported Godot game"
+name: "▶️ Boot: Exported Godot game"
 description: "Launches an exported game headlessly and fails if it logs a failure while booting."
 
 inputs:
