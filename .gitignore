@@ -27,6 +27,10 @@ thirdparty/moltenvk/*
 tests/project/*
 !tests/project/export_overrides.cfg
 !tests/project/export_presets.cfg
+!tests/project/editor/
+!tests/project/editor/leftover.gd
+!tests/project/editor/leftover.gd.uid
+!tests/project/label_settings.tres
 !tests/project/main.tscn
 !tests/project/project.godot
 

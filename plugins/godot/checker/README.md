@@ -24,12 +24,14 @@ project root.
 | `script-order` | `.tscn` `.tres` | a property assigned ahead of `script =` | |
 | `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
 | `export-overrides` | `export_presets.cfg` | a preset value differing from `export_overrides.cfg` | yes |
+| `export-ref` | `export_presets.cfg` | a file a preset keeps whose dependency that same preset excludes | |
 
 Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
 directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
-`export-overrides` is the exception: it covers one file and reads the whole project,
-`addons/` included, to decide whether a glob still matches anything. The checker exits 1
-for a problem or a repair alike, since the engine cannot return a code that tells them
+`export-overrides` and `export-ref` are the exceptions. Each covers one file and reads
+the whole project, `addons/` included, one to decide whether a glob still matches
+anything and the other to decide what those globs leave out. The checker exits 1 for a
+problem or a repair alike, since the engine cannot return a code that tells them
 apart. Follow `--fix` with `godot --import --headless` so the assigned uids resolve.
 
 Add a rule only after a pitfall has bitten twice. A rule applies to every repository
@@ -123,6 +125,29 @@ matches nothing while `*/tests/*` matches everything under one. The exporter als
 text files before any filter runs, so `*.md` and `LICENSE.*` exclude nothing that was
 going to ship.
 
+A few files are exported whatever the filters say, because the exporter adds them after
+filtering. The project icon named by `application/config/icon` is one; `icudt_godot.dat`,
+the text server's ICU data, is another, and at 4.8 MB it is the larger by far. No
+pattern removes either. `icon.svg`, `*/icon.svg` and `*.svg` each leave the file in the
+pack, and in one filter list carrying `*.po`, `icon.svg` and `icudt_godot.dat`, only
+the `.po` entries applied. Verified on 4.7.2. An entry for such a file is reported by
+nothing, since the file does exist, so the rule cannot tell a project that it is
+wasting a line; `export-ref` reporting a dependency into one is the signal that the
+glob is dead.
+
+Directories carry the decision well, because the rule writes one entry per category and
+a name is easier to keep honest than a list of files. `*/editor/*` drops tooling from
+every build. `*/steam/*` under `[*-unknown]` drops a storefront's implementation from
+the builds that do not use it. That works only while nothing outside such a directory
+names something inside one. A storefront subtree is reached by a uid string on an
+`StdConditionLoader`, never by a `preload` or an `[ext_resource]`, so the gate
+resources and the settings property those scenes do name have to live outside it.
+`export-ref` checks that arrangement rather than leaving it to memory.
+
+A `.po` is a translation's source. `project.godot` names the compiled `.mo`, and a
+runtime scan for a `.po` reads `user://`, never `res://`. `*.po` therefore drops every
+one from the pack without changing a single lookup.
+
 The rule reports an entry that names nothing in the project, and a glob that matches no
 file. Both read the tree, so run it with submodules checked out; without them every
 addon glob looks dead.
@@ -152,6 +177,38 @@ reproduces the file byte for byte. That proof keeps every option the editor wrot
 the file's line ending, exactly as they are. It also means the rule reports and leaves
 alone a file holding something `ConfigFile` cannot keep, such as a comment or
 hand-placed spacing.
+
+## Export references
+
+An exclusion is only half a decision. Dropping `*/steam/*` from a build is safe exactly
+while nothing that build keeps holds a hard link into it, and that second half is not
+visible in the declaration, in the preset, or in a boot of the editor, where every file
+is present. It surfaces as a broken export, or as a scene that loads with a null where
+a resource should be.
+
+`export-ref` closes it. For each preset it assembles the same exclusion globs
+`export-overrides` writes, works out which files they drop, and reports any
+`[ext_resource]` header in a surviving file that points at a dropped one, naming every
+preset that breaks:
+
+```
+res://project/main/system.tscn:9: [export-ref] dependency is excluded from
+  main-x86_64-windows-unknown: res://addons/kit/system/debug/editor/bridge.tscn
+```
+
+A header is the whole of what it reports. A `uid://` or `res://` string in a property
+is not a dependency, since the engine resolves it only when something asks. That is
+what a gated subtree is for, so a condition loader naming an excluded scene is correct
+and is left alone.
+
+The target is the path the header's uid resolves to rather than the `path` beside it,
+which is why `path-ref` reports the two disagreeing. A move made outside the editor
+leaves the old path in the header; the engine prefers the uid and rewrites the path on
+its next save, so nothing reports the stale one, while the exporter filters on the real
+path. Measured against the header's own text, this rule would read a file that moved.
+
+It is keyed on `export_presets.cfg`, so the edit hook runs it when the presets change
+and the whole-project run catches a crossing introduced by editing a scene.
 
 ## GDExtensions that did not load
 
