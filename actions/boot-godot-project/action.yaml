@@ -108,10 +108,8 @@ runs:
         NOISE="$NOISE|^ERROR: [0-9]+ resources still in use at exit|^   at: clear "
 
         # A runner has no storefront client, so the SDK reports every call as
-        # uninitialized. That is the expected outcome and it arrives long after
-        # the extension loaded and the scripts parsed, which is what this gate
-        # is for. An extension that fails to load looks nothing like it and
-        # still trips FAILURE.
+        # uninitialized. An extension that failed to load looks nothing like
+        # that and still trips FAILURE.
         if [[ "$STOREFRONT" == "steam" ]]; then
           NOISE="$NOISE|^ERROR: .+ Steam may not be initialized: "
           NOISE="$NOISE|^   at: [A-Za-z_]+ \(godotsteam\.cpp:"
@@ -141,9 +139,8 @@ runs:
         fi
 
         # Looking only for failures passes a game that never ran far enough to
-        # fail: a brick whose script was dropped takes its own error reporting
-        # with it and boots quietly. Each expected pattern is proof that the
-        # code which would report a problem actually got to run.
+        # fail. A brick whose script was dropped takes its own error reporting
+        # with it and boots quietly, so each pattern proves that code ran.
         MISSING=0
 
         while IFS= read -r PATTERN; do

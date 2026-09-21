@@ -373,8 +373,8 @@ jobs:
   package:
     needs: ["config", "export", "boot"]
 
-    # NOTE: 'boot' covers one target, so every other one skips it, and a skipped
-    # dependency would otherwise skip this job along with it.
+    # NOTE: 'boot' skips a web export, and a skipped dependency would otherwise
+    # skip this job along with it.
     if: ${{ !cancelled() && needs.export.result == 'success' && needs.boot.result != 'failure' }}
 
     runs-on: ubuntu-latest
@@ -482,10 +482,8 @@ jobs:
   # boot is never published.
   #
   # NOTE: A web export needs a browser to boot, so it is skipped. A storefront
-  # build is not: its client is absent on the runner, but that failure lands
-  # well after the extension loaded and the scripts parsed, which is the class
-  # this catches. The action allows that storefront's own "not initialized"
-  # errors.
+  # build is booted without its client; that failure lands well after the
+  # extension loaded and the scripts parsed, which is what this gate catches.
   boot:
     needs: ["config", "export"]
     if: inputs.platform != 'web'
