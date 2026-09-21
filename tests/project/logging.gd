@@ -1,7 +1,7 @@
 ##
 ## A file the `logging` rule must report nothing in. Every line below names a function
 ## the rule matches, in a position where naming it is not calling it: a doc comment, a
-## string, a multi-line string, and a method on an object.
+## string, a multi-line string, a method on an object, and a declaration.
 ##
 ## NOTE: A green run proves only that the rule raises no false positive. Nothing here
 ## can prove it still reports a real call, because CI asserts this project is clean.
@@ -25,3 +25,9 @@ var _logger: Variant = null
 ## describe hands the logger a message rather than printing one.
 func describe() -> void:
 	_logger.print_rich(PATTERN + BANNER)
+
+
+## print_debug shadows the `@GDScript` function of that name. Declaring one of the
+## eleven is not calling it, so the rule must pass over this line.
+func print_debug(message: String) -> void:
+	_logger.print_rich(message)

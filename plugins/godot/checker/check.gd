@@ -409,10 +409,12 @@ class LoggingRule:
 	extends Rule
 
 	## CALL_PATTERN matches a call to an output function of `@GlobalScope` or `@GDScript`.
-	## The trailing `(` keeps `print` from matching the head of `print_rich`, and
-	## NAME_BOUNDARY drops anything dotted, such as the logger's own `print` method.
+	## The trailing `(` keeps `print` from matching the head of `print_rich`, NAME_BOUNDARY
+	## drops anything dotted, such as the logger's own `print` method, and `func ` drops a
+	## declaration that shadows one of these names.
 	const CALL_PATTERN := (
 		NAME_BOUNDARY
+		+ "(?<!func )"
 		+ "(print|printerr|printraw|print_rich|print_verbose|printt|prints"
 		+ "|print_debug|print_stack|push_warning|push_error)\\s*\\("
 	)

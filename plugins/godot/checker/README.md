@@ -92,8 +92,9 @@ here applies to every repository that enables the plugin.
 A match has to be a call in code. Comments and strings are masked before the scan, so a
 doc comment naming `print_rich()` reports nothing, and each masked span keeps the
 newlines it held so a multi-line string shifts no line number under it. Anything dotted
-is skipped, which lets a logger own a `print` method of its own. The cost is a missed
-`self.push_error()`, cheaper here than a false positive.
+is skipped, which lets a logger own a `print` method of its own, and so is anything
+preceded by `func `, so a project may declare a method that shadows one of the eleven.
+The cost is a missed `self.push_error()`, cheaper here than a false positive.
 
 Two exemptions are structural rather than incidental. Their paths differ per repository,
 so a project names them itself under `[logging] excludes`:
