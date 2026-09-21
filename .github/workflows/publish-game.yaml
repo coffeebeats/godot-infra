@@ -67,6 +67,11 @@ on:
         description: "A comma, space, or newline-delimited list of filepath patterns, relative to the project directory, to include alongside the exported game; each must match a file."
         required: false
         default: ""
+      boot-expect:
+        type: string
+        description: "Newline-separated extended regexes; the booted game's log must match every one. Use it to assert that a brick which reports its own failures actually ran."
+        required: false
+        default: ""
 
       # itch.io inputs
       publish-to-itchio:
@@ -502,3 +507,4 @@ jobs:
           path: ${{ runner.temp }}/exports
           platform: ${{ inputs.platform }}
           storefront: ${{ inputs.storefront }}
+          expect: ${{ inputs.boot-expect }}

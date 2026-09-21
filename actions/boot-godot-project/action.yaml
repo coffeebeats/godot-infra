@@ -12,6 +12,10 @@ inputs:
     description: "The storefront the game was exported for ('steam' or 'unknown')."
     required: false
     default: unknown
+  expect:
+    description: "Newline-separated extended regexes; the boot log must match every one."
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -86,6 +90,7 @@ runs:
         LOG_PATH: ${{ runner.temp }}/boot.log
         REPORT_PATH: ${{ runner.temp }}/boot-report.log
         STOREFRONT: ${{ inputs.storefront }}
+        EXPECT: ${{ inputs.expect }}
       run: |
         if command -v cygpath >/dev/null 2>&1; then
           LOG_PATH="$(cygpath -u "$LOG_PATH")"
@@ -132,6 +137,25 @@ runs:
         if grep -qE "$FAILURE" "$REPORT_PATH"; then
           echo "::error::The exported game logged a failure while booting."
           grep -nE "$FAILURE" "$REPORT_PATH"
+          exit 1
+        fi
+
+        # Looking only for failures passes a game that never ran far enough to
+        # fail: a brick whose script was dropped takes its own error reporting
+        # with it and boots quietly. Each expected pattern is proof that the
+        # code which would report a problem actually got to run.
+        MISSING=0
+
+        while IFS= read -r PATTERN; do
+          [[ -z "$PATTERN" ]] && continue
+
+          if ! grep -qE "$PATTERN" "$LOG_PATH"; then
+            echo "::error::The exported game never logged an expected line: $PATTERN"
+            MISSING=1
+          fi
+        done <<< "$EXPECT"
+
+        if [[ $MISSING -ne 0 ]]; then
           exit 1
         fi
 
