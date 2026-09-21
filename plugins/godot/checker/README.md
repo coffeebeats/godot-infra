@@ -18,6 +18,7 @@ project root.
 | Rule | Covers | Reports | Fixable |
 | --- | --- | --- | --- |
 | `compile` | `.gd` | a script that does not compile, a promoted warning included | |
+| `logging` | `.gd` | a bare `print` or `push_error` in a project that disallows engine output | |
 | `uid` | `.tscn` `.tres` | a header carrying no `uid=` | yes |
 | `path-ref` | `.tscn` `.tres` | a reference that does not resolve, a `res://` string that should be a uid, and a dependency whose `path` disagrees with its `uid` | yes |
 | `load` | `.tscn` `.tres` | a file that does not parse or instantiate | |
@@ -29,9 +30,10 @@ project root.
 Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
 directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
 `export-overrides` and `export-ref` are the exceptions; each covers one file and reads
-the whole project, `addons/` included. The checker exits 1 for a problem or a repair
-alike, since the engine cannot return a code that tells them apart. Follow `--fix` with
-`godot --import --headless` so the assigned uids resolve.
+the whole project, `addons/` included. `logging` covers nothing until `.gdcheckrc` turns
+it on. The checker exits 1 for a problem or a repair alike, since the engine cannot
+return a code that tells them apart. Follow `--fix` with `godot --import --headless` so
+the assigned uids resolve.
 
 Add a rule only after a pitfall has bitten twice, and add it to this file rather than a
 second script. Booting the project costs 1.17s against about 10ms per rule per file, so
@@ -48,6 +50,9 @@ format of `project.godot`, not the YAML of `.gdlintrc` and `.gdformatrc`.
 excludes=["res://project/scratch/*"]
 extensions={"res://addons/godotsteam/godotsteam.gdextension": ["Steam"]}
 
+[logging]
+disallow_engine_output=true
+
 [nodepath]
 excludes=["res://project/menus/legacy.tscn"]
 ```
@@ -60,8 +65,44 @@ Section `[all]` applies to every rule, and any other section to the rule it name
   the edit hook stays quiet on it. Under a rule's section, only that rule skips it.
 - `extensions`, under `[all]` only, maps each GDExtension the project uses to the global
   names it defines.
+- `disallow_engine_output`, under `[logging]` only, turns that rule on; see below.
 
 An invalid config is reported against `res://.gdcheckrc`, and nothing else is checked.
+
+## Logging
+
+A bare `print()` or `push_error()` bypasses whatever the project logs through, so the
+line carries no logger name, no level and no timestamp, and nothing can filter or route
+it. On Windows it can reach no reader at all. Without `debug/export_console_wrapper` on
+the preset a build attaches to no terminal, and the line survives only in
+`user://logs/godot.log`, which nothing points a reader at.
+
+The rule reports eleven names, every output function of `@GlobalScope` and `@GDScript`:
+`print`, `printerr`, `printraw`, `print_rich`, `print_verbose`, `printt`, `prints`,
+`print_debug`, `print_stack`, `push_warning` and `push_error`. `Node.print_tree()`,
+`print_tree_pretty()` and the static `print_orphan_nodes()` are callable bare inside a
+node too, and the rule leaves them alone, as it does `assert()`. Each dumps engine state
+or halts rather than emitting a log line a logger could carry.
+
+The rule is off until a project turns it on. It covers no file until
+`disallow_engine_output` is set, which `--list` shows as an empty Covers column. "Never
+call `print()`" does not hold for a project with nothing to call instead, and a rule
+here applies to every repository that enables the plugin.
+
+A match has to be a call in code. Comments and strings are masked before the scan, so a
+doc comment naming `print_rich()` reports nothing, and each masked span keeps the
+newlines it held so a multi-line string shifts no line number under it. Anything dotted
+is skipped, which lets a logger own a `print` method of its own, and so is anything
+preceded by `func `, so a project may declare a method that shadows one of the eleven.
+The cost is a missed `self.push_error()`, cheaper here than a false positive.
+
+Two exemptions are structural rather than incidental. Their paths differ per repository,
+so a project names them itself under `[logging] excludes`:
+
+- **The sink the logger pushes through**, which is implemented on `push_error` and
+  `push_warning`. There is nothing under it to log through.
+- **CLI tooling**, whose stdout is its product and whose caller parses it. A logger
+  would prefix that output with a category and, at the usual default level, drop it.
 
 ## Export overrides
 
@@ -232,8 +273,10 @@ Each of these returns a plausible wrong answer rather than an error.
   property such as `StdScreen.scene_path` points at nothing until something reads it. A
   `uid://` reference survives the move.
 - **A script process does not rebuild the uid cache**, so a reference to a file created
-  since the last import reports as unknown until `godot --import --headless`. Uids derive
-  from the path, so every machine assigns the same one.
+  since the last import reports as unknown, and one to a file moved since then reports as
+  resolving to a missing file. Both clear after `godot --import --headless`; the second
+  reads like a real dangling reference and is not. Uids derive from the path, so every
+  machine assigns the same one.
 - **Quitting mid-load prints parse errors for well-formed scenes**, and the failing set
   changes between runs. A smoke test uses `--quit-after 30`, and `load` loads
   synchronously.
