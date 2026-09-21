@@ -67,9 +67,14 @@ on:
         description: "A comma, space, or newline-delimited list of filepath patterns, relative to the project directory, to include alongside the exported game; each must match a file."
         required: false
         default: ""
-      boot-expect:
+      boot-expected-logs:
         type: string
         description: "Newline-separated extended regexes; the booted game's log must match every one. Use it to assert that a brick which reports its own failures actually ran."
+        required: false
+        default: ""
+      boot-ignored-logs:
+        type: string
+        description: "Newline-separated extended regexes; a matching line never fails the boot. Use it for the errors a service the runner cannot reach always logs."
         required: false
         default: ""
 
@@ -484,6 +489,7 @@ jobs:
   # NOTE: A web export needs a browser to boot, so it is skipped. A storefront
   # build is booted without its client; that failure lands well after the
   # extension loaded and the scripts parsed, which is what this gate catches.
+  # The caller passes the errors a missing client logs as 'boot-ignored-logs'.
   boot:
     needs: ["config", "export"]
     if: inputs.platform != 'web'
@@ -504,5 +510,5 @@ jobs:
         with:
           path: ${{ runner.temp }}/exports
           platform: ${{ inputs.platform }}
-          storefront: ${{ inputs.storefront }}
-          expect: ${{ inputs.boot-expect }}
+          expected-logs: ${{ inputs.boot-expected-logs }}
+          ignored-logs: ${{ inputs.boot-ignored-logs }}

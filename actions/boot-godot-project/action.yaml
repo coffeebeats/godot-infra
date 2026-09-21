@@ -8,12 +8,12 @@ inputs:
   platform:
     description: "The platform the game was exported for ('windows', 'macos' or 'linux')."
     required: true
-  storefront:
-    description: "The storefront the game was exported for ('steam' or 'unknown')."
-    required: false
-    default: unknown
-  expect:
+  expected-logs:
     description: "Newline-separated extended regexes; the boot log must match every one."
+    required: false
+    default: ""
+  ignored-logs:
+    description: "Newline-separated extended regexes; a matching line never fails the boot."
     required: false
     default: ""
 
@@ -89,8 +89,8 @@ runs:
         GAME: ${{ steps.game.outputs.path }}
         LOG_PATH: ${{ runner.temp }}/boot.log
         REPORT_PATH: ${{ runner.temp }}/boot-report.log
-        STOREFRONT: ${{ inputs.storefront }}
-        EXPECT: ${{ inputs.expect }}
+        EXPECTED_LOGS: ${{ inputs.expected-logs }}
+        IGNORED_LOGS: ${{ inputs.ignored-logs }}
       run: |
         if command -v cygpath >/dev/null 2>&1; then
           LOG_PATH="$(cygpath -u "$LOG_PATH")"
@@ -107,13 +107,20 @@ runs:
         NOISE='^WARNING: [0-9]+ ObjectDB instances were leaked|^   at: cleanup '
         NOISE="$NOISE|^ERROR: [0-9]+ resources still in use at exit|^   at: clear "
 
-        # A runner has no storefront client, so the SDK reports every call as
-        # uninitialized. An extension that failed to load looks nothing like
-        # that and still trips FAILURE.
-        if [[ "$STOREFRONT" == "steam" ]]; then
-          NOISE="$NOISE|^ERROR: .+ Steam may not be initialized: "
-          NOISE="$NOISE|^   at: [A-Za-z_]+ \(godotsteam\.cpp:"
-        fi
+        # NOTE: A workflow stored with CRLF hands over patterns ending in a
+        # carriage return, which match nothing and look correct in an error.
+        EXPECTED_LOGS="${EXPECTED_LOGS//$'\r'/}"
+        IGNORED_LOGS="${IGNORED_LOGS//$'\r'/}"
+
+        # A game reaching for a service the runner does not have logs errors
+        # that say nothing about whether it booted, so the caller names those.
+        # A brick that failed to load looks nothing like them and still trips
+        # FAILURE.
+        while IFS= read -r PATTERN; do
+          [[ -z "$PATTERN" ]] && continue
+
+          NOISE="$NOISE|$PATTERN"
+        done <<< "$IGNORED_LOGS"
 
         FAILURE='^(SCRIPT ERROR|USER SCRIPT ERROR|ERROR):'
         FAILURE="$FAILURE|Parse Error|Compile Error"
@@ -144,17 +151,13 @@ runs:
         MISSING=0
 
         while IFS= read -r PATTERN; do
-          # NOTE: A workflow stored with CRLF hands over patterns ending in a
-          # carriage return, which match nothing and look correct in the error.
-          PATTERN="${PATTERN%$'\r'}"
-
           [[ -z "$PATTERN" ]] && continue
 
           if ! grep -qE "$PATTERN" "$LOG_PATH"; then
             echo "::error::The exported game never logged an expected line: $PATTERN"
             MISSING=1
           fi
-        done <<< "$EXPECT"
+        done <<< "$EXPECTED_LOGS"
 
         if [[ $MISSING -ne 0 ]]; then
           exit 1
