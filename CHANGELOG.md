@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.18.0 (2026-09-21)
+
+## What's Changed
+* feat(boot): gate storefront builds and assert expected log lines by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/650
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.17.0...v6.18.0
+
 ## 6.17.0 (2026-09-21)
 
 ## What's Changed
