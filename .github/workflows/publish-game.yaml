@@ -69,7 +69,7 @@ on:
         default: ""
       boot-expected-logs:
         type: string
-        description: "Newline-separated extended regexes; the booted game's log must match every one. Use it to assert that a brick which reports its own failures actually ran."
+        description: "Newline-separated extended regexes; the booted game's log must match every one. Use it to assert that the code which reports a failure actually ran."
         required: false
         default: ""
       boot-ignored-logs:
