@@ -272,8 +272,10 @@ Each of these returns a plausible wrong answer rather than an error.
   property such as `StdScreen.scene_path` points at nothing until something reads it. A
   `uid://` reference survives the move.
 - **A script process does not rebuild the uid cache**, so a reference to a file created
-  since the last import reports as unknown until `godot --import --headless`. Uids derive
-  from the path, so every machine assigns the same one.
+  since the last import reports as unknown, and one to a file moved since then reports as
+  resolving to a missing file. Both clear after `godot --import --headless`; the second
+  reads like a real dangling reference and is not. Uids derive from the path, so every
+  machine assigns the same one.
 - **Quitting mid-load prints parse errors for well-formed scenes**, and the failing set
   changes between runs. A smoke test uses `--quit-after 30`, and `load` loads
   synchronously.
