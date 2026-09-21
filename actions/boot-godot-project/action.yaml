@@ -147,6 +147,10 @@ runs:
         MISSING=0
 
         while IFS= read -r PATTERN; do
+          # NOTE: A workflow stored with CRLF hands over patterns ending in a
+          # carriage return, which match nothing and look correct in the error.
+          PATTERN="${PATTERN%$'\r'}"
+
           [[ -z "$PATTERN" ]] && continue
 
           if ! grep -qE "$PATTERN" "$LOG_PATH"; then
