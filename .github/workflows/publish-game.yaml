@@ -476,11 +476,14 @@ jobs:
   # else here runs on that engine. This gates 'package', so a game that cannot
   # boot is never published.
   #
-  # NOTE: A web export needs a browser to boot, and a storefront build wants its
-  # client running to get past startup, so neither is booted here.
+  # NOTE: A web export needs a browser to boot, so it is skipped. A storefront
+  # build is not: its client is absent on the runner, but that failure lands
+  # well after the extension loaded and the scripts parsed, which is the class
+  # this catches. The action allows that storefront's own "not initialized"
+  # errors.
   boot:
     needs: ["config", "export"]
-    if: inputs.platform != 'web' && inputs.storefront == 'unknown'
+    if: inputs.platform != 'web'
 
     runs-on: ${{ inputs.platform == 'macos' && 'macos-latest' || inputs.platform == 'windows' && 'windows-latest' || 'ubuntu-latest' }}
     timeout-minutes: 10
@@ -498,3 +501,4 @@ jobs:
         with:
           path: ${{ runner.temp }}/exports
           platform: ${{ inputs.platform }}
+          storefront: ${{ inputs.storefront }}

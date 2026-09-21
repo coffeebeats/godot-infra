@@ -8,6 +8,10 @@ inputs:
   platform:
     description: "The platform the game was exported for ('windows', 'macos' or 'linux')."
     required: true
+  storefront:
+    description: "The storefront the game was exported for ('steam' or 'unknown')."
+    required: false
+    default: unknown
 
 runs:
   using: "composite"
@@ -81,6 +85,7 @@ runs:
         GAME: ${{ steps.game.outputs.path }}
         LOG_PATH: ${{ runner.temp }}/boot.log
         REPORT_PATH: ${{ runner.temp }}/boot-report.log
+        STOREFRONT: ${{ inputs.storefront }}
       run: |
         if command -v cygpath >/dev/null 2>&1; then
           LOG_PATH="$(cygpath -u "$LOG_PATH")"
@@ -96,6 +101,16 @@ runs:
         # what 'plugins/godot/hooks/on_edit.sh' filters.
         NOISE='^WARNING: [0-9]+ ObjectDB instances were leaked|^   at: cleanup '
         NOISE="$NOISE|^ERROR: [0-9]+ resources still in use at exit|^   at: clear "
+
+        # A runner has no storefront client, so the SDK reports every call as
+        # uninitialized. That is the expected outcome and it arrives long after
+        # the extension loaded and the scripts parsed, which is what this gate
+        # is for. An extension that fails to load looks nothing like it and
+        # still trips FAILURE.
+        if [[ "$STOREFRONT" == "steam" ]]; then
+          NOISE="$NOISE|^ERROR: .+ Steam may not be initialized: "
+          NOISE="$NOISE|^   at: [A-Za-z_]+ \(godotsteam\.cpp:"
+        fi
 
         FAILURE='^(SCRIPT ERROR|USER SCRIPT ERROR|ERROR):'
         FAILURE="$FAILURE|Parse Error|Compile Error"
