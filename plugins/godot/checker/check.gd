@@ -28,6 +28,10 @@ extends SceneTree
 ## CONFIG_ALL names the config section that applies to every rule.
 const CONFIG_ALL := "all"
 
+## CONFIG_LOGGING names the config section of the `logging` rule, the one rule a project
+## turns on rather than inherits; see `LoggingRule`.
+const CONFIG_LOGGING := "logging"
+
 ## CONFIG_PATH is the project's checker config; see `Config`.
 const CONFIG_PATH := "res://.gdcheckrc"
 
@@ -98,13 +102,17 @@ class Problem:
 ## Config is the project's `.gdcheckrc`, in `ConfigFile` syntax. Section `all` applies
 ## to every rule and any other section to the rule it names. `excludes` lists `res://`
 ## globs of files to skip; `extensions`, only under `all`, maps each GDExtension the
-## project uses to the global names it defines. A project without the file has an
-## empty config.
+## project uses to the global names it defines; `disallow_engine_output`, only under
+## `logging`, turns that rule on. A project without the file has an empty config.
 class Config:
 	extends RefCounted
 
 	## EXTENSIONS_SHAPE describes the value `extensions` must hold.
 	const EXTENSIONS_SHAPE := "a dictionary of .gdextension paths to arrays of names"
+
+	## disallow_engine_output reports whether the project logs through something other
+	## than the engine's own output functions.
+	var disallow_engine_output: bool = false
 
 	## excludes maps a section to the globs of the files it skips.
 	var excludes: Dictionary = {}
@@ -141,6 +149,12 @@ class Config:
 					config._parse_extensions(value)
 				elif key == "extensions":
 					config._error("[%s] extensions belongs under [all]" % section)
+				elif key == "disallow_engine_output" and section == CONFIG_LOGGING:
+					config._parse_disallow_engine_output(value)
+				elif key == "disallow_engine_output":
+					config._error(
+						"[%s] disallow_engine_output belongs under [logging]" % section
+					)
 				else:
 					config._error("unknown key `%s` in [%s]" % [key, section])
 
@@ -158,6 +172,13 @@ class Config:
 
 	func _error(message: String) -> void:
 		problems.append(Problem.new(CONFIG_PATH, 0, &"config", message))
+
+	func _parse_disallow_engine_output(value: Variant) -> void:
+		if not (value is bool):
+			_error("[logging] disallow_engine_output must be a boolean")
+			return
+
+		disallow_engine_output = value
 
 	func _parse_excludes(section: String, value: Variant) -> void:
 		if not _is_strings(value):
@@ -289,7 +310,8 @@ class SourceFile:
 
 ## Rule is one check over one kind of file. Subclasses set `name`, `extensions` and
 ## optionally `roots` or `files` in `_init` and override `check`; only rules that can
-## repair what they find override `fix` and `fixable`.
+## repair what they find override `fix` and `fixable`, and only rules the project
+## configures override `configure`.
 class Rule:
 	extends RefCounted
 
@@ -323,6 +345,10 @@ class Rule:
 	## check reports every problem this rule finds in the file.
 	func check(_file: SourceFile) -> Array[Problem]:
 		return []
+
+	## configure hands the rule the parsed config, and runs before any file is checked.
+	func configure(_config: Config) -> void:
+		pass
 
 	## fix repairs what `check` reported and returns whether the file changed.
 	func fix(_file: SourceFile) -> bool:
@@ -368,6 +394,69 @@ class CompileRule:
 			return []
 
 		return [Problem.new(file.path, 0, name, "does not compile")]
+
+
+## LoggingRule reports a call to one of the engine's own output functions in a project
+## that logs through something else. Such a call carries no logger name, no level and
+## no timestamp, and nothing can filter or route it.
+##
+## NOTE: The rule covers no file until `.gdcheckrc` sets `disallow_engine_output`, since
+## "never call `print()`" does not hold for a project with nothing to call instead.
+##
+## NOTE: `Node.print_tree()` and `print_orphan_nodes()` are callable bare too, but they
+## dump engine state rather than emit a log line and have no logger equivalent.
+class LoggingRule:
+	extends Rule
+
+	## CALL_PATTERN matches a call to an output function of `@GlobalScope` or `@GDScript`.
+	## The trailing `(` keeps `print` from matching the head of `print_rich`, and
+	## NAME_BOUNDARY drops anything dotted, such as the logger's own `print` method.
+	const CALL_PATTERN := (
+		NAME_BOUNDARY
+		+ "(print|printerr|printraw|print_rich|print_verbose|printt|prints"
+		+ "|print_debug|print_stack|push_warning|push_error)\\s*\\("
+	)
+
+	var _call := RegEx.create_from_string(CALL_PATTERN)
+	var _non_code := RegEx.create_from_string(NON_CODE_PATTERN)
+
+	func _init() -> void:
+		name = CONFIG_LOGGING
+
+	func configure(config: Config) -> void:
+		if config.disallow_engine_output:
+			extensions = ["gd"]
+
+	func check(file: SourceFile) -> Array[Problem]:
+		var problems: Array[Problem] = []
+		var lines := _masked(file.text())
+
+		for i in lines.size():
+			for found: RegExMatch in _call.search_all(lines[i]):
+				var fn := found.get_string(1)
+				var message := "bare `%s()`; log through the project's logger" % fn
+				problems.append(Problem.new(file.path, i + 1, name, message))
+
+		return problems
+
+	## _masked returns the file's lines with every comment and string literal blanked out,
+	## so the scan reads code alone while its line numbers still match the file's.
+	func _masked(text: String) -> PackedStringArray:
+		var source := text.replace("\r\n", "\n")
+		var masked := ""
+		var cursor := 0
+
+		for found: RegExMatch in _non_code.search_all(source):
+			masked += source.substr(cursor, found.get_start() - cursor)
+
+			# A span collapses to the newlines it held, so a multi-line string shifts
+			# nothing reported below it.
+			var length := found.get_end() - found.get_start()
+			masked += "\n".repeat(source.substr(found.get_start(), length).count("\n"))
+
+			cursor = found.get_end()
+
+		return (masked + source.substr(cursor)).split("\n")
 
 
 ## UidRule reports scenes and resources whose header carries no uid, and can assign one.
@@ -1412,6 +1501,11 @@ func _initialize() -> void:
 		quit(1)
 		return
 
+	# A rule the project configures learns it here rather than in `_registry`, which runs
+	# first because parsing the config needs the rule names it produces.
+	for rule in rules:
+		rule.configure(config)
+
 	if args.has("--list"):
 		_list(rules)
 		quit(0)
@@ -1733,6 +1827,7 @@ func _registry() -> Array[Rule]:
 
 	var rules: Array[Rule] = []
 	rules.append(compile)
+	rules.append(LoggingRule.new())
 	rules.append(UidRule.new())
 	rules.append(PathRefRule.new())
 	rules.append(LoadRule.new())
