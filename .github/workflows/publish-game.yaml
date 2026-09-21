@@ -67,6 +67,16 @@ on:
         description: "A comma, space, or newline-delimited list of filepath patterns, relative to the project directory, to include alongside the exported game; each must match a file."
         required: false
         default: ""
+      boot-expected-logs:
+        type: string
+        description: "Newline-separated extended regexes; the booted game's log must match every one. Use it to assert that the code which reports a failure actually ran."
+        required: false
+        default: ""
+      boot-ignored-logs:
+        type: string
+        description: "Newline-separated extended regexes; a matching line never fails the boot. Use it for the errors a service the runner cannot reach always logs."
+        required: false
+        default: ""
 
       # itch.io inputs
       publish-to-itchio:
@@ -368,8 +378,8 @@ jobs:
   package:
     needs: ["config", "export", "boot"]
 
-    # NOTE: 'boot' covers one target, so every other one skips it, and a skipped
-    # dependency would otherwise skip this job along with it.
+    # NOTE: 'boot' skips a web export, and a skipped dependency would otherwise
+    # skip this job along with it.
     if: ${{ !cancelled() && needs.export.result == 'success' && needs.boot.result != 'failure' }}
 
     runs-on: ubuntu-latest
@@ -476,11 +486,13 @@ jobs:
   # else here runs on that engine. This gates 'package', so a game that cannot
   # boot is never published.
   #
-  # NOTE: A web export needs a browser to boot, and a storefront build wants its
-  # client running to get past startup, so neither is booted here.
+  # NOTE: A web export needs a browser to boot, so it is skipped. A storefront
+  # build is booted without its client; that failure lands well after the
+  # extension loaded and the scripts parsed, which is what this gate catches.
+  # The caller passes the errors a missing client logs as 'boot-ignored-logs'.
   boot:
     needs: ["config", "export"]
-    if: inputs.platform != 'web' && inputs.storefront == 'unknown'
+    if: inputs.platform != 'web'
 
     runs-on: ${{ inputs.platform == 'macos' && 'macos-latest' || inputs.platform == 'windows' && 'windows-latest' || 'ubuntu-latest' }}
     timeout-minutes: 10
@@ -498,3 +510,5 @@ jobs:
         with:
           path: ${{ runner.temp }}/exports
           platform: ${{ inputs.platform }}
+          expected-logs: ${{ inputs.boot-expected-logs }}
+          ignored-logs: ${{ inputs.boot-ignored-logs }}
