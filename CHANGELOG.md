@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.17.0 (2026-09-21)
+
+## What's Changed
+* feat(checker): report bare `print` and `push_error` in projects that disallow them by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/648
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.16.0...v6.17.0
+
 ## 6.16.0 (2026-09-20)
 
 ## What's Changed
