@@ -47,7 +47,9 @@ CHECKED = (".gd", ".tscn", ".tres")
 
 # PATCH_FILE matches the line naming a file in a patch. 'Delete File' is left out: a
 # file that is gone cannot be checked, and a moved file is checked at its destination.
-PATCH_FILE = re.compile(r"^\s*\*{3} (?:Add File|Update File|Move to): (.+?)\s*$")
+# The anchor is exact, since a hunk's context lines begin with a space and would
+# otherwise let a patch that quotes this grammar name a file it never touched.
+PATCH_FILE = re.compile(r"^\*{3} (?:Add File|Update File|Move to): (.+?)\s*$")
 
 # NOISE matches the boilerplate every headless run prints (the banner, godotsteam's
 # settings conversion, teardown notices). Script errors and warnings are never matched.
@@ -60,8 +62,8 @@ NOISE = re.compile(
 )
 
 # UNAVAILABLE matches uv failing to start a tool, rather than the tool reporting on the
-# files. Codex's Windows sandbox denies uv its cache, which is this line.
-UNAVAILABLE = re.compile(r"^error: Failed to initialize cache", re.MULTILINE)
+# files: a sandbox denying uv its cache, or a project that does not depend on the tool.
+UNAVAILABLE = re.compile(r"^error: Failed to (?:initialize cache|spawn)", re.MULTILINE)
 
 # TIMEOUT bounds each call in seconds, since a checker file that fails to compile can
 # hang the engine rather than exit.
@@ -143,7 +145,9 @@ def covered(paths: list[str], cwd: str, project: Path) -> list[str]:
         except (ValueError, OSError):
             continue
 
-        if relative.parts[0] == "addons" or not absolute.is_file():
+        # 'relative' has no parts when the path is the project root itself, which the
+        # file test rejects first.
+        if not absolute.is_file() or relative.parts[0] == "addons":
             continue
 
         kept.append(relative.as_posix())
@@ -184,16 +188,23 @@ def targets(files: list[str], project: Path) -> tuple[list[str], list[str], list
 def gdtoolkit(
     project: Path, command: list[str]
 ) -> subprocess.CompletedProcess[str] | None:
-    """gdtoolkit runs a gdtoolkit command over files, from the PATH or else through uv,
+    """gdtoolkit runs a gdtoolkit command over files, through uv or else from the PATH,
     and returns None when neither can start it.
+
+    uv comes first so that the version the project locked is the one that runs, and the
+    hook agrees with CI about formatting. Where uv cannot start the tool — a sandbox
+    denying it its cache, or a project that does not depend on gdtoolkit — whatever is
+    on the PATH runs instead.
     """
     tool = command[0]
 
+    if shutil.which("uv"):
+        result = run(["uv", "run", *command], project)
+        if not UNAVAILABLE.search(f"{result.stdout}{result.stderr}"):
+            return result
+
     if shutil.which(tool):
         return run(command, project)
-
-    if shutil.which("uv"):
-        return run(["uv", "run", *command], project)
 
     return None
 
@@ -219,9 +230,9 @@ def check(project: Path, files: list[str]) -> list[str]:
 
         result = gdtoolkit(project, [*command, *scripts])
         if result is None:
-            report.append(f"{command[0]} was skipped: neither it nor uv is on the PATH")
-        elif UNAVAILABLE.search(f"{result.stdout}{result.stderr}"):
-            report.append(f"{command[0]} was skipped: uv could not start")
+            report.append(
+                f"{command[0]} was skipped: neither uv nor the PATH could start it"
+            )
         else:
             reports(label, scripts, result)
 
@@ -255,7 +266,12 @@ def main() -> None:
     """main reports on the files a tool call touched, and prints nothing when it has
     nothing to say.
     """
-    payload = json.loads(sys.stdin.read())
+    # A payload that will not parse is nothing to check rather than something to report:
+    # the launcher's '||' hands the second interpreter a stream the first has drained.
+    try:
+        payload = json.loads(sys.stdin.read())
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return
 
     project = project_dir(payload)
     if project is None or not shutil.which("godot"):
