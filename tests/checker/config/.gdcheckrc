@@ -3,7 +3,7 @@
 [all]
 
 excludes=["project/scratch/*"]
-extensions={"res://empty.gdextension": [], "res://bad.gdextension": ["not an identifier"]}
+extensions={"res://empty.gdextension": [], "res://bad.gdextension": ["not an identifier"], "res://flat.gdextension": "Steam"}
 disallow_engine_output=true
 
 [logging]

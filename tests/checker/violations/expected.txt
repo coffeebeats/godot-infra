@@ -2,6 +2,7 @@
   res://export_overrides.cfg:13: [export-overrides] [*-linux-*] matches no preset
   res://export_overrides.cfg:5: [export-overrides] [*] `no-such-directory` names no file or directory in the project
   res://export_overrides.cfg:5: [export-overrides] [*] `*.nothing` matches no file
+  res://export_overrides.cfg:16: [export-overrides] [*-linux-*] include_filter must be an array of strings
   res://export_presets.cfg:13: [export-overrides] universal-macos-unknown: `options/application/bundle_identifier` differs from res://export_overrides.cfg; re-run with --fix
   res://export_presets.cfg:12: [export-overrides] universal-macos-unknown: `options/binary_format/architecture` is declared as int but the preset holds String
   res://export_presets.cfg: [export-overrides] universal-macos-unknown: carries no `options/no_such/option`; check the key against the platform
@@ -18,7 +19,7 @@
   res://path-ref/references.tres:9: [path-ref] reference this as uid://bcss4jk47ku53; a res:// string is dropped on a move
   res://script-order/misordered.tscn:7: [script-order] speed assigned before `script =`; silently dropped
   res://uid/no_uid.tres:1: [uid] no uid in header; re-run with --fix to assign one
-checked 20 file(s), 20 problem(s)
+checked 20 file(s), 21 problem(s)
 excluded 1 file(s) through res://.gdcheckrc
 skipped the loading rules for 3 file(s): res://absent.gdextension not loaded
   res://gated/holds_user.tscn
