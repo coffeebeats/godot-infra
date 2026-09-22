@@ -4,8 +4,9 @@
 ## Config is the project's `.gdcheckrc`, in `ConfigFile` syntax. Section `all` applies
 ## to every rule and any other section to the rule it names. `excludes` lists `res://`
 ## globs of files to skip; `extensions`, only under `all`, maps each GDExtension the
-## project uses to the global names it defines; `disallow_engine_output`, only under
-## `logging`, turns that rule on. A project without the file has an empty config.
+## project uses to the global names it defines. Any other key is an option of the rule
+## whose section holds it, which the rule declares with a default; see `Rule.options`.
+## A project without the file has an empty config.
 ##
 
 extends RefCounted
@@ -23,18 +24,10 @@ const ALL := "all"
 ## EXTENSIONS_SHAPE describes the value `extensions` must hold.
 const EXTENSIONS_SHAPE := "a dictionary of .gdextension paths to arrays of names"
 
-## LOGGING names the config section of the `logging` rule, the one rule a project
-## turns on rather than inherits; see `rules/logging.gd`.
-const LOGGING := "logging"
-
 ## PATH is the project's checker config.
 const PATH := "res://.gdcheckrc"
 
 # -- CONFIGURATION ------------------------------------------------------------------- #
-
-## disallow_engine_output reports whether the project logs through something other
-## than the engine's own output functions.
-var disallow_engine_output: bool = false
 
 ## excludes maps a section to the globs of the files it skips.
 var excludes: Dictionary = {}
@@ -45,12 +38,22 @@ var extensions: Dictionary = {}
 ## problems holds every error found in the file.
 var problems: Array[Problem] = []
 
+# -- INITIALIZATION ------------------------------------------------------------------ #
+
+## _options maps a rule's section to its options, each a key mapped to its value.
+var _options: Dictionary = {}
+
 # -- PUBLIC METHODS ------------------------------------------------------------------ #
 
 
-## parse reads `PATH`, accepting `all` and each of `rule_names` as a section.
-static func parse(rule_names: PackedStringArray) -> Config:
+## parse reads `PATH`. `sections` maps each rule's section to the options it declares,
+## each a key mapped to its default; `all` is accepted besides.
+static func parse(sections: Dictionary) -> Config:
 	var config := Config.new()
+
+	for section: String in sections:
+		config._options[section] = sections[section].duplicate()
+
 	if not FileAccess.file_exists(PATH):
 		return config
 
@@ -61,7 +64,7 @@ static func parse(rule_names: PackedStringArray) -> Config:
 		return config
 
 	for section in file.get_sections():
-		if section != ALL and section not in rule_names:
+		if section != ALL and section not in sections:
 			config._error("unknown section [%s]" % section)
 			continue
 
@@ -72,16 +75,10 @@ static func parse(rule_names: PackedStringArray) -> Config:
 				config._parse_excludes(section, value)
 			elif key == "extensions" and section == ALL:
 				config._parse_extensions(value)
-			elif key == "extensions":
-				config._error("[%s] extensions belongs under [all]" % section)
-			elif key == "disallow_engine_output" and section == LOGGING:
-				config._parse_disallow_engine_output(value)
-			elif key == "disallow_engine_output":
-				config._error(
-					"[%s] disallow_engine_output belongs under [logging]" % section
-				)
+			elif section != ALL and key in sections[section]:
+				config._parse_option(section, key, value)
 			else:
-				config._error("unknown key `%s` in [%s]" % [key, section])
+				config._misplaced(section, key, sections)
 
 	return config
 
@@ -109,6 +106,11 @@ static func is_strings(value: Variant) -> bool:
 	return true
 
 
+## options returns a rule's options, each default replaced by the project's value.
+func options(section: String) -> Dictionary:
+	return _options.get(section, {})
+
+
 # -- PRIVATE METHODS ----------------------------------------------------------------- #
 
 
@@ -116,12 +118,20 @@ func _error(message: String) -> void:
 	problems.append(Problem.new(PATH, 0, &"config", message))
 
 
-func _parse_disallow_engine_output(value: Variant) -> void:
-	if not (value is bool):
-		_error("[logging] disallow_engine_output must be a boolean")
+## _misplaced reports a key its section does not take, naming the section that does.
+func _misplaced(section: String, key: String, sections: Dictionary) -> void:
+	var home := ALL if key == "extensions" else ""
+
+	for other: String in sections:
+		if key in sections[other]:
+			home = other
+			break
+
+	if home == "":
+		_error("unknown key `%s` in [%s]" % [key, section])
 		return
 
-	disallow_engine_output = value
+	_error("[%s] %s belongs under [%s]" % [section, key, home])
 
 
 func _parse_excludes(section: String, value: Variant) -> void:
@@ -165,3 +175,15 @@ func _parse_extensions(value: Variant) -> void:
 				_error("[all] not an identifier: %s" % identifier)
 
 		extensions[extension] = PackedStringArray(names)
+
+
+## _parse_option records a rule's option, which must hold the type of its default.
+func _parse_option(section: String, key: String, value: Variant) -> void:
+	var default: Variant = _options[section][key]
+
+	if typeof(value) != typeof(default):
+		var type := type_string(typeof(default))
+		_error("[%s] %s must be of type %s" % [section, key, type])
+		return
+
+	_options[section][key] = value

@@ -51,13 +51,17 @@ func check(file: SourceFile) -> Array[Problem]:
 	return problems
 
 
-func configure(config: Config) -> void:
-	if config.disallow_engine_output:
+func configure(values: Dictionary) -> void:
+	if values["disallow_engine_output"]:
 		extensions = ["gd"]
+
+
+func options() -> Dictionary:
+	return {"disallow_engine_output": false}
 
 
 # -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
 
 
 func _init() -> void:
-	name = Config.LOGGING
+	name = &"logging"

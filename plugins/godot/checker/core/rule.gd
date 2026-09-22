@@ -4,14 +4,13 @@
 ## Rule is one check over one kind of file. Subclasses set `name`, `extensions` and
 ## optionally `roots` or `files` in `_init` and override `check`; only rules that can
 ## repair what they find override `fix` and `fixable`, and only rules the project
-## configures override `configure`.
+## configures override `options` and `configure`.
 ##
 
 extends RefCounted
 
 # -- DEPENDENCIES -------------------------------------------------------------------- #
 
-const Config := preload("config.gd")
 const Problem := preload("problem.gd")
 const SourceFile := preload("source_file.gd")
 
@@ -53,8 +52,9 @@ func check(_file: SourceFile) -> Array[Problem]:
 	return []
 
 
-## configure hands the rule the parsed config, and runs before any file is checked.
-func configure(_config: Config) -> void:
+## configure hands the rule its options, each default replaced by the project's value,
+## and runs before any file is checked.
+func configure(_values: Dictionary) -> void:
 	pass
 
 
@@ -72,3 +72,9 @@ func fixable() -> bool:
 ## succeeds only when every GDExtension the file depends on is present.
 func loads_file() -> bool:
 	return false
+
+
+## options returns the keys this rule reads from its own section of `.gdcheckrc`, each
+## mapped to its default, whose type a project's value must match.
+func options() -> Dictionary:
+	return {}

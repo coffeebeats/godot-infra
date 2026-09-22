@@ -57,11 +57,11 @@ func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var rules := _registry()
 
-	var rule_names := PackedStringArray()
+	var sections := {}
 	for rule in rules:
-		rule_names.append(rule.name)
+		sections[rule.name] = rule.options()
 
-	var config := Config.parse(rule_names)
+	var config := Config.parse(sections)
 
 	if not config.problems.is_empty():
 		for problem in config.problems:
@@ -72,9 +72,9 @@ func _initialize() -> void:
 		return
 
 	# A rule the project configures learns it here rather than in `_registry`, which runs
-	# first because parsing the config needs the rule names it produces.
+	# first because parsing the config needs the options each rule declares.
 	for rule in rules:
-		rule.configure(config)
+		rule.configure(config.options(rule.name))
 
 	if args.has("--list"):
 		_list(rules)
