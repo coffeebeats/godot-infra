@@ -1,4 +1,5 @@
-"""Run the 'godot' plugin's project checker over each case in 'tests/checker'.
+"""Run the 'godot' plugin's project checker, and its edit hook, over each case in
+'tests/checker'.
 
 A case is a Godot project whose 'expected.txt' holds the checker's output over it,
 followed by the code the checker exited with. A case may also hold these files:
@@ -8,6 +9,14 @@ followed by the code the checker exited with. A case may also hold these files:
   the uid cache as a move made since the last import does.
 - 'expected-fixed.txt' holds the output of a second check, after '--fix' and a fresh
   import.
+- 'payload.json' is a hook payload, as a harness sends it. The case then runs the edit
+  hook over the copy instead of the checker, through the command line 'hooks.json'
+  carries, so the wiring is covered too. 'expected.txt' holds what the hook reported,
+  whichever channel it used.
+- 'env' lists 'NAME=value' lines to set for the hook. 'CLAUDE_PROJECT_DIR' belongs here,
+  since only some harnesses set it.
+
+'{root}' in 'payload.json' and 'env' becomes the path of the copy the case runs on.
 
 Each case runs on a copy, so neither an import nor a fix writes into the repository.
 
@@ -19,6 +28,8 @@ Usage: test_project_checker.py [--update] [CASE...]
 from __future__ import annotations
 
 import difflib
+import json
+import os
 import shutil
 import subprocess
 import sys
@@ -31,6 +42,13 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # CASES is the directory holding one Godot project per case.
 CASES = ROOT / "tests" / "checker"
+
+# PLUGIN is the plugin root a harness hands its hooks, in the forward-slash form the
+# hook command is substituted with on every platform.
+PLUGIN = (ROOT / "plugins" / "godot").as_posix()
+
+# HOOKS holds the hook commands, which the cases run rather than restate.
+HOOKS = ROOT / "plugins" / "godot" / "hooks" / "hooks.json"
 
 # CHECKER is the checker's entry script, in the forward-slash form Godot reads on every
 # platform.
@@ -88,6 +106,75 @@ def checker(project: Path, args: list[str]) -> str:
     return f"{output}\nexit {result.returncode}\n".lstrip("\n")
 
 
+def hook_command() -> str:
+    """hook_command returns the edit hook's command line, as a harness runs it: the one
+    'hooks.json' holds, with the plugin root substituted.
+    """
+    config = json.loads(HOOKS.read_text(encoding="utf-8"))
+    command = config["hooks"]["PostToolUse"][0]["hooks"][0]["command"]
+
+    return command.replace("${CLAUDE_PLUGIN_ROOT}", PLUGIN)
+
+
+def reported(result: subprocess.CompletedProcess[str]) -> str:
+    """reported returns what a hook run told the agent, from whichever channel it used:
+    a JSON decision on stdout, or the stderr that an exit code carries.
+    """
+    text = result.stderr
+
+    try:
+        decision = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        decision = None
+
+    if isinstance(decision, dict):
+        # Both harnesses act on a PostToolUse decision only when it blocks, so anything
+        # else is a report the agent never sees. Fail rather than compare it.
+        if decision.get("decision") != "block" or "reason" not in decision:
+            raise Failure(f"the hook's decision blocks nothing: {result.stdout}")
+
+        text = decision["reason"]
+
+    lines = text.replace("\r\n", "\n").splitlines()
+
+    return "\n".join(line.rstrip() for line in lines).strip("\n")
+
+
+def hook(project: Path, case: Path) -> str:
+    """hook runs the edit hook over a copy of a case, with the case's payload on stdin,
+    and returns what it reported, followed by the code it exited with.
+    """
+    root = project.as_posix()
+    payload = (case / "payload.json").read_text(encoding="utf-8")
+    payload = payload.replace("{root}", root)
+
+    # Only some harnesses name the project in the environment, so the case decides what
+    # is set rather than the shell the tests happen to run in.
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+    env["CLAUDE_PLUGIN_ROOT"] = PLUGIN
+    for line in read_lines(case / "env"):
+        name, _, value = line.partition("=")
+        env[name] = value.replace("{root}", root)
+
+    try:
+        result = subprocess.run(
+            hook_command(),
+            shell=True,
+            cwd=project,
+            env=env,
+            input=payload,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=TIMEOUT,
+        )
+    except subprocess.TimeoutExpired as e:
+        raise Failure(f"the edit hook timed out after {TIMEOUT}s") from e
+
+    return f"{reported(result)}\nexit {result.returncode}\n".lstrip("\n")
+
+
 def import_project(project: Path) -> None:
     """import_project imports a project, so the uids its files carry resolve."""
     godot(project, "--quit", "--import")
@@ -102,7 +189,9 @@ def read_lines(path: Path) -> list[str]:
 
 
 def run_case(case: Path) -> list[Run]:
-    """run_case runs the checker over a copy of a case and returns every output."""
+    """run_case runs the checker, or the edit hook, over a copy of a case and returns
+    every output.
+    """
     args = read_lines(case / "args")
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -112,6 +201,9 @@ def run_case(case: Path) -> list[Run]:
         import_project(project)
         for name in read_lines(case / "delete-after-import"):
             (project / name).unlink()
+
+        if (case / "payload.json").exists():
+            return [Run(case / "expected.txt", hook(project, case))]
 
         runs = [Run(case / "expected.txt", checker(project, args))]
 

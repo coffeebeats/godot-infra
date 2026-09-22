@@ -6,8 +6,8 @@ disable-model-invocation: true
 argument-hint: "<major.minor | major.minor.patch>"
 ---
 
-Move this repository to Godot `$ARGUMENTS`. It applies to anything holding a
-`.godot-version` pin: a game, `godot-prototypes`, `godot-plugin-std`,
+Move this repository to the Godot release named in the request. It applies to anything
+holding a `.godot-version` pin: a game, `godot-prototypes`, `godot-plugin-std`,
 `godot-plugin-template`, and the `gut` and `GodotSteam` forks.
 
 The pin is the only engine version a repository stores. `config/features` in
@@ -27,8 +27,13 @@ Not every step applies to every repository:
 ## 1. Resolve the release and the route
 
 ```sh
-python3 "${CLAUDE_SKILL_DIR}/upgrade_godot_project.py" resolve --godot-version <X.Y|X.Y.Z>
+python3 <skill directory>/upgrade_godot_project.py resolve --godot-version <X.Y|X.Y.Z>
 ```
+
+Every command here runs **from the repository root**, since `--project` defaults to the
+working directory. The script lives beside this file, so give it an absolute path built
+from the skill directory the harness names; a bare `upgrade_godot_project.py` would
+resolve against the repository and not be found.
 
 `X.Y` takes that minor's newest stable release. Where `python3` is absent, run it with
 `uv run --no-project` instead.
@@ -51,7 +56,7 @@ Branch `chore/godot/upgrade`, then:
 
 ```sh
 SUMMARY="${TMPDIR:-/tmp}/upgrade-summary.json"
-python3 "${CLAUDE_SKILL_DIR}/upgrade_godot_project.py" upgrade \
+python3 <skill directory>/upgrade_godot_project.py upgrade \
   --godot-version <target> --output "$SUMMARY"
 ```
 
@@ -82,7 +87,7 @@ On a minor, also regenerate the API reference, since engine signatures move betw
 minors:
 
 ```sh
-sh "${CLAUDE_SKILL_DIR}/../godot-api/dump_api.sh"
+python3 <skill directory>/../godot-api/dump_api.py
 ```
 
 ## 4. Rebase the engine patches (minor)

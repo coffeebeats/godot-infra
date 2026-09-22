@@ -7,7 +7,7 @@
     {
       "name": "godot",
       "source": "./plugins/godot",
-      "description": "Checks Godot project files on every edit, looks up exact engine and project APIs, and moves a project to a new Godot release."
+      "description": "Checks Godot project files on every edit, checks a whole project on demand, looks up exact engine and project APIs, manages the gettext catalogue, and moves a project to a new Godot release."
     }
   ]
 }

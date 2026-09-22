@@ -103,7 +103,7 @@ runs:
         # confirms.
         #
         # NOISE is the teardown boilerplate a clean run still prints, matching
-        # what 'plugins/godot/hooks/on_edit.sh' filters.
+        # what 'plugins/godot/hooks/on_edit.py' filters.
         NOISE='^WARNING: [0-9]+ ObjectDB instances were leaked|^   at: cleanup '
         NOISE="$NOISE|^ERROR: [0-9]+ resources still in use at exit|^   at: clear "
 

@@ -1,0 +1,15 @@
+{
+  "session_id": "0198f0f2-0000-7000-8000-000000000002",
+  "turn_id": "turn-0002",
+  "transcript_path": "{root}/transcript.jsonl",
+  "cwd": "{root}",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-5.6-sol",
+  "permission_mode": "default",
+  "tool_name": "apply_patch",
+  "tool_input": {
+    "command": "*** Begin Patch\n*** Add File: added.tres\n+[gd_resource type=\"Resource\" format=3 uid=\"uid://bcss4jk47ku53\"]\n*** Update File: no_uid.tres\n@@\n-metadata/note = \"a header\"\n+metadata/note = \"a header carrying no uid\"\n*** Update File: renamed.tres\n*** Move to: moved.tres\n@@\n-metadata/note = \"before\"\n+metadata/note = \"the destination of a move\"\n*** Delete File: gone.tres\n*** End Patch\n"
+  },
+  "tool_response": "Exit code: 0\nWall time: 0.1 seconds\nOutput:\nSuccess. Updated the following files:\nA added.tres\nM no_uid.tres\nM moved.tres\nD gone.tres\n",
+  "tool_use_id": "call-0002"
+}

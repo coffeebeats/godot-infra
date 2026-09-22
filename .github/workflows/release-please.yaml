@@ -50,6 +50,7 @@ jobs:
           git tag -d v${{ steps.release.outputs.major }} || :
           git push origin :v${{ steps.release.outputs.major }} || :
 
-          # Create new/updated major tag
-          git tag -a v${{ steps.release.outputs.major }} -m "chore: release v${{ steps.release.outputs.major }}"
+          # Create new/updated major tag. It stays lightweight, so that a tool comparing
+          # 'git ls-remote' with a clone's HEAD sees the same commit and not a tag object.
+          git tag v${{ steps.release.outputs.major }}
           git push origin v${{ steps.release.outputs.major }}

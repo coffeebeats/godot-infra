@@ -1,0 +1,14 @@
+{
+  "session_id": "0198f0f2-0000-7000-8000-000000000001",
+  "transcript_path": "{root}/transcript.jsonl",
+  "cwd": "{root}",
+  "permission_mode": "default",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "{root}/no_uid.tres",
+    "old_string": "a header",
+    "new_string": "a header carrying no uid"
+  },
+  "tool_response": { "filePath": "{root}/no_uid.tres", "success": true }
+}

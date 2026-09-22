@@ -1,0 +1,15 @@
+{
+  "session_id": "0198f0f2-0000-7000-8000-000000000003",
+  "turn_id": "turn-0003",
+  "transcript_path": "{root}/transcript.jsonl",
+  "cwd": "{root}",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-5.6-sol",
+  "permission_mode": "default",
+  "tool_name": "apply_patch",
+  "tool_input": {
+    "command": "*** Begin Patch\n*** Update File: notes.md\n@@\n-# notes\n+# notes, revised\n*** Delete File: stale.tres\n*** End Patch\n"
+  },
+  "tool_response": "Exit code: 0\nWall time: 0.1 seconds\nOutput:\nSuccess. Updated the following files:\nM notes.md\nD stale.tres\n",
+  "tool_use_id": "call-0003"
+}

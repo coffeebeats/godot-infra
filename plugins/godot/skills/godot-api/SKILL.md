@@ -22,11 +22,17 @@ The `##` comment above the definition is the same prose the dump carries, and it
 
 ## Generating the dump
 
-The reference lives in the project's `.godot/agent-api/`, so it is absent in a fresh clone and stale after an addon bump or an edit to any `##` doc comment. Regenerate it from the project root whenever a lookup comes back empty or contradicts the code:
+The reference lives in the project's `.godot/agent-api/`, so it is absent in a fresh clone and stale after an addon bump or an edit to any `##` doc comment. Regenerate it whenever a lookup comes back empty or contradicts the code:
 
 ```sh
-sh "${CLAUDE_SKILL_DIR}/dump_api.sh"
+python3 <skill directory>/dump_api.py
 ```
+
+Run it **from the project root**, and give the script an absolute path. The harness names
+this skill's directory when it loads the skill; a bare `dump_api.py` would resolve against
+the project instead. The script finds the project through `CLAUDE_PROJECT_DIR`, or through
+`git rev-parse` in the working directory, so running it from anywhere else writes the dump
+into whatever repository that directory belongs to.
 
 Takes about 15 seconds and prints a class count per tree. It removes each tree before rewriting it, so a renamed or deleted class never lingers.
 
