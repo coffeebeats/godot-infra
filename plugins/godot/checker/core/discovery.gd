@@ -48,8 +48,8 @@ static func discover(rules: Array[Rule]) -> Array[String]:
 	return found
 
 
-## extensions returns every extension covered by any rule, free of duplicates.
-static func extensions(rules: Array[Rule]) -> Array[String]:
+## file_extensions returns every file extension a rule covers, free of duplicates.
+static func file_extensions(rules: Array[Rule]) -> Array[String]:
 	var found: Array[String] = []
 
 	for rule in rules:

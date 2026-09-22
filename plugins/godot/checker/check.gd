@@ -96,7 +96,7 @@ func _initialize() -> void:
 		# A directory argument is expanded rather than checked, since a path no rule
 		# applies to would otherwise be reported as clean.
 		if DirAccess.dir_exists_absolute(path):
-			Discovery.scan(path, Discovery.extensions(rules), expanded)
+			Discovery.scan(path, Discovery.file_extensions(rules), expanded)
 
 			var prefix := path if path.ends_with("/") else path + "/"
 

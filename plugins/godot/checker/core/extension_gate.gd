@@ -34,7 +34,7 @@ var missing: Dictionary = {}
 # -- INITIALIZATION ------------------------------------------------------------------ #
 
 ## _blocked_cache maps each file a walk has settled to whether it reaches a script using
-## a name from an extension that did not load; see `_blocked`.
+## a name from an extension that did not load; see `blocks`.
 var _blocked_cache: Dictionary = {}
 
 var _dependency := RegEx.create_from_string(DEPENDENCY_PATTERN)
@@ -44,31 +44,18 @@ var _script_dependency := RegEx.create_from_string(SCRIPT_DEPENDENCY_PATTERN)
 # -- PUBLIC METHODS ------------------------------------------------------------------ #
 
 
-## blocks reports whether the rules that load a file must skip it; see `_blocked`.
-func blocks(path: String) -> bool:
-	return _names != null and _blocked(path, _names)
-
-
-# -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
-
-
-func _init(config: Config) -> void:
-	missing = _missing_extensions(config)
-	_names = _blocking_pattern(missing)
-
-
-# -- PRIVATE METHODS ----------------------------------------------------------------- #
-
-
-## _blocked reports whether a file is a script using a name `names` matches, or depends
-## on one to any depth; see `_dependencies`.
+## blocks reports whether the rules that load a file must skip it, because it is a
+## script using a name a missing extension defines or depends on one to any depth.
 ##
 ## NOTE: A scene naming a blocked script in a header still loads and instantiates, so
 ## without the walk every rule would pass it unchecked.
-func _blocked(path: String, names: RegEx) -> bool:
+func blocks(path: String) -> bool:
+	if _names == null:
+		return false
+
 	var visited := {}
 
-	if _reaches_blocked(path, names, visited):
+	if _reaches_blocked(path, visited):
 		return true
 
 	# NOTE: A walk that finds nothing proves every file it visited clean. One that finds a
@@ -79,9 +66,20 @@ func _blocked(path: String, names: RegEx) -> bool:
 	return false
 
 
+# -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
+
+
+func _init(config: Config) -> void:
+	missing = _missing_extensions(config)
+	_names = _blocking_pattern()
+
+
+# -- PRIVATE METHODS ----------------------------------------------------------------- #
+
+
 ## _blocking_pattern returns a pattern matching a use of any name a missing extension
 ## defines, or null when no extension is missing.
-func _blocking_pattern(missing: Dictionary) -> RegEx:
+func _blocking_pattern() -> RegEx:
 	if missing.is_empty():
 		return null
 
@@ -131,18 +129,18 @@ func _dependencies(path: String, text: String) -> PackedStringArray:
 ## NOTE: A GDExtension with no binary for the platform does not load, so scripts naming
 ## its API fail to parse. GodotSteam ships no Linux binary.
 func _missing_extensions(config: Config) -> Dictionary:
-	var missing := {}
+	var unloaded := {}
 
 	for extension: String in config.extensions:
 		if not GDExtensionManager.is_extension_loaded(extension):
-			missing[extension] = config.extensions[extension]
+			unloaded[extension] = config.extensions[extension]
 
-	return missing
+	return unloaded
 
 
 ## _reaches_blocked walks a file's dependencies depth-first, settling each file it finds
 ## to reach a blocked script.
-func _reaches_blocked(path: String, names: RegEx, visited: Dictionary) -> bool:
+func _reaches_blocked(path: String, visited: Dictionary) -> bool:
 	if path in _blocked_cache:
 		return _blocked_cache[path]
 
@@ -157,12 +155,12 @@ func _reaches_blocked(path: String, names: RegEx, visited: Dictionary) -> bool:
 
 	var text := FileAccess.get_file_as_string(path)
 
-	if extension == "gd" and names.search(GDScriptText.mask(text)) != null:
+	if extension == "gd" and _names.search(GDScriptText.mask(text)) != null:
 		_blocked_cache[path] = true
 		return true
 
 	for dependency in _dependencies(path, text):
-		if _reaches_blocked(dependency, names, visited):
+		if _reaches_blocked(dependency, visited):
 			_blocked_cache[path] = true
 			return true
 
