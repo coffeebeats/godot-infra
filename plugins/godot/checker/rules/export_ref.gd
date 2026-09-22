@@ -132,8 +132,8 @@ func _dependencies(tree: PackedStringArray) -> Array[Dictionary]:
 
 
 ## _target returns the file a dependency header points at, without the scheme, or an
-## empty string when it points at nothing. A uid that resolves wins, since that is
-## what the engine loads.
+## empty string when it points at nothing. A uid that resolves wins, since that is what
+## the engine loads.
 func _target(line: String) -> String:
 	var carried := ""
 

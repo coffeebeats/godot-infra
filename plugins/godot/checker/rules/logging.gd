@@ -2,8 +2,8 @@
 ## plugins/godot/checker/rules/logging.gd
 ##
 ## `logging` reports a call to one of the engine's own output functions in a project
-## that logs through something else. Such a call carries no logger name, no level and
-## no timestamp, and nothing can filter or route it.
+## that logs through something else. Such a call carries no logger name, no level and no
+## timestamp, and nothing can filter or route it.
 ##
 ## NOTE: The rule covers no file until `.gdcheckrc` sets `disallow_engine_output`, since
 ## "never call `print()`" does not hold for a project with nothing to call instead.

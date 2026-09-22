@@ -2,11 +2,8 @@
 ## plugins/godot/checker/core/config.gd
 ##
 ## Config is the project's `.gdcheckrc`, in `ConfigFile` syntax. Section `all` applies
-## to every rule and any other section to the rule it names. `excludes` lists `res://`
-## globs of files to skip; `extensions`, only under `all`, maps each GDExtension the
-## project uses to the global names it defines. Any other key is an option of the rule
-## whose section holds it, which the rule declares with a default; see `Rule.options`.
-## A project without the file has an empty config.
+## to every rule, and any other section to the rule it names, which declares the keys it
+## reads with `Rule.options`. A project without the file has an empty config.
 ##
 
 extends RefCounted
@@ -47,7 +44,7 @@ var _options: Dictionary = {}
 
 
 ## parse reads `PATH`. `sections` maps each rule's section to the options it declares,
-## each a key mapped to its default; `all` is accepted besides.
+## each a key mapped to its default; `all` is always accepted.
 static func parse(sections: Dictionary) -> Config:
 	var config := Config.new()
 
@@ -114,6 +111,7 @@ func options(section: String) -> Dictionary:
 # -- PRIVATE METHODS ----------------------------------------------------------------- #
 
 
+## _error records a problem with the config file itself.
 func _error(message: String) -> void:
 	problems.append(Problem.new(PATH, 0, &"config", message))
 
@@ -134,6 +132,7 @@ func _misplaced(section: String, key: String, sections: Dictionary) -> void:
 	_error("[%s] %s belongs under [%s]" % [section, key, home])
 
 
+## _parse_excludes records a section's `excludes`, reporting a glob outside `res://`.
 func _parse_excludes(section: String, value: Variant) -> void:
 	if not is_strings(value):
 		_error("[%s] excludes must be an array of strings" % section)
@@ -151,6 +150,7 @@ func _parse_excludes(section: String, value: Variant) -> void:
 	excludes[section] = patterns
 
 
+## _parse_extensions records `[all] extensions`, reporting an entry of the wrong shape.
 func _parse_extensions(value: Variant) -> void:
 	if not (value is Dictionary):
 		_error("[all] extensions must be %s" % EXTENSIONS_SHAPE)

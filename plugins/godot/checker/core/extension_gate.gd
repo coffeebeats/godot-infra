@@ -1,9 +1,9 @@
 ##
 ## plugins/godot/checker/core/extension_gate.gd
 ##
-## ExtensionGate decides which files the rules that load a file skip, because a
-## GDExtension they depend on did not load. A script naming the API of a missing
-## extension fails to parse, which reports the machine rather than the script.
+## ExtensionGate decides which files to hold back from the rules that load them, because
+## a GDExtension they depend on did not load. A script naming a missing extension's API
+## fails to parse, which reports the machine rather than the script.
 ##
 
 extends RefCounted
@@ -27,8 +27,8 @@ const SCRIPT_DEPENDENCY_PATTERN := (
 
 # -- CONFIGURATION ------------------------------------------------------------------- #
 
-## missing maps each extension in the config that this process did not load to the
-## names it defines; see `_missing_extensions`.
+## missing maps each extension in the config that this process did not load to the names
+## it defines.
 var missing: Dictionary = {}
 
 # -- INITIALIZATION ------------------------------------------------------------------ #
@@ -38,8 +38,10 @@ var missing: Dictionary = {}
 var _blocked_cache: Dictionary = {}
 
 var _dependency := RegEx.create_from_string(DEPENDENCY_PATTERN)
-var _names: RegEx = null
 var _script_dependency := RegEx.create_from_string(SCRIPT_DEPENDENCY_PATTERN)
+
+## _names matches a use of any name in `missing`, or is null when nothing is missing.
+var _names: RegEx = null
 
 # -- PUBLIC METHODS ------------------------------------------------------------------ #
 
@@ -58,8 +60,8 @@ func blocks(path: String) -> bool:
 	if _reaches_blocked(path, visited):
 		return true
 
-	# NOTE: A walk that finds nothing proves every file it visited clean. One that finds a
-	# blocked script stops early, so only the files on the way to it are settled.
+	# NOTE: A walk that finds nothing proves every file it visited clean. One that finds
+	# a blocked script stops early, so only the files on the way to it are settled.
 	for visited_path: String in visited:
 		_blocked_cache[visited_path] = false
 
@@ -93,8 +95,8 @@ func _blocking_pattern() -> RegEx:
 	)
 
 
-## _dependencies returns the files a file needs in order to load: the `[ext_resource]`
-## headers of a scene or resource, and the paths a script `preload`s or `extends`.
+## _dependencies returns each file a file needs in order to load, as a scene or resource
+## names it in an `[ext_resource]` header, or a script in a `preload` or `extends`.
 ##
 ## NOTE: A script referring to another only by its `class_name` is not followed.
 func _dependencies(path: String, text: String) -> PackedStringArray:

@@ -1,8 +1,8 @@
 ##
 ## plugins/godot/checker/lib/gdscript_text.gd
 ##
-## GDScriptText holds what the checker knows about GDScript source as text: where code
-## gives way to a comment or a string, and where a name begins.
+## GDScriptText holds what the checker knows about GDScript source as text, such as
+## where code gives way to a comment or a string and where a name begins.
 ##
 ## NOTE: This 'Object' should *not* be instanced and/or added to the 'SceneTree'. It is
 ## a "static" library that can be imported at compile-time using 'preload'.
@@ -26,6 +26,7 @@ const NON_CODE_PATTERN := (
 
 # -- INITIALIZATION ------------------------------------------------------------------ #
 
+## _non_code is `NON_CODE_PATTERN`, compiled once for every caller.
 static var _non_code := RegEx.create_from_string(NON_CODE_PATTERN)
 
 # -- PUBLIC METHODS ------------------------------------------------------------------ #
@@ -41,8 +42,8 @@ static func mask(text: String) -> String:
 	for found: RegExMatch in _non_code.search_all(source):
 		masked += source.substr(cursor, found.get_start() - cursor)
 
-		# A span collapses to the newlines it held, so a multi-line string shifts
-		# nothing reported below it.
+		# A span collapses to the newlines it held, so a multi-line string shifts no
+		# line below it.
 		var length := found.get_end() - found.get_start()
 		masked += "\n".repeat(source.substr(found.get_start(), length).count("\n"))
 

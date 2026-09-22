@@ -51,8 +51,8 @@ func check(file: SourceFile) -> Array[Problem]:
 	var differences := _check_presets(file, presets, overrides, names)
 	problems.append_array(differences)
 
-	# NOTE: Reported only alongside a difference, since a file the rule never needs
-	# to write is fine in any form.
+	# NOTE: Reported only alongside a difference, since a file the rule never needs to
+	# write is fine in any form.
 	if not differences.is_empty() and not _reproducible(file.text(), presets):
 		var message := (
 			"not in the form the editor writes, so --fix would drop part of it;"
@@ -162,8 +162,8 @@ func _check_globs(overrides: ConfigFile) -> Array[Problem]:
 	return problems
 
 
-## _check_presets reports each preset key whose value differs from the declared one,
-## and each declared key the preset does not carry.
+## _check_presets reports each preset key whose value differs from the declared one, and
+## each declared key the preset does not carry.
 func _check_presets(
 	file: SourceFile, presets: ConfigFile, overrides: ConfigFile, names: Dictionary
 ) -> Array[Problem]:
@@ -178,8 +178,8 @@ func _check_presets(
 			var target_section := ExportDeclaration.target_section(section, key)
 			var target_key := ExportDeclaration.target_key(key)
 
-			# NOTE: The editor writes every key its platform defines and drops the
-			# rest on load, so a key it does not carry is never written here.
+			# NOTE: The editor writes every key its platform defines and drops the rest
+			# on load, so a key it does not carry is never written here.
 			if not presets.has_section_key(target_section, target_key):
 				var absent := (
 					"%s: carries no `%s`; check the key against the platform"
@@ -244,8 +244,8 @@ func _check_sections(overrides: ConfigFile, names: Dictionary) -> Array[Problem]
 	return problems
 
 
-## _coerced returns a declared value as the type the preset already holds, so an
-## array written in the declaration stays the packed array the editor expects.
+## _coerced returns a declared value as the type the preset already holds, so an array
+## written in the declaration stays the packed array the editor expects.
 static func _coerced(current: Variant, declared: Variant) -> Variant:
 	if current is PackedStringArray and declared is Array:
 		return PackedStringArray(declared)
@@ -276,8 +276,8 @@ static func _line_of(lines: PackedStringArray, section: String, key: String) -> 
 	return 0
 
 
-## _matches_any reports whether any file matches a glob, trying it against both the
-## bare path and the `res://` one, as the exporter does.
+## _matches_any reports whether any file matches a glob, trying it against both the bare
+## path and the `res://` one, as the exporter does.
 func _matches_any(glob: String) -> bool:
 	for path in ExportDeclaration.tree():
 		if path.matchn(glob) or ("res://" + path).matchn(glob):
@@ -296,9 +296,9 @@ static func _render(text: String, encoded: String) -> String:
 	return normalized.replace("\n", "\r\n")
 
 
-## _reproducible reports whether writing the config back would reproduce the file
-## byte for byte, which is what proves a write would drop nothing the file holds and
-## would carry its line ending exactly.
+## _reproducible reports whether writing the config back would reproduce the file byte
+## for byte, which is what proves a write would drop nothing the file holds and would
+## carry its line ending exactly.
 static func _reproducible(text: String, presets: ConfigFile) -> bool:
 	return _render(text, presets.encode_to_text()) == text
 

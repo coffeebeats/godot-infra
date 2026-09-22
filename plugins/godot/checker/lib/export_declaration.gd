@@ -2,9 +2,8 @@
 ## plugins/godot/checker/lib/export_declaration.gd
 ##
 ## ExportDeclaration reads `res://export_overrides.cfg`, which declares values once for
-## every export preset whose name one of its sections globs, and assembles what each
-## preset should hold. `export-overrides` writes that into the presets, and
-## `export-ref` checks what it leaves out.
+## every export preset whose name a section globs, and assembles what each preset should
+## hold. `export-overrides` writes that into the presets, and `export-ref` checks it.
 ##
 ## NOTE: This 'Object' should *not* be instanced and/or added to the 'SceneTree'. It is
 ## a "static" library that can be imported at compile-time using 'preload'.
@@ -25,19 +24,25 @@ const LIST_KEYS := ["exclude_filter", "include_filter"]
 ## OPTIONS_PREFIX marks a declared key belonging to a preset's options block.
 const OPTIONS_PREFIX := "options/"
 
+## OVERRIDES_PATH is the declaration, kept beside the presets it overlays.
 const OVERRIDES_PATH := "res://export_overrides.cfg"
+
+## PRESETS_PATH is the presets file the editor writes and the declaration overlays.
 const PRESETS_PATH := "res://export_presets.cfg"
 
 # -- INITIALIZATION ------------------------------------------------------------------ #
 
+## _tree holds every file `tree` returns, once the project is walked.
 static var _tree := PackedStringArray()
+
+## _walked records whether the project has been walked into `_tree`.
 static var _walked: bool = false
 
 # -- PUBLIC METHODS ------------------------------------------------------------------ #
 
 
-## assemble returns every key the sections matching a preset name declare for it,
-## each `LIST_KEYS` entry accumulated into the glob string the preset holds.
+## assemble returns every key the sections matching a preset name declare for it, each
+## `LIST_KEYS` entry accumulated into the glob string the preset holds.
 static func assemble(preset_name: String, overrides: ConfigFile) -> Dictionary:
 	var declared := {}
 	var lists := {}
@@ -91,8 +96,8 @@ static func preset_names(presets: ConfigFile) -> Dictionary:
 	return names
 
 
-## read returns the project's declaration, or null when it is absent or does
-## not parse. `export-overrides` reports a declaration that does not parse.
+## read returns the project's declaration, or null when it is absent or does not parse.
+## `export-overrides` reports a declaration that does not parse.
 static func read() -> ConfigFile:
 	if not FileAccess.file_exists(OVERRIDES_PATH):
 		return null
@@ -114,8 +119,8 @@ static func target_section(section: String, key: String) -> String:
 	return section + ".options" if key.begins_with(OPTIONS_PREFIX) else section
 
 
-## to_glob returns the exporter glob an entry names, recursive for a directory and
-## as written for a file or a pattern, or an empty string when it names nothing.
+## to_glob returns the exporter glob an entry names, recursive for a directory and as
+## written for a file or a pattern, or an empty string when it names nothing.
 static func to_glob(entry: String) -> String:
 	if entry.contains("*") or entry.contains("?"):
 		return entry
@@ -155,8 +160,7 @@ func _init() -> void:
 
 
 ## _collect appends every file under a directory, passing over the directories the
-## exporter ignores, those named with a leading period and those holding a
-## `.gdignore`.
+## exporter ignores, those named with a leading period and those holding a `.gdignore`.
 static func _collect(dir_path: String, found: PackedStringArray) -> void:
 	var dir := DirAccess.open(dir_path)
 	if dir == null or dir.file_exists(".gdignore"):

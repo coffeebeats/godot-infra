@@ -16,11 +16,14 @@ const SourceFile := preload("source_file.gd")
 
 # -- CONFIGURATION ------------------------------------------------------------------- #
 
+## name identifies the rule in a report, in `--list` and as a `.gdcheckrc` section.
 var name: StringName = &""
+
+## extensions lists the file extensions the rule covers, without the dot.
 var extensions: Array[String] = []
 
-## files limits the rule to these exact paths, whether or not a walk would reach
-## them; an empty list covers every file with a matching extension.
+## files limits the rule to these exact paths, whether or not a walk would reach them;
+## an empty list covers every file with a matching extension.
 var files: Array[String] = []
 
 ## roots limits the rule to these directories; an empty list covers the whole scan.

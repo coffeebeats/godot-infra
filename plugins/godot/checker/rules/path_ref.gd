@@ -1,9 +1,9 @@
 ##
 ## plugins/godot/checker/rules/path_ref.gd
 ##
-## `path-ref` reports references in a scene or resource that do not resolve,
-## `res://` strings that should be uid references, and a dependency whose `path`
-## names a different file than its `uid`.
+## `path-ref` reports references in a scene or resource that do not resolve, `res://`
+## strings that should be uid references, and a dependency whose `path` names a
+## different file than its `uid`.
 ##
 ## NOTE: A move rewrites `ext_resource` headers but not `res://` strings in properties,
 ## which then point at nothing, while a `uid://` reference survives it. A move made
@@ -57,8 +57,8 @@ func check(file: SourceFile) -> Array[Problem]:
 
 
 func fix(file: SourceFile) -> bool:
-	# NOTE: The raw text is split on newlines alone, so a carriage return rides along
-	# at the end of its line and the file is written back with its endings intact.
+	# NOTE: The raw text is split on newlines alone, so a carriage return rides along at
+	# the end of its line and the file is written back with its endings intact.
 	var lines := file.text().split("\n")
 	var changed := false
 
@@ -125,8 +125,8 @@ func _describe(ref: String) -> String:
 
 ## _describe_dependency returns what is wrong with an `[ext_resource]` header, or an
 ## empty string. One resolving reference on the line is enough for the dependency to
-## load, since the engine falls back from the uid to the path; a header that loads
-## can still name two different files.
+## load, since the engine falls back from the uid to the path; a header that loads can
+## still name two different files.
 func _describe_dependency(line: String) -> String:
 	var references := PackedStringArray()
 	var resolved := false
@@ -151,9 +151,9 @@ func _describe_dependency(line: String) -> String:
 	return "path names %s but uid resolves to %s" % [drift[0], drift[1]]
 
 
-## _drift returns the stale `res://` path a dependency header carries and the path
-## its uid resolves to, in that order, or an empty array when the header carries no
-## uid, no path, or two that already agree.
+## _drift returns the stale `res://` path a dependency header carries and the path its
+## uid resolves to, in that order, or an empty array when the header carries no uid, no
+## path, or two that already agree.
 func _drift(line: String) -> PackedStringArray:
 	var carried := ""
 	var resolved := ""
@@ -172,9 +172,9 @@ func _drift(line: String) -> PackedStringArray:
 	return PackedStringArray([carried, resolved])
 
 
-## _uid_path returns the file a `uid://` reference resolves to, or an empty string
-## when it resolves to nothing. A uid naming a missing file is `_describe_uid`'s to
-## report, so it is not drift.
+## _uid_path returns the file a `uid://` reference resolves to, or an empty string when
+## it resolves to nothing. A uid naming a missing file is `_describe_uid`'s to report,
+## so it is not drift.
 func _uid_path(ref: String) -> String:
 	var id := ResourceUID.text_to_id(ref)
 	if id == ResourceUID.INVALID_ID or not ResourceUID.has_id(id):

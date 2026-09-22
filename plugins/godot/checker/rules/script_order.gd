@@ -1,12 +1,12 @@
 ##
 ## plugins/godot/checker/rules/script_order.gd
 ##
-## `script-order` reports script-declared properties assigned ahead of `script =` in
-## the same block, which Godot silently drops. Base-type properties are exempt, since
-## they apply regardless of the script.
+## `script-order` reports script-declared properties assigned ahead of `script =` in the
+## same block, which Godot silently drops. Base-type properties are exempt, since they
+## apply regardless of the script.
 ##
-## NOTE: `[resource]` and `[sub_resource]` blocks are covered as well as `[node]`,
-## since a hand-written `.tres` can carry a script and its exports too.
+## NOTE: `[resource]` and `[sub_resource]` blocks are covered as well as `[node]`, since
+## a hand-written `.tres` can carry a script and its exports too.
 ##
 
 extends "../core/rule.gd"
@@ -17,8 +17,8 @@ const ResourceText := preload("../lib/resource_text.gd")
 
 # -- DEFINITIONS --------------------------------------------------------------------- #
 
-## PROPERTY_PATTERN matches a top-level property assignment, skipping continuation
-## lines of a multi-line value.
+## PROPERTY_PATTERN matches a top-level property assignment, skipping continuation lines
+## of a multi-line value.
 const PROPERTY_PATTERN := "^([A-Za-z_][A-Za-z0-9_/]*) = "
 
 ## SCRIPT_VALUE_PATTERN captures the ext_resource id a `script =` line references.

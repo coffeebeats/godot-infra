@@ -262,11 +262,11 @@ Each of these returns a plausible wrong answer rather than an error.
   own files.
   `ResourceLoader.has_cached()` cannot stand in for that skip, since it reports true for
   scripts the process never loaded.
-- **A `preload`ed script that names anything unresolved hangs the engine**, measured on
-  4.7.2 for an unknown global, a missing preload target and an unknown type, or exits 0
-  having run nothing; a plain syntax error exits 1 instead. Only an edit to the checker
-  itself can cause it, since its files preload one another by relative path, and
-  `scripts/test_project_checker.py` catches both outcomes.
+- **A `preload`ed script that names anything unresolved hangs the engine, or exits 0
+  having run nothing**, measured on 4.7.2 for an unknown global, a missing preload
+  target and an unknown type; a plain syntax error exits 1 instead. Only an edit to the
+  checker's own files can cause it, and `scripts/test_project_checker.py` catches both
+  outcomes.
 - **`SceneTree.quit(code)` collapses every non-zero code to 1** under `-s`.
 - **A missing `[ext_resource]` target does not fail a load.** The scene loads without
   the node that needed it, so `path-ref` validates headers rather than `load`.

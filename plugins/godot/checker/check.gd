@@ -5,10 +5,8 @@
 ## repairs the ones it can. The `godot` plugin's edit hook runs it on each edited file,
 ## and `check-project.yaml` runs it over the whole project.
 ##
-## NOTE: The checker runs from outside the project, so its files preload one another by
-## relative path and declare no `class_name`. A preloaded file that fails to compile
-## hangs the engine or exits 0 having checked nothing, so run
-## `scripts/test_project_checker.py` after changing any of them.
+## NOTE: Every file here preloads others by relative path and declares no `class_name`.
+## One that fails to compile hangs the engine, or exits 0 having checked nothing.
 ##
 ## Usage, from the project root:
 ##   godot --headless -s <checker>                       # every rule, every file
@@ -71,8 +69,8 @@ func _initialize() -> void:
 		quit(1)
 		return
 
-	# A rule the project configures learns it here rather than in `_registry`, which runs
-	# first because parsing the config needs the options each rule declares.
+	# A rule the project configures learns it here rather than in `_registry`, which
+	# runs first because parsing the config needs the options each rule declares.
 	for rule in rules:
 		rule.configure(config.options(rule.name))
 
@@ -203,8 +201,8 @@ func _initialize() -> void:
 			"fixed %d file(s); run `godot --import --headless` so they resolve" % fixed
 		)
 
-	# NOTE: `SceneTree.quit()` collapses every non-zero code to 1 under `-s`, so a problem
-	# found and a repair applied both exit 1.
+	# NOTE: `SceneTree.quit()` collapses every non-zero code to 1 under `-s`, so a
+	# problem found and a repair applied both exit 1.
 	quit(1 if not problems.is_empty() or fixed > 0 else 0)
 
 

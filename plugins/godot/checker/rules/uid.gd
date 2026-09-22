@@ -3,8 +3,8 @@
 ##
 ## `uid` reports scenes and resources whose header carries no uid, and can assign one.
 ##
-## NOTE: The engine never assigns a uid headless, and a script process does not save
-## the uid cache, so run `godot --import --headless` after a fix.
+## NOTE: The engine never assigns a uid headless, and a script process does not save the
+## uid cache, so run `godot --import --headless` after a fix.
 ##
 
 extends "../core/rule.gd"

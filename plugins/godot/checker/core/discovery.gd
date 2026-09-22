@@ -1,8 +1,8 @@
 ##
 ## plugins/godot/checker/core/discovery.gd
 ##
-## Discovery finds the files a run covers: every file a rule covers, or the files and
-## directories named on the command line.
+## Discovery finds the files a run covers, either every file a rule covers or the files
+## and directories named on the command line.
 ##
 ## NOTE: This 'Object' should *not* be instanced and/or added to the 'SceneTree'. It is
 ## a "static" library that can be imported at compile-time using 'preload'.
