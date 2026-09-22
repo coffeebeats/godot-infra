@@ -106,7 +106,7 @@ func _init() -> void:
 
 
 ## _dependencies returns every `[ext_resource]` header in the project, as the file
-## carrying it, the line it sits on and the file it points at.
+## carrying it, the line it sits on and the file it loads.
 func _dependencies(tree: PackedStringArray) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 
