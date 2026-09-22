@@ -1,0 +1,21 @@
+; Every mistake the config parser reports, one per line, in the order it reports them.
+
+[all]
+
+excludes=["project/scratch/*"]
+extensions={"res://empty.gdextension": [], "res://bad.gdextension": ["not an identifier"]}
+disallow_engine_output=true
+
+[logging]
+
+disallow_engine_output="yes"
+
+[nodepath]
+
+excludes="res://one.tscn"
+extensions={}
+unknown_key=1
+
+[no-such-rule]
+
+excludes=[]

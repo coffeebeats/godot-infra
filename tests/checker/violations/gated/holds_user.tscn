@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cc82i74wq08le"]
+
+[ext_resource type="Script" uid="uid://dls4cxavked10" path="res://gated/uses_absent.gd" id="1_user"]
+
+[node name="Root" type="Node"]
+script = ExtResource("1_user")

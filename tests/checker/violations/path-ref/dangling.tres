@@ -1,0 +1,6 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://b36xoi0wc4bqf"]
+
+[ext_resource type="Resource" uid="uid://cunregistered" path="res://path-ref/gone.tres" id="1_gone"]
+
+[resource]
+metadata/gone = ExtResource("1_gone")

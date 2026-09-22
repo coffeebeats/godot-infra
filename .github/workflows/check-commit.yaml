@@ -36,7 +36,8 @@ jobs:
           fetch-depth: 0
 
       # NOTE: The self-test compiles export templates, so only run it for
-      # changes that can affect the pipeline (not scripts, docs, or releases).
+      # changes that can affect the pipeline (not scripts, docs, checker cases,
+      # or releases).
       - name: Check for pipeline changes
         id: check-pipeline
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
@@ -44,7 +45,7 @@ jobs:
           files: |
             actions/**
             .github/**
-            tests/**
+            tests/project/**
             godot-versions.txt
             scripts/resolve_godot_versions.py
 
@@ -115,7 +116,9 @@ jobs:
           "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/'
 
   # A release ships the project checker to every consumer at once, so it runs
-  # here against the sample project with each supported Godot version first.
+  # here with each supported Godot version first: against the sample project,
+  # which must stay clean, and against the cases in 'tests/checker', whose
+  # expected output proves every rule still reports.
   check-plugin:
     needs: ["changes"]
 
@@ -141,6 +144,9 @@ jobs:
       - uses: ./.github/actions/check-godot-files
         with:
           path: tests/project
+
+      - name: Check the checker's cases
+        run: python3 scripts/test_project_checker.py
 
   # The self-test exports the sample project with every supported Godot
   # version through the reusable workflows, so a release never ships an

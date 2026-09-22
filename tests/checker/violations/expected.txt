@@ -1,0 +1,26 @@
+  res://compile/broken.gd: [compile] does not compile
+  res://export_overrides.cfg:13: [export-overrides] [*-linux-*] matches no preset
+  res://export_overrides.cfg:5: [export-overrides] [*] `no-such-directory` names no file or directory in the project
+  res://export_overrides.cfg:5: [export-overrides] [*] `*.nothing` matches no file
+  res://export_presets.cfg:13: [export-overrides] universal-macos-unknown: `options/application/bundle_identifier` differs from res://export_overrides.cfg; re-run with --fix
+  res://export_presets.cfg:12: [export-overrides] universal-macos-unknown: `options/binary_format/architecture` is declared as int but the preset holds String
+  res://export_presets.cfg: [export-overrides] universal-macos-unknown: carries no `options/no_such/option`; check the key against the platform
+  res://export-ref/uses_tool.tscn:3: [export-ref] dependency is excluded from universal-macos-unknown, x86_64-windows-unknown: res://export-ref/editor/tool.tscn
+  res://load/unparseable.tres: [load] failed to load
+  res://logging/bare_print.gd:9: [logging] bare `print()`; log through the project's logger
+  res://nodepath/wrong_type.tscn: [nodepath] node '.' export `label` points at 'Sprite' but resolves to null
+  res://path-ref/dangling.tres:3: [path-ref] dependency does not resolve: uid://cunregistered res://path-ref/gone.tres
+  res://path-ref/dangling.tres: [load] failed to load
+  res://path-ref/references.tres:3: [path-ref] path names res://path-ref/moved_away.tres but uid resolves to res://path-ref/target.tres
+  res://path-ref/references.tres:7: [path-ref] path does not exist
+  res://path-ref/references.tres:8: [path-ref] unknown uid; if its target is new, run `godot --import --headless`
+  res://path-ref/references.tres:9: [path-ref] reference this as uid://bcss4jk47ku53; a res:// string is dropped on a move
+  res://script-order/misordered.tscn:7: [script-order] speed assigned before `script =`; silently dropped
+  res://uid/no_uid.tres:1: [uid] no uid in header; re-run with --fix to assign one
+checked 19 file(s), 19 problem(s)
+excluded 1 file(s) through res://.gdcheckrc
+skipped the loading rules for 3 file(s): res://absent.gdextension not loaded
+  res://gated/holds_user.tscn
+  res://gated/preloads_user.gd
+  res://gated/uses_absent.gd
+note: res://absent.gdextension is not loaded here; if a script above uses a name it defines, add the name under `extensions` in res://.gdcheckrc

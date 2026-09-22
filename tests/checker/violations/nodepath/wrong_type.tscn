@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://bfg6iu6lac60w"]
+
+[ext_resource type="Script" uid="uid://c3uwahi4trgb7" path="res://nodepath/target.gd" id="1_target"]
+
+[node name="Root" type="Node" node_paths=PackedStringArray("label")]
+script = ExtResource("1_target")
+label = NodePath("Sprite")
+
+[node name="Sprite" type="Node2D" parent="."]

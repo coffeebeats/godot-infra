@@ -1,0 +1,10 @@
+  res://.gdcheckrc: [config] [all] exclude must start with res://: project/scratch/*
+  res://.gdcheckrc: [config] [all] extension defines no names: res://empty.gdextension
+  res://.gdcheckrc: [config] [all] not an identifier: not an identifier
+  res://.gdcheckrc: [config] [all] disallow_engine_output belongs under [logging]
+  res://.gdcheckrc: [config] [logging] disallow_engine_output must be a boolean
+  res://.gdcheckrc: [config] [nodepath] excludes must be an array of strings
+  res://.gdcheckrc: [config] [nodepath] extensions belongs under [all]
+  res://.gdcheckrc: [config] unknown key `unknown_key` in [nodepath]
+  res://.gdcheckrc: [config] unknown section [no-such-rule]
+checked 0 file(s); fix res://.gdcheckrc first

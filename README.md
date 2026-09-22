@@ -221,7 +221,7 @@ Three things the settings file cannot do.
 
 #### System dependencies
 
-Installed by hand, and each has to be on the `PATH` of the shell that runs the scripts: `git`, `gh` for [`scripts/instantiate_template_repository.py`](./scripts/instantiate_template_repository.py), and Docker to build images locally (see below). Godot is not among them, since the actions bring their own.
+Installed by hand, and each has to be on the `PATH` of the shell that runs the scripts: `git`, `gh` for [`scripts/instantiate_template_repository.py`](./scripts/instantiate_template_repository.py), Docker to build images locally (see below), and `godot` to test the project checker (see below). The actions bring their own Godot.
 
 ### Building images locally
 
@@ -401,6 +401,18 @@ mv godot/bin/godot.windows.template_release.x86_64.llvm.exe build/
 Each compile ends with `scons: done building targets.` and each export with `[ DONE ] export`, leaving `Game.app.zip`, `index.html` with `Game.wasm`, and `Game.exe` in `dist/`. A broken toolchain fails within seconds of `scons: Building targets ...`. The editor's `Unable to load fontconfig` errors are noise.
 
 The `release` profile enables link-time optimization, so compiles are slow under emulation on an M-series Mac (the web template takes about 23 minutes; an export takes seconds). `.scons/` caches object files between runs. `godot/`, `build/`, `dist/`, `.godot-editor/`, `.scons/`, and `tests/project/.godot-version` are gitignored.
+
+### Testing the project checker
+
+`check-plugin` runs the [project checker](./plugins/godot/checker/README.md) over each case in [`tests/checker`](./tests/checker). A case is a small Godot project, and its `expected.txt` holds the output the checker must produce. The same runs locally:
+
+```sh
+uv run scripts/test_project_checker.py              # every case
+uv run scripts/test_project_checker.py violations   # one case
+uv run scripts/test_project_checker.py --update     # accept a change in output
+```
+
+`violations/` holds one of every problem the checker reports, and a new rule adds its own there. `named/` runs the checker the way the edit hook does, and `config/` holds every config error. Review the diff `--update` leaves before committing it.
 
 ## **Contributing**
 
