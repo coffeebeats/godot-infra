@@ -213,9 +213,10 @@ no `Steam` singleton.
 
 While an extension listed under `extensions` is unloaded, the rules that load files skip
 each script using one of its names in code, outside comments and strings, and each file
-depending on such a script through `[ext_resource]` headers or a `preload` or `extends`
-path. The skipped files are listed. Text-only rules still run. A script referring to a
-skipped one only by its `class_name` is not followed.
+depending on such a script through `[ext_resource]` headers or a `preload` or `extends`.
+The walk follows a dependency's uid, and its path only when the uid resolves to nothing,
+as the engine does. The skipped files are listed. Text-only rules still run. A script
+referring to a skipped one only by its `class_name` is not followed.
 
 ## Warnings
 

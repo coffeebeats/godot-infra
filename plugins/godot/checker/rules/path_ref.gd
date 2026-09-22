@@ -162,7 +162,7 @@ func _drift(line: String) -> PackedStringArray:
 		var ref := found.get_string(1)
 
 		if ref.begins_with("uid://"):
-			resolved = _uid_path(ref)
+			resolved = ResourceText.uid_path(ref)
 		elif ref.begins_with("res://"):
 			carried = ref
 
@@ -170,19 +170,6 @@ func _drift(line: String) -> PackedStringArray:
 		return PackedStringArray()
 
 	return PackedStringArray([carried, resolved])
-
-
-## _uid_path returns the file a `uid://` reference resolves to, or an empty string when
-## it resolves to nothing. A uid naming a missing file is `_describe_uid`'s to report,
-## so it is not drift.
-func _uid_path(ref: String) -> String:
-	var id := ResourceUID.text_to_id(ref)
-	if id == ResourceUID.INVALID_ID or not ResourceUID.has_id(id):
-		return ""
-
-	var target := ResourceUID.get_id_path(id)
-
-	return target if FileAccess.file_exists(target) else ""
 
 
 ## _describe_path returns what is wrong with a `res://` reference, or an empty string.

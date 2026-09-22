@@ -8,7 +8,6 @@
   res://export_presets.cfg: [export-overrides] universal-macos-unknown: carries no `options/no_such/option`; check the key against the platform
   res://export-ref/uses_tool/again.tscn:3: [export-ref] dependency is excluded from universal-macos-unknown, x86_64-windows-unknown: res://export-ref/editor/tool.tscn
   res://export-ref/uses_tool.tscn:3: [export-ref] dependency is excluded from universal-macos-unknown, x86_64-windows-unknown: res://export-ref/editor/tool.tscn
-  res://gated/preloads_by_uid.gd: [compile] does not compile
   res://gated/stale_path.tscn:3: [path-ref] path names res://gated/moved_away.gd but uid resolves to res://gated/uses_absent.gd
   res://load/no_root.tscn: [load] failed to instantiate
   res://load/unparseable.tres: [load] failed to load
@@ -22,12 +21,15 @@
   res://path-ref/references.tres:9: [path-ref] reference this as uid://bcss4jk47ku53; a res:// string is dropped on a move
   res://script-order/misordered.tscn:7: [script-order] speed assigned before `script =`; silently dropped
   res://script-order/stale_path.tscn:3: [path-ref] path names res://script-order/moved_away.gd but uid resolves to res://script-order/holder.gd
+  res://script-order/stale_path.tscn:7: [script-order] speed assigned before `script =`; silently dropped
   res://uid/no_uid.tres:1: [uid] no uid in header; re-run with --fix to assign one
 checked 24 file(s), 25 problem(s)
 excluded 1 file(s) through res://.gdcheckrc
-skipped the loading rules for 3 file(s): res://absent.gdextension not loaded
+skipped the loading rules for 5 file(s): res://absent.gdextension not loaded
   res://gated/holds_user.tscn
+  res://gated/preloads_by_uid.gd
   res://gated/preloads_user.gd
+  res://gated/stale_path.tscn
   res://gated/uses_absent.gd
 note: res://absent.gdextension is not loaded here; if a script above uses a name it defines, add the name under `extensions` in res://.gdcheckrc
 exit 1
