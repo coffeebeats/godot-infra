@@ -27,7 +27,7 @@ Not every step applies to every repository:
 ## 1. Resolve the release and the route
 
 ```sh
-python3 "${CLAUDE_SKILL_DIR}/upgrade_godot_project.py" resolve --godot-version <X.Y|X.Y.Z>
+python3 upgrade_godot_project.py resolve --godot-version <X.Y|X.Y.Z>
 ```
 
 `X.Y` takes that minor's newest stable release. Where `python3` is absent, run it with
@@ -51,7 +51,7 @@ Branch `chore/godot/upgrade`, then:
 
 ```sh
 SUMMARY="${TMPDIR:-/tmp}/upgrade-summary.json"
-python3 "${CLAUDE_SKILL_DIR}/upgrade_godot_project.py" upgrade \
+python3 upgrade_godot_project.py upgrade \
   --godot-version <target> --output "$SUMMARY"
 ```
 
@@ -82,7 +82,7 @@ On a minor, also regenerate the API reference, since engine signatures move betw
 minors:
 
 ```sh
-sh "${CLAUDE_SKILL_DIR}/../godot-api/dump_api.sh"
+python3 ../godot-api/dump_api.py
 ```
 
 ## 4. Rebase the engine patches (minor)

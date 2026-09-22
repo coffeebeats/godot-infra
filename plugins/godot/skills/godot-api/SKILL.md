@@ -25,8 +25,11 @@ The `##` comment above the definition is the same prose the dump carries, and it
 The reference lives in the project's `.godot/agent-api/`, so it is absent in a fresh clone and stale after an addon bump or an edit to any `##` doc comment. Regenerate it from the project root whenever a lookup comes back empty or contradicts the code:
 
 ```sh
-sh "${CLAUDE_SKILL_DIR}/dump_api.sh"
+python3 dump_api.py
 ```
+
+Run it from this skill's own directory, whose path the harness names when it loads the
+skill.
 
 Takes about 15 seconds and prints a class count per tree. It removes each tree before rewriting it, so a renamed or deleted class never lingers.
 
