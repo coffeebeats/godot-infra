@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.19.0 (2026-09-22)
+
+## What's Changed
+* feat(plugins): support Codex in the godot plugin by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/657
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.18.1...v6.19.0
+
 ## 6.18.1 (2026-09-22)
 
 ## What's Changed
