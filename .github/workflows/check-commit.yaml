@@ -53,6 +53,25 @@ jobs:
         id: versions
         run: echo "value=$(python3 scripts/resolve_godot_versions.py godot-versions.txt)" >> "$GITHUB_OUTPUT"
 
+  check-gdscript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
+        with:
+          enable-cache: true
+
+      # NOTE: The cases in 'tests/checker' break the rules on purpose, so only
+      # the repository's own GDScript is named.
+      - name: Lint GDScript source code
+        run: uv run gdlint plugins actions
+
+      - name: Verify GDScript source code is formatted
+        run: uv run gdformat --check plugins actions
+
   check-python:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -181,7 +200,7 @@ jobs:
   # Used to ensure all branch protection requirements are met. This is a workaround until
   # https://github.com/github-community/community/discussions/4324 is addressed.
   branch_protection:
-    needs: ["changes", "check-plugin", "check-python", "check-shell", "check-workflows", "export"]
+    needs: ["changes", "check-gdscript", "check-plugin", "check-python", "check-shell", "check-workflows", "export"]
     if: ${{ always() }}
 
     runs-on: ubuntu-latest
