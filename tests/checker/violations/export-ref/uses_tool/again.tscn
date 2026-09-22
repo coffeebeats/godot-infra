@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://dvn3k5ttqjgjw"]
+
+; This directory shares its name with `uses_tool.tscn` beside it, so a filesystem may
+; list the directory first, while `export-ref` must report the scene first either way.
+
+[ext_resource type="PackedScene" uid="uid://c60knbdeshhj" path="res://export-ref/editor/tool.tscn" id="1_tool"]
+
+[node name="Root" type="Node"]
+
+[node name="Tool" parent="." instance=ExtResource("1_tool")]

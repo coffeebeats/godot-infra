@@ -16,10 +16,7 @@ const ResourceText := preload("../lib/resource_text.gd")
 
 # -- DEFINITIONS --------------------------------------------------------------------- #
 
-## DEPENDENCY_PATTERN captures the path an `[ext_resource]` header points at.
-const DEPENDENCY_PATTERN := 'path="([^"]+)"'
-
-## SCRIPT_DEPENDENCY_PATTERN captures the path a script `preload`s or `extends`.
+## SCRIPT_DEPENDENCY_PATTERN captures the path or uid a script `preload`s or `extends`.
 const SCRIPT_DEPENDENCY_PATTERN := (
 	"(?m)(?:\\bpreload\\s*\\(\\s*|^(?:class_name\\s+\\w+\\s+)?extends\\s+)"
 	+ "[\\x22\\x27]([^\\x22\\x27]+)[\\x22\\x27]"
@@ -37,7 +34,6 @@ var missing: Dictionary = {}
 ## a name from an extension that did not load; see `blocks`.
 var _blocked_cache: Dictionary = {}
 
-var _dependency := RegEx.create_from_string(DEPENDENCY_PATTERN)
 var _script_dependency := RegEx.create_from_string(SCRIPT_DEPENDENCY_PATTERN)
 
 ## _names matches a use of any name in `missing`, or is null when nothing is missing.
@@ -95,8 +91,8 @@ func _blocking_pattern() -> RegEx:
 	)
 
 
-## _dependencies returns each file a file needs in order to load, as a scene or resource
-## names it in an `[ext_resource]` header, or a script in a `preload` or `extends`.
+## _dependencies returns each file a scene or resource loads through an `[ext_resource]`
+## header, or a script through a `preload` or `extends`, whether by path or by uid.
 ##
 ## NOTE: A script referring to another only by its `class_name` is not followed.
 func _dependencies(path: String, text: String) -> PackedStringArray:
@@ -106,10 +102,13 @@ func _dependencies(path: String, text: String) -> PackedStringArray:
 		for result: RegExMatch in _script_dependency.search_all(text):
 			var target := result.get_string(1)
 
-			if not target.contains("://"):
+			if target.begins_with("uid://"):
+				target = ResourceText.uid_path(target)
+			elif not target.contains("://"):
 				target = path.get_base_dir().path_join(target).simplify_path()
 
-			found.append(target)
+			if target != "":
+				found.append(target)
 
 		return found
 
@@ -117,9 +116,9 @@ func _dependencies(path: String, text: String) -> PackedStringArray:
 		if not line.begins_with(ResourceText.EXT_RESOURCE_PREFIX):
 			continue
 
-		var result := _dependency.search(line)
-		if result != null:
-			found.append(result.get_string(1))
+		var target := ResourceText.dependency(line)
+		if target != "":
+			found.append(target)
 
 	return found
 

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c06y8l0l6bymn"]
+
+[ext_resource type="Script" uid="uid://dls4cxavked10" path="res://gated/moved_away.gd" id="1_user"]
+
+[node name="Root" type="Node"]
+script = ExtResource("1_user")

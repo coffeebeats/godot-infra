@@ -24,8 +24,9 @@ const PROPERTY_PATTERN := "^([A-Za-z_][A-Za-z0-9_/]*) = "
 ## SCRIPT_VALUE_PATTERN captures the ext_resource id a `script =` line references.
 const SCRIPT_VALUE_PATTERN := '^script = ExtResource\\("([^"]+)"\\)'
 
-## SCRIPT_RESOURCE_PATTERN captures the path and id of a declared script resource.
-const SCRIPT_RESOURCE_PATTERN := 'type="Script".*path="([^"]+)".*id="([^"]+)"'
+## SCRIPT_RESOURCE_PATTERN captures the id of a declared script resource, in any
+## attribute order; the space before `id=` keeps it from matching inside `uid=`.
+const SCRIPT_RESOURCE_PATTERN := 'type="Script".* id="([^"]+)"'
 
 # -- INITIALIZATION ------------------------------------------------------------------ #
 
@@ -110,7 +111,7 @@ func _init() -> void:
 # -- PRIVATE METHODS ----------------------------------------------------------------- #
 
 
-## _script_resources maps ext_resource ids to script paths for the given file.
+## _script_resources maps ext_resource ids to the scripts they load in the given file.
 func _script_resources(file: SourceFile) -> Dictionary:
 	var scripts := {}
 
@@ -120,7 +121,7 @@ func _script_resources(file: SourceFile) -> Dictionary:
 
 		var found := _script_resource.search(line)
 		if found != null:
-			scripts[found.get_string(2)] = found.get_string(1)
+			scripts[found.get_string(1)] = ResourceText.dependency(line)
 
 	return scripts
 

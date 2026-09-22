@@ -6,5 +6,6 @@
 extends Node
 
 
-func _ready() -> void:
-	AbsentApi.start()
+## start takes the extension's own type, as a wrapper around a storefront's API would.
+static func start(api: AbsentApi = null) -> void:
+	api.start()

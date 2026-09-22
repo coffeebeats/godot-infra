@@ -30,10 +30,6 @@ const EXCLUDE_KEY := "exclude_filter"
 ## REFERRING_EXTENSIONS are the files carrying `[ext_resource]` headers.
 const REFERRING_EXTENSIONS: Array[String] = ["tscn", "tres"]
 
-# -- INITIALIZATION ------------------------------------------------------------------ #
-
-var _reference := RegEx.create_from_string(ResourceText.REFERENCE_PATTERN)
-
 # -- PUBLIC METHODS (OVERRIDES) ------------------------------------------------------ #
 
 
@@ -110,7 +106,7 @@ func _init() -> void:
 
 
 ## _dependencies returns every `[ext_resource]` header in the project, as the file
-## carrying it, the line it sits on and the file it points at.
+## carrying it, the line it sits on and the file it loads.
 func _dependencies(tree: PackedStringArray) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 
@@ -124,30 +120,11 @@ func _dependencies(tree: PackedStringArray) -> Array[Dictionary]:
 			if not lines[i].begins_with(ResourceText.EXT_RESOURCE_PREFIX):
 				continue
 
-			var target := _target(lines[i])
+			var target := ResourceText.dependency(lines[i]).trim_prefix("res://")
 			if target != "":
 				out.append({&"file": path, &"line": i + 1, &"target": target})
 
 	return out
-
-
-## _target returns the file a dependency header points at, without the scheme, or an
-## empty string when it points at nothing. A uid that resolves wins, since that is what
-## the engine loads.
-func _target(line: String) -> String:
-	var carried := ""
-
-	for found in _reference.search_all(line):
-		var ref := found.get_string(1)
-
-		if ref.begins_with("uid://"):
-			var id := ResourceUID.text_to_id(ref)
-			if id != ResourceUID.INVALID_ID and ResourceUID.has_id(id):
-				return ResourceUID.get_id_path(id).trim_prefix("res://")
-		elif ref.begins_with("res://"):
-			carried = ref.trim_prefix("res://")
-
-	return carried
 
 
 ## _excluded returns the files a set of globs drops, as a set, matching them against
