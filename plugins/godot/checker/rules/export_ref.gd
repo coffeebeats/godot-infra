@@ -78,9 +78,7 @@ func check(file: SourceFile) -> Array[Problem]:
 			if dependency[&"target"] not in excluded:
 				continue
 
-			var reported: PackedStringArray = crossings.get(
-				index, PackedStringArray()
-			)
+			var reported: PackedStringArray = crossings.get(index, PackedStringArray())
 			reported.append(preset)
 			crossings[index] = reported
 
@@ -154,9 +152,7 @@ func _target(line: String) -> String:
 
 ## _excluded returns the files a set of globs drops, as a set, matching them against
 ## both the bare path and the `res://` one, as the exporter does.
-static func _excluded(
-	tree: PackedStringArray, globs: PackedStringArray
-) -> Dictionary:
+static func _excluded(tree: PackedStringArray, globs: PackedStringArray) -> Dictionary:
 	var out := {}
 
 	for path in tree:

@@ -47,9 +47,7 @@ func lines() -> PackedStringArray:
 func resource() -> Resource:
 	if not _loaded:
 		_loaded = true
-		_resource = ResourceLoader.load(
-			path, "", ResourceLoader.CACHE_MODE_IGNORE_DEEP
-		)
+		_resource = ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE_DEEP)
 
 	return _resource
 

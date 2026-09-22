@@ -133,7 +133,9 @@ func _check_globs(overrides: ConfigFile) -> Array[Problem]:
 
 			if not Config.is_strings(value):
 				var shape := "[%s] %s must be an array of strings" % [section, key]
-				problems.append(Problem.new(ExportDeclaration.OVERRIDES_PATH, line, name, shape))
+				problems.append(
+					Problem.new(ExportDeclaration.OVERRIDES_PATH, line, name, shape)
+				)
 				continue
 
 			for entry: String in value:
@@ -145,13 +147,17 @@ func _check_globs(overrides: ConfigFile) -> Array[Problem]:
 						% [section, entry]
 					)
 					problems.append(
-						Problem.new(ExportDeclaration.OVERRIDES_PATH, line, name, missing)
+						Problem.new(
+							ExportDeclaration.OVERRIDES_PATH, line, name, missing
+						)
 					)
 					continue
 
 				if not _matches_any(glob):
 					var empty := "[%s] `%s` matches no file" % [section, entry]
-					problems.append(Problem.new(ExportDeclaration.OVERRIDES_PATH, line, name, empty))
+					problems.append(
+						Problem.new(ExportDeclaration.OVERRIDES_PATH, line, name, empty)
+					)
 
 	return problems
 
@@ -231,7 +237,9 @@ func _check_sections(overrides: ConfigFile, names: Dictionary) -> Array[Problem]
 
 		var message := "[%s] matches no preset" % section
 		var line := _line_of(lines, section, "")
-		problems.append(Problem.new(ExportDeclaration.OVERRIDES_PATH, line, name, message))
+		problems.append(
+			Problem.new(ExportDeclaration.OVERRIDES_PATH, line, name, message)
+		)
 
 	return problems
 

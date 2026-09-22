@@ -90,7 +90,9 @@ func _blocking_pattern(missing: Dictionary) -> RegEx:
 	for extension: String in missing:
 		names.append_array(missing[extension])
 
-	return RegEx.create_from_string(GDScriptText.NAME_BOUNDARY + ("(?:%s)\\b" % "|".join(names)))
+	return RegEx.create_from_string(
+		GDScriptText.NAME_BOUNDARY + ("(?:%s)\\b" % "|".join(names))
+	)
 
 
 ## _dependencies returns the files a file needs in order to load: the `[ext_resource]`
