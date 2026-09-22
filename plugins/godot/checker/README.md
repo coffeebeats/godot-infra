@@ -35,10 +35,10 @@ it on. The checker exits 1 for a problem or a repair alike, since the engine can
 return a code that tells them apart. Follow `--fix` with `godot --import --headless` so
 the assigned uids resolve.
 
-Add a rule only after a pitfall has bitten twice, and add it to this file rather than a
-second script. Booting the project costs 1.17s against about 10ms per rule per file, so
-one boot has to run everything. A rule applies to every repository that enables the
-plugin, so it must hold for any Godot project.
+Add a rule only after a pitfall has bitten twice; see [Adding a rule](#adding-a-rule).
+Booting the project costs 1.17s against about 10ms per rule per file, so one boot runs
+every rule. A rule applies to every repository that enables the plugin, so it must hold
+for any Godot project.
 
 ## Configuration
 
@@ -258,14 +258,15 @@ Each of these returns a plausible wrong answer rather than an error.
 - **A script that fails to parse still loads as non-null.** A compiled script always
   has a native base type, so `compile` checks `get_instance_base_type()`.
   `Script.reload()` cannot stand in, since it errors on any script with live instances.
-- **Re-loading the running script hangs the engine**, so `compile` skips its own path.
+- **Re-loading the running script hangs the engine**, so `compile` skips the checker's
+  own files.
   `ResourceLoader.has_cached()` cannot stand in for that skip, since it reports true for
   scripts the process never loaded.
 - **A `preload`ed script that names anything unresolved hangs the engine**, measured on
-  4.7.2 for an unknown global, a missing preload target and an unknown type; a plain
-  syntax error exits 1 instead. Splitting the rules out also needs
-  `ResourceLoader.load` on an absolute path, since the checker runs from outside the
-  project and `preload` cannot reach its own files. Both are why every rule lives here.
+  4.7.2 for an unknown global, a missing preload target and an unknown type, or exits 0
+  having run nothing; a plain syntax error exits 1 instead. Only an edit to the checker
+  itself can cause it, since its files preload one another by relative path, and
+  `scripts/test_project_checker.py` catches both outcomes.
 - **`SceneTree.quit(code)` collapses every non-zero code to 1** under `-s`.
 - **A missing `[ext_resource]` target does not fail a load.** The scene loads without
   the node that needed it, so `path-ref` validates headers rather than `load`.
@@ -289,3 +290,24 @@ reaches the agent; a hook that writes there shows up as "No stderr output".
 
 An edit to `export_overrides.cfg` is checked against `export_presets.cfg`, since that is
 the file the rule covers and the pair is meaningless apart.
+
+## Adding a rule
+
+`check.gd` is the entry point, and it preloads everything else. `core/` holds what every
+run needs: the config, the per-file cache, discovery and the GDExtension gate. `lib/`
+holds what more than one rule reads. `rules/` holds one file per rule, named for the
+rule with `_` in place of `-`.
+
+1. Write `rules/<name>.gd`. It extends `"../core/rule.gd"`, sets `name`, `extensions`
+   and optionally `roots` or `files` in `_init`, and overrides `check`. A rule that can
+   repair what it finds also overrides `fix` and `fixable`, and one a project configures
+   overrides `options` and `configure`.
+2. Add it to `RULES` in `check.gd`, whose order is the order the rules run in.
+3. Add files that break it to `tests/checker/violations/`, along with any it must pass
+   over. Run `uv run scripts/test_project_checker.py --update` and review the lines it
+   adds.
+4. Add its row to the table above.
+
+A rule preloads from `core/` and `lib/`, never another rule; what two rules share moves
+into `lib/`. No file declares a `class_name`, since the checker runs inside a project
+whose class cache it must not add to.
