@@ -11,6 +11,10 @@
 
 extends "../core/rule.gd"
 
+# -- DEPENDENCIES -------------------------------------------------------------------- #
+
+const ResourceText := preload("../lib/resource_text.gd")
+
 # -- DEFINITIONS --------------------------------------------------------------------- #
 
 ## PROPERTY_PATTERN matches a top-level property assignment, skipping continuation
@@ -111,7 +115,7 @@ func _script_resources(file: SourceFile) -> Dictionary:
 	var scripts := {}
 
 	for line in file.lines():
-		if not line.begins_with("[ext_resource "):
+		if not line.begins_with(ResourceText.EXT_RESOURCE_PREFIX):
 			continue
 
 		var found := _script_resource.search(line)

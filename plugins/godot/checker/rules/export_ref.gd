@@ -49,8 +49,7 @@ func check(file: SourceFile) -> Array[Problem]:
 	if presets.load(file.path) != OK:
 		return problems
 
-	var tree := PackedStringArray()
-	ExportDeclaration.collect("res://", tree)
+	var tree := ExportDeclaration.tree()
 
 	var dependencies := _dependencies(tree)
 	if dependencies.is_empty():

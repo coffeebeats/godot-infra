@@ -19,11 +19,6 @@ extends "../core/rule.gd"
 
 const ExportDeclaration := preload("../lib/export_declaration.gd")
 
-# -- INITIALIZATION ------------------------------------------------------------------ #
-
-var _tree := PackedStringArray()
-var _walked: bool = false
-
 # -- PUBLIC METHODS (OVERRIDES) ------------------------------------------------------ #
 
 
@@ -249,15 +244,6 @@ static func _coerced(current: Variant, declared: Variant) -> Variant:
 	return declared
 
 
-## _files returns every file the exporter's walk reaches, without the scheme.
-func _files() -> PackedStringArray:
-	if not _walked:
-		_walked = true
-		ExportDeclaration.collect("res://", _tree)
-
-	return _tree
-
-
 ## _line_of returns the 1-based line a key sits on within a section, or the section's
 ## own header when `key` is empty, and 0 when neither is there.
 static func _line_of(lines: PackedStringArray, section: String, key: String) -> int:
@@ -284,7 +270,7 @@ static func _line_of(lines: PackedStringArray, section: String, key: String) -> 
 ## _matches_any reports whether any file matches a glob, trying it against both the
 ## bare path and the `res://` one, as the exporter does.
 func _matches_any(glob: String) -> bool:
-	for path in _files():
+	for path in ExportDeclaration.tree():
 		if path.matchn(glob) or ("res://" + path).matchn(glob):
 			return true
 

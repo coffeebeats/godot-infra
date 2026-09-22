@@ -23,3 +23,29 @@ const NON_CODE_PATTERN := (
 	+ "|\\x22(?:\\\\.|[^\\x22\\\\\\n])*\\x22|\\x27(?:\\\\.|[^\\x27\\\\\\n])*\\x27"
 	+ "|#[^\\n]*"
 )
+
+# -- INITIALIZATION ------------------------------------------------------------------ #
+
+static var _non_code := RegEx.create_from_string(NON_CODE_PATTERN)
+
+# -- PUBLIC METHODS ------------------------------------------------------------------ #
+
+
+## mask returns the source with every comment and string literal blanked out, so a scan
+## reads code alone while each line still sits where it does in the file.
+static func mask(text: String) -> String:
+	var source := text.replace("\r\n", "\n")
+	var masked := ""
+	var cursor := 0
+
+	for found: RegExMatch in _non_code.search_all(source):
+		masked += source.substr(cursor, found.get_start() - cursor)
+
+		# A span collapses to the newlines it held, so a multi-line string shifts
+		# nothing reported below it.
+		var length := found.get_end() - found.get_start()
+		masked += "\n".repeat(source.substr(found.get_start(), length).count("\n"))
+
+		cursor = found.get_end()
+
+	return masked + source.substr(cursor)

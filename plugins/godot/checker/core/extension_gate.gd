@@ -12,6 +12,7 @@ extends RefCounted
 
 const Config := preload("config.gd")
 const GDScriptText := preload("../lib/gdscript_text.gd")
+const ResourceText := preload("../lib/resource_text.gd")
 
 # -- DEFINITIONS --------------------------------------------------------------------- #
 
@@ -38,7 +39,6 @@ var _blocked_cache: Dictionary = {}
 
 var _dependency := RegEx.create_from_string(DEPENDENCY_PATTERN)
 var _names: RegEx = null
-var _non_code := RegEx.create_from_string(GDScriptText.NON_CODE_PATTERN)
 var _script_dependency := RegEx.create_from_string(SCRIPT_DEPENDENCY_PATTERN)
 
 # -- PUBLIC METHODS ------------------------------------------------------------------ #
@@ -112,7 +112,7 @@ func _dependencies(path: String, text: String) -> PackedStringArray:
 		return found
 
 	for line in text.split("\n"):
-		if not line.begins_with("[ext_resource "):
+		if not line.begins_with(ResourceText.EXT_RESOURCE_PREFIX):
 			continue
 
 		var result := _dependency.search(line)
@@ -155,7 +155,7 @@ func _reaches_blocked(path: String, names: RegEx, visited: Dictionary) -> bool:
 
 	var text := FileAccess.get_file_as_string(path)
 
-	if extension == "gd" and names.search(_non_code.sub(text, " ", true)) != null:
+	if extension == "gd" and names.search(GDScriptText.mask(text)) != null:
 		_blocked_cache[path] = true
 		return true
 

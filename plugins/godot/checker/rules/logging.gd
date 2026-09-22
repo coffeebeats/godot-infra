@@ -34,14 +34,13 @@ const CALL_PATTERN := (
 # -- INITIALIZATION ------------------------------------------------------------------ #
 
 var _call := RegEx.create_from_string(CALL_PATTERN)
-var _non_code := RegEx.create_from_string(GDScriptText.NON_CODE_PATTERN)
 
 # -- PUBLIC METHODS (OVERRIDES) ------------------------------------------------------ #
 
 
 func check(file: SourceFile) -> Array[Problem]:
 	var problems: Array[Problem] = []
-	var lines := _masked(file.text())
+	var lines := GDScriptText.mask(file.text()).split("\n")
 
 	for i in lines.size():
 		for found: RegExMatch in _call.search_all(lines[i]):
@@ -62,26 +61,3 @@ func configure(config: Config) -> void:
 
 func _init() -> void:
 	name = Config.LOGGING
-
-
-# -- PRIVATE METHODS ----------------------------------------------------------------- #
-
-
-## _masked returns the file's lines with every comment and string literal blanked out,
-## so the scan reads code alone while its line numbers still match the file's.
-func _masked(text: String) -> PackedStringArray:
-	var source := text.replace("\r\n", "\n")
-	var masked := ""
-	var cursor := 0
-
-	for found: RegExMatch in _non_code.search_all(source):
-		masked += source.substr(cursor, found.get_start() - cursor)
-
-		# A span collapses to the newlines it held, so a multi-line string shifts
-		# nothing reported below it.
-		var length := found.get_end() - found.get_start()
-		masked += "\n".repeat(source.substr(found.get_start(), length).count("\n"))
-
-		cursor = found.get_end()
-
-	return (masked + source.substr(cursor)).split("\n")

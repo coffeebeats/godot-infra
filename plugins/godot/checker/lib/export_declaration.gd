@@ -28,6 +28,11 @@ const OPTIONS_PREFIX := "options/"
 const OVERRIDES_PATH := "res://export_overrides.cfg"
 const PRESETS_PATH := "res://export_presets.cfg"
 
+# -- INITIALIZATION ------------------------------------------------------------------ #
+
+static var _tree := PackedStringArray()
+static var _walked: bool = false
+
 # -- PUBLIC METHODS ------------------------------------------------------------------ #
 
 
@@ -64,31 +69,6 @@ static func assemble(preset_name: String, overrides: ConfigFile) -> Dictionary:
 		declared[key] = ",".join(lists[key])
 
 	return declared
-
-
-## collect appends every file under a directory, passing over the directories the
-## exporter ignores, those named with a leading period and those holding a
-## `.gdignore`.
-static func collect(dir_path: String, found: PackedStringArray) -> void:
-	var dir := DirAccess.open(dir_path)
-	if dir == null or dir.file_exists(".gdignore"):
-		return
-
-	dir.list_dir_begin()
-
-	var entry := dir.get_next()
-	while entry != "":
-		var path := dir_path.path_join(entry)
-
-		if dir.current_is_dir():
-			if not entry.begins_with("."):
-				collect(path, found)
-		else:
-			found.append(path.trim_prefix("res://"))
-
-		entry = dir.get_next()
-
-	dir.list_dir_end()
 
 
 ## lines returns a file's contents split on newlines, carriage returns removed.
@@ -149,3 +129,41 @@ static func to_glob(entry: String) -> String:
 		return entry
 
 	return ""
+
+
+## tree returns every file the exporter's walk reaches, without the scheme. The project
+## is walked once per run.
+static func tree() -> PackedStringArray:
+	if not _walked:
+		_walked = true
+		_collect("res://", _tree)
+
+	return _tree
+
+
+# -- PRIVATE METHODS ----------------------------------------------------------------- #
+
+
+## _collect appends every file under a directory, passing over the directories the
+## exporter ignores, those named with a leading period and those holding a
+## `.gdignore`.
+static func _collect(dir_path: String, found: PackedStringArray) -> void:
+	var dir := DirAccess.open(dir_path)
+	if dir == null or dir.file_exists(".gdignore"):
+		return
+
+	dir.list_dir_begin()
+
+	var entry := dir.get_next()
+	while entry != "":
+		var path := dir_path.path_join(entry)
+
+		if dir.current_is_dir():
+			if not entry.begins_with("."):
+				_collect(path, found)
+		else:
+			found.append(path.trim_prefix("res://"))
+
+		entry = dir.get_next()
+
+	dir.list_dir_end()
