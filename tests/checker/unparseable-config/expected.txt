@@ -1,0 +1,3 @@
+  res://.gdcheckrc: [config] does not parse: Parse error
+checked 0 file(s); fix res://.gdcheckrc first
+exit 1

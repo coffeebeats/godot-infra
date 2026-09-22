@@ -1,0 +1,5 @@
+; A list left open, so the file does not parse and nothing else is checked.
+
+[all]
+
+excludes=["res://scratch/*"

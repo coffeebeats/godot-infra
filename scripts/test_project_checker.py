@@ -82,7 +82,7 @@ def checker(project: Path, args: list[str]) -> str:
     result = godot(project, "-s", CHECKER, "--", *args)
 
     lines = result.stdout.replace("\r\n", "\n").splitlines()
-    kept = [line for line in lines if not line.startswith(BANNER)]
+    kept = [line.rstrip() for line in lines if not line.startswith(BANNER)]
     output = "\n".join(kept).strip("\n")
 
     return f"{output}\nexit {result.returncode}\n".lstrip("\n")
