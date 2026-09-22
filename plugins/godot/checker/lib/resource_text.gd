@@ -31,9 +31,7 @@ static var _reference := RegEx.create_from_string(REFERENCE_PATTERN)
 static func dependency(line: String) -> String:
 	var carried := ""
 
-	for found in _reference.search_all(line):
-		var ref := found.get_string(1)
-
+	for ref in references(line):
 		if ref.begins_with("uid://"):
 			var resolved := uid_path(ref)
 			if resolved != "":
@@ -42,6 +40,16 @@ static func dependency(line: String) -> String:
 			carried = ref
 
 	return carried
+
+
+## references returns every quoted `res://` or `uid://` string on a line, in order.
+static func references(line: String) -> PackedStringArray:
+	var found := PackedStringArray()
+
+	for result in _reference.search_all(line):
+		found.append(result.get_string(1))
+
+	return found
 
 
 ## uid_path returns the file a `uid://` reference resolves to, or an empty string when

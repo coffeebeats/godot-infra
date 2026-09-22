@@ -24,10 +24,6 @@ const ResourceText := preload("../lib/resource_text.gd")
 ## SELF_HEADER_PREFIXES mark the file's own header, which the `uid` rule owns.
 const SELF_HEADER_PREFIXES: Array[String] = ["[gd_resource ", "[gd_scene "]
 
-# -- INITIALIZATION ------------------------------------------------------------------ #
-
-var _reference := RegEx.create_from_string(ResourceText.REFERENCE_PATTERN)
-
 # -- PUBLIC METHODS (OVERRIDES) ------------------------------------------------------ #
 
 
@@ -48,8 +44,8 @@ func check(file: SourceFile) -> Array[Problem]:
 
 			continue
 
-		for found in _reference.search_all(line):
-			var message := _describe(found.get_string(1))
+		for ref in ResourceText.references(line):
+			var message := _describe(ref)
 			if message != "":
 				problems.append(Problem.new(file.path, i + 1, name, message))
 
@@ -76,8 +72,7 @@ func fix(file: SourceFile) -> bool:
 			if not drift.is_empty():
 				replaced = line.replace('"%s"' % drift[0], '"%s"' % drift[1])
 		else:
-			for found in _reference.search_all(line):
-				var ref := found.get_string(1)
+			for ref in ResourceText.references(line):
 				var uid := _preferred_uid(ref)
 				if uid != "":
 					replaced = replaced.replace('"%s"' % ref, '"%s"' % uid)
@@ -131,8 +126,7 @@ func _describe_dependency(line: String) -> String:
 	var references := PackedStringArray()
 	var resolved := false
 
-	for found in _reference.search_all(line):
-		var ref := found.get_string(1)
+	for ref in ResourceText.references(line):
 		if _resolves(ref):
 			resolved = true
 
@@ -158,9 +152,7 @@ func _drift(line: String) -> PackedStringArray:
 	var carried := ""
 	var resolved := ""
 
-	for found in _reference.search_all(line):
-		var ref := found.get_string(1)
-
+	for ref in ResourceText.references(line):
 		if ref.begins_with("uid://"):
 			resolved = ResourceText.uid_path(ref)
 		elif ref.begins_with("res://"):
