@@ -6,8 +6,8 @@ disable-model-invocation: true
 argument-hint: "<major.minor | major.minor.patch>"
 ---
 
-Move this repository to Godot `$ARGUMENTS`. It applies to anything holding a
-`.godot-version` pin: a game, `godot-prototypes`, `godot-plugin-std`,
+Move this repository to the Godot release named in the request. It applies to anything
+holding a `.godot-version` pin: a game, `godot-prototypes`, `godot-plugin-std`,
 `godot-plugin-template`, and the `gut` and `GodotSteam` forks.
 
 The pin is the only engine version a repository stores. `config/features` in
