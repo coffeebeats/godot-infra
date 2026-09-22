@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://di4q4rop1i6is"]
+
+[ext_resource type="Script" uid="uid://dgk22gn1u0gij" path="res://script-order/holder.gd" id="1_holder"]
+
+[node name="Root" type="Node"]
+speed = 2.0
+script = ExtResource("1_holder")

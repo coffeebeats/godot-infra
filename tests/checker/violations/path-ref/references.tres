@@ -1,0 +1,9 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://dduel2n8kb64s"]
+
+[ext_resource type="Resource" uid="uid://bcss4jk47ku53" path="res://path-ref/moved_away.tres" id="1_target"]
+
+[resource]
+metadata/drifted = ExtResource("1_target")
+metadata/missing = "res://path-ref/missing.tres"
+metadata/unknown = "uid://cunregistered"
+metadata/by_path = "res://path-ref/target.tres"

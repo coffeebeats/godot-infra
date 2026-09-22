@@ -1,0 +1,5 @@
+; Turns the `logging` rule on, so the listing shows each rule as a project configures it.
+
+[logging]
+
+disallow_engine_output=true

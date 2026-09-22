@@ -1,0 +1,8 @@
+  res://relative.tres:4: [path-ref] path does not exist
+  res://absolute.tres:4: [path-ref] path does not exist
+  res://sub/broken.gd: [compile] does not compile
+  res://sub/nested.tres:4: [path-ref] path does not exist
+checked 4 file(s), 4 problem(s)
+excluded 1 file(s) through res://.gdcheckrc
+fixed 3 file(s); run `godot --import --headless` so they resolve
+exit 1

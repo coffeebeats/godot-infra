@@ -3,8 +3,8 @@
 ## the rule matches, in a position where naming it is not calling it: a doc comment, a
 ## string, a multi-line string, a method on an object, and a declaration.
 ##
-## NOTE: A green run proves only that the rule raises no false positive. Nothing here
-## can prove it still reports a real call, because CI asserts this project is clean.
+## NOTE: A report against this file shows up as a new line in `expected.txt`, while
+## `bare_print.gd` beside it proves the rule still reports a real call.
 ##
 
 extends Node

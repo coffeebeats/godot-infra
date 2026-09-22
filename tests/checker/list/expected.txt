@@ -1,0 +1,10 @@
+compile          gd           res://
+logging          gd           res://
+uid              tscn tres    res://                                        fixable
+path-ref         tscn tres    res://                                        fixable
+load             tscn tres    res://
+script-order     tscn tres    res://
+nodepath         tscn         res://
+export-overrides cfg          res://export_presets.cfg                      fixable
+export-ref       cfg          res://export_presets.cfg
+exit 0

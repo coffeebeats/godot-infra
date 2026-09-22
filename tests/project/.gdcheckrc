@@ -1,7 +1,0 @@
-; Configures godot-infra's project checker, which this repository runs against this
-; project in CI. See ../../plugins/godot/checker/README.md.
-
-[logging]
-
-; Turns the `logging` rule on, so a false positive in `logging.gd` fails CI.
-disallow_engine_output=true

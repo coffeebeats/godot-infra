@@ -1,0 +1,4 @@
+[gd_resource type="Resource" format=3]
+
+[resource]
+metadata/note = "a header with no uid, left unchecked"

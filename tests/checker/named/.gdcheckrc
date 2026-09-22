@@ -1,0 +1,5 @@
+; Excludes one of the files `args` names, which is then counted rather than checked.
+
+[all]
+
+excludes=["res://excluded.tres"]
