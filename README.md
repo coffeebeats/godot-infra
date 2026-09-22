@@ -176,12 +176,14 @@ The script deliberately leaves SHA pinning off. Dependent repositories consume g
 
 ## **Agent plugin**
 
-This repository is also a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) holding one plugin, [`godot`](./plugins/godot). Nothing is published anywhere; a repository references it by GitHub path. The plugin carries the Godot tooling that is the same in every repository:
+This repository is also a plugin marketplace holding one plugin, [`godot`](./plugins/godot). [Claude Code](https://code.claude.com/docs/en/plugin-marketplaces) and Codex both read it, from the same `.claude-plugin/` files. Nothing is published anywhere; a repository references it by GitHub path. The plugin carries the Godot tooling that is the same in every repository:
 
-- An edit hook that runs `gdformat` and `gdlint` on each `.gd` edit, the [project checker](./plugins/godot/checker/README.md) with `--fix` on each edited `.gd`, `.tscn` or `.tres` file, and the edited script's `<name>_test.gd` if one exists.
+- An edit hook that runs `gdformat` and `gdlint` on each edited `.gd` file, the [project checker](./plugins/godot/checker/README.md) with `--fix` on each edited `.gd`, `.tscn` or `.tres` file, and the `<name>_test.gd` beside each edited script. It fires on Claude Code's `Edit` and `Write` and on Codex's `apply_patch`, and a patch that touches several files is checked in one run.
 - `godot-check`, which runs the same checker over the whole project, for changes the hook never sees such as a move.
 - The `godot-api` skill, which dumps engine, addon and project class references for lookups.
 - `godot-locale`, which updates a gettext catalogue from its message template, compiles the `.mo` files the engine loads, and validates both — including that each translation keeps the placeholders its English text declares, which gettext cannot check for a catalogue keyed by message ID. Set `LOCALE_DIR` where the catalogue is not `project/locale`.
+
+Claude Code puts `godot-check` and `godot-locale` on the `PATH`; Codex has nothing that does, so each also has a skill of its own name carrying the form to run it by.
 
 The `test` job of `check-project.yaml` runs the same checker, and its `check-translations` job runs the same catalogue tooling, so a new rule reaches CI and the hook together and no repository needs a copy of either. A repository gets the translation job by having a `messages.pot` under the workflow's `locale-dir`.
 
@@ -212,6 +214,28 @@ Three things the settings file cannot do.
 - It registers the marketplace only when the folder is first trusted, so a machine that already knows the name keeps its old `ref` after a major release. Run `claude plugin marketplace remove godot-infra`, then `claude plugin marketplace add coffeebeats/godot-infra#<ref>` with the ref from `.claude/settings.json`. The remove also deletes that entry from the file and uninstalls the marketplace's plugins, so restore the file with git and install again.
 - It enables the plugin but does not install it, and a project-scope install is keyed to the repository's path. A moved or renamed clone loads the skills but not the hook, and the only trace is an entry in the `/plugin` Errors tab. Run the install again from the new path.
 - It does not update an install that already exists. `claude plugin update godot@godot-infra --scope project` does.
+
+### Codex
+
+A repository declares the same marketplace in its `.codex/config.toml`, which Codex reads
+once the project folder is trusted:
+
+```toml
+[marketplaces.godot-infra]
+source_type = "git"
+source = "https://github.com/coffeebeats/godot-infra.git"
+ref = "v6"
+
+[plugins."godot@godot-infra"]
+enabled = true
+```
+
+A machine without that file gets the same result from `codex plugin marketplace add coffeebeats/godot-infra --ref v6` followed by `codex plugin add godot@godot-infra`. Either way Codex refreshes the marketplace at startup, and `codex plugin marketplace upgrade godot-infra` does it on demand.
+
+Two things differ from Claude Code.
+
+- **The hook runs only once its user trusts it.** Codex hashes each hook and skips it until someone approves it in `/hooks`. The prompt returns whenever the entry in `hooks.json` changes, though not when the script it runs does.
+- **`PATH` carries nothing from the plugin.** `godot` is what the hook and the checker need, `python3` runs the hook and the `godot-api` dump (`uv` covers a machine without it), and `godot-locale` needs a POSIX shell and gettext, so on Windows it needs MSYS2 or Git Bash. Codex's Windows sandbox blocks both that shell and `uv`, so a `godot-locale` run there has to happen outside the sandbox.
 
 ## **Development**
 
@@ -402,9 +426,9 @@ Each compile ends with `scons: done building targets.` and each export with `[ D
 
 The `release` profile enables link-time optimization, so compiles are slow under emulation on an M-series Mac (the web template takes about 23 minutes; an export takes seconds). `.scons/` caches object files between runs. `godot/`, `build/`, `dist/`, `.godot-editor/`, `.scons/`, and `tests/project/.godot-version` are gitignored.
 
-### Testing the project checker
+### Testing the project checker and the edit hook
 
-`check-plugin` runs the [project checker](./plugins/godot/checker/README.md) over each case in [`tests/checker`](./tests/checker). A case is a small Godot project, and its `expected.txt` holds the output the checker must produce. The same runs locally:
+`check-plugin` runs the [project checker](./plugins/godot/checker/README.md) over each case in [`tests/checker`](./tests/checker). A case is a small Godot project, and its `expected.txt` holds the output the checker must produce. A case that holds a `payload.json` runs the edit hook over the project instead, with that payload on stdin and through the command line `hooks.json` carries, so the `hook-*` cases cover what each harness sends: one file from Claude Code, a patch of several from Codex. The same runs locally:
 
 ```sh
 uv run scripts/test_project_checker.py              # every case

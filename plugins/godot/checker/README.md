@@ -12,8 +12,9 @@ godot-check --fix a.tscn            # repair, then re-check
 godot-check --list                  # print the rule registry
 ```
 
-Outside Claude Code, run `godot --headless -s <path to check.gd> -- <args>` from the
-project root.
+Where the plugin's `bin/` is not on `PATH`, as under Codex, run
+`godot --headless -s <path to check.gd> -- <args>` from the project root. The
+`godot-check` skill carries that form.
 
 | Rule | Covers | Reports | Fixable |
 | --- | --- | --- | --- |
