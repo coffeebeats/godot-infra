@@ -1,9 +1,13 @@
 """Run the 'godot' plugin's project checker over each case in 'tests/checker'.
 
-A case is a Godot project whose 'expected.txt' holds the checker's output over it. A
-case holding an 'args' file passes those arguments, one per line. A case holding an
-'expected-fixed.txt' is then run with '--fix', re-imported and checked again, and that
-file holds the second check's output. Every run must exit 1, since each case reports.
+A case is a Godot project whose 'expected.txt' holds the checker's output over it,
+followed by the code the checker exited with. A case may also hold these files:
+
+- 'args' lists the arguments to pass, one per line.
+- 'delete-after-import' lists paths deleted once the project is imported, which leaves
+  the uid cache as a move made since the last import does.
+- 'expected-fixed.txt' holds the output of a second check, after '--fix' and a fresh
+  import.
 
 Each case runs on a copy, so neither an import nor a fix writes into the repository.
 
@@ -41,7 +45,7 @@ TIMEOUT = 120
 
 
 class Failure(Exception):
-    """Failure is a run that went wrong in a way no output diff would show."""
+    """Failure is a Godot call that never finished, which no output could show."""
 
 
 @dataclass
@@ -50,7 +54,7 @@ class Run:
 
     # expected is the case file the output is compared with, or written to.
     expected: Path
-    # actual is the output, without the engine's banner.
+    # actual is the output, without the engine's banner, and the exit code after it.
     actual: str
 
 
@@ -72,39 +76,50 @@ def godot(project: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 def checker(project: Path, args: list[str]) -> str:
-    """checker runs the checker over a project and returns its output."""
+    """checker runs the checker over a project and returns its output, followed by the
+    code it exited with.
+    """
     result = godot(project, "-s", CHECKER, "--", *args)
-    if result.returncode != 1:
-        raise Failure(f"the checker exited {result.returncode}, not 1\n{result.stderr}")
 
     lines = result.stdout.replace("\r\n", "\n").splitlines()
     kept = [line for line in lines if not line.startswith(BANNER)]
+    output = "\n".join(kept).strip("\n")
 
-    return "\n".join(kept).strip("\n") + "\n"
+    return f"{output}\nexit {result.returncode}\n".lstrip("\n")
 
 
-def check(project: Path, args: list[str]) -> str:
-    """check imports a project so its uids resolve, and returns the checker's output."""
+def import_project(project: Path) -> None:
+    """import_project imports a project, so the uids its files carry resolve."""
     godot(project, "--quit", "--import")
-    return checker(project, args)
+
+
+def read_lines(path: Path) -> list[str]:
+    """read_lines returns a case file's non-empty lines, or none if it is absent."""
+    if not path.exists():
+        return []
+
+    return [line for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
 def run_case(case: Path) -> list[Run]:
     """run_case runs the checker over a copy of a case and returns every output."""
-    args: list[str] = []
-    if (case / "args").exists():
-        args = (case / "args").read_text(encoding="utf-8").splitlines()
+    args = read_lines(case / "args")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         project = Path(tmpdir, case.name)
         shutil.copytree(case, project, ignore=shutil.ignore_patterns(".godot"))
 
-        runs = [Run(case / "expected.txt", check(project, args))]
+        import_project(project)
+        for name in read_lines(case / "delete-after-import"):
+            (project / name).unlink()
+
+        runs = [Run(case / "expected.txt", checker(project, args))]
 
         fixed = case / "expected-fixed.txt"
         if fixed.exists():
             checker(project, ["--fix", *args])
-            runs.append(Run(fixed, check(project, args)))
+            import_project(project)
+            runs.append(Run(fixed, checker(project, args)))
 
     return runs
 

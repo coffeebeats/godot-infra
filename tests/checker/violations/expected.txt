@@ -24,3 +24,4 @@ skipped the loading rules for 3 file(s): res://absent.gdextension not loaded
   res://gated/preloads_user.gd
   res://gated/uses_absent.gd
 note: res://absent.gdextension is not loaded here; if a script above uses a name it defines, add the name under `extensions` in res://.gdcheckrc
+exit 1

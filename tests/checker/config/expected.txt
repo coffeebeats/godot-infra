@@ -8,3 +8,4 @@
   res://.gdcheckrc: [config] unknown key `unknown_key` in [nodepath]
   res://.gdcheckrc: [config] unknown section [no-such-rule]
 checked 0 file(s); fix res://.gdcheckrc first
+exit 1
