@@ -1,6 +1,6 @@
 ---
 name: godot-locale
-description: Manage a Godot project's gettext catalogue with `godot-locale` — validate every '.pot' and '.po', merge the message template into the translations, and compile the '.mo' files the engine loads. Use after adding or changing a translatable string, and whenever a run of it is asked for and the command is not on PATH.
+description: Manage a Godot project's gettext catalogue with `godot-locale` — validate every '.pot' and '.po', merge the message template into the translations, and compile the '.mo' files the engine loads. Use after adding or changing a translatable string, and whenever a catalogue run is asked for.
 user-invocable: true
 argument-hint: "validate | update | compile [--verify]"
 ---
@@ -25,11 +25,11 @@ Set `LOCALE_DIR` to the catalogue's directory where it is not `project/locale`.
 Elsewhere, run the file itself:
 
 ```sh
-sh ../../bin/godot-locale validate
+sh <skill directory>/../../bin/godot-locale validate
 ```
 
-That path is relative to this skill's directory, whose location the harness names when it
-loads the skill; pass it as an absolute path.
+Run it from the project root. The script sits two directories above the skill, so build
+the path from the skill directory the harness names and pass it absolute.
 
 ## What it needs
 

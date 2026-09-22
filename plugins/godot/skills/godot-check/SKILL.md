@@ -1,6 +1,6 @@
 ---
 name: godot-check
-description: Run the project checker (`godot-check`) over a Godot project — every rule and every file, or named files — and repair what it can with `--fix`. Use after a move, a rename, or any change the edit hook never saw, and whenever a run of it is asked for and the command is not on PATH.
+description: Run the project checker (`godot-check`) over a Godot project — every rule and every file, or named files — and repair what it can with `--fix`. Use after a move, a rename, or any change the edit hook never saw, and whenever a checker run is asked for.
 user-invocable: true
 argument-hint: "[--fix] [paths...]"
 ---
@@ -27,12 +27,14 @@ godot-check --list           # print what each rule covers
 is not, run the checker through the engine instead — the same thing the command does:
 
 ```sh
-godot --headless --path . -s ../../checker/check.gd -- [--fix] [paths...]
+godot --headless --path <project> -s <skill directory>/../../checker/check.gd -- [--fix] [paths...]
 ```
 
-That path is relative to this skill's directory, whose location the harness names when it
-loads the skill; pass it as an absolute path. This form needs only `godot`, so it is the
-one to use outside Claude Code.
+`--path` names the project and stays pointed at it; the `-s` script is this plugin's
+checker, two directories above the skill, so build it from the skill directory the harness
+names and pass it absolute. Under Git Bash, convert that path with `cygpath -m` first —
+the engine opens a native Windows path, not `/c/...`, which is what `bin/godot-check`
+does. This form needs only `godot`, so it is the one to use outside Claude Code.
 
 ## Reading the result
 

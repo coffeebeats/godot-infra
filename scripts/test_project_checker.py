@@ -127,7 +127,12 @@ def reported(result: subprocess.CompletedProcess[str]) -> str:
     except json.JSONDecodeError:
         decision = None
 
-    if isinstance(decision, dict) and "reason" in decision:
+    if isinstance(decision, dict):
+        # Both harnesses act on a PostToolUse decision only when it blocks, so anything
+        # else is a report the agent never sees. Fail rather than compare it.
+        if decision.get("decision") != "block" or "reason" not in decision:
+            raise Failure(f"the hook's decision blocks nothing: {result.stdout}")
+
         text = decision["reason"]
 
     lines = text.replace("\r\n", "\n").splitlines()
