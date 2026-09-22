@@ -116,9 +116,8 @@ jobs:
           "$(go env GOPATH)/bin/actionlint" -ignore 'specifying action "\$/'
 
   # A release ships the project checker to every consumer at once, so it runs
-  # here with each supported Godot version first: against the sample project,
-  # which must stay clean, and against the cases in 'tests/checker', whose
-  # expected output proves every rule still reports.
+  # here first with each supported Godot version, over the sample project,
+  # which must stay clean, and over the cases in 'tests/checker'.
   check-plugin:
     needs: ["changes"]
 

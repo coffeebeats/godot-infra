@@ -412,7 +412,7 @@ uv run scripts/test_project_checker.py violations   # one case
 uv run scripts/test_project_checker.py --update     # accept a change in output
 ```
 
-`violations/` holds one of every problem the checker reports, and a new rule adds its own there. `named/` runs the checker the way the edit hook does, and `config/` holds every config error. Review the diff `--update` leaves before committing it.
+`violations/` holds one of every problem the checker reports, and a new rule adds its own there. `named/` runs the checker the way the edit hook does, `config/` holds every config error, and `hand-edited-presets/` holds a presets file `--fix` must leave alone. Review the diff `--update` leaves before committing it.
 
 ## **Contributing**
 
