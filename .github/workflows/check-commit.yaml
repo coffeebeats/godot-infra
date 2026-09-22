@@ -106,7 +106,7 @@ jobs:
       # NOTE: 'shellcheck' is preinstalled on GitHub-hosted Ubuntu runners.
       - name: Lint shell scripts
         run: |
-          shopt -s globstar
+          shopt -s globstar nullglob
           shellcheck --severity=warning actions/**/*.sh plugins/**/*.sh plugins/*/bin/*
 
       # NOTE: 'actionlint' reads only workflows, so the 'run:' blocks inside
