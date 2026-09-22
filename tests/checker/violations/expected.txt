@@ -20,10 +20,11 @@
   res://path-ref/references.tres:8: [path-ref] unknown uid; if its target is new, run `godot --import --headless`
   res://path-ref/references.tres:9: [path-ref] reference this as uid://bcss4jk47ku53; a res:// string is dropped on a move
   res://script-order/misordered.tscn:7: [script-order] speed assigned before `script =`; silently dropped
+  res://script-order/reordered.tscn:7: [script-order] speed assigned before `script =`; silently dropped
   res://script-order/stale_path.tscn:3: [path-ref] path names res://script-order/moved_away.gd but uid resolves to res://script-order/holder.gd
   res://script-order/stale_path.tscn:7: [script-order] speed assigned before `script =`; silently dropped
   res://uid/no_uid.tres:1: [uid] no uid in header; re-run with --fix to assign one
-checked 24 file(s), 25 problem(s)
+checked 25 file(s), 26 problem(s)
 excluded 1 file(s) through res://.gdcheckrc
 skipped the loading rules for 5 file(s): res://absent.gdextension not loaded
   res://gated/holds_user.tscn

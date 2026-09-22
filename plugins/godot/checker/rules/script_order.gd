@@ -24,8 +24,9 @@ const PROPERTY_PATTERN := "^([A-Za-z_][A-Za-z0-9_/]*) = "
 ## SCRIPT_VALUE_PATTERN captures the ext_resource id a `script =` line references.
 const SCRIPT_VALUE_PATTERN := '^script = ExtResource\\("([^"]+)"\\)'
 
-## SCRIPT_RESOURCE_PATTERN captures the id of a declared script resource.
-const SCRIPT_RESOURCE_PATTERN := 'type="Script".*id="([^"]+)"'
+## SCRIPT_RESOURCE_PATTERN captures the id of a declared script resource, in any
+## attribute order; the space before `id=` keeps it from matching inside `uid=`.
+const SCRIPT_RESOURCE_PATTERN := 'type="Script".* id="([^"]+)"'
 
 # -- INITIALIZATION ------------------------------------------------------------------ #
 
