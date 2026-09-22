@@ -49,3 +49,13 @@ static func mask(text: String) -> String:
 		cursor = found.get_end()
 
 	return masked + source.substr(cursor)
+
+
+# -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
+
+
+func _init() -> void:
+	assert(
+		not OS.is_debug_build(),
+		"Invalid config; this 'Object' should not be instantiated!"
+	)

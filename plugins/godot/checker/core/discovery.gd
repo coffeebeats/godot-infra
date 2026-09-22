@@ -101,3 +101,13 @@ static func scan(dir_path: String, extensions: Array[String], seen: Dictionary) 
 		entry = dir.get_next()
 
 	dir.list_dir_end()
+
+
+# -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
+
+
+func _init() -> void:
+	assert(
+		not OS.is_debug_build(),
+		"Invalid config; this 'Object' should not be instantiated!"
+	)

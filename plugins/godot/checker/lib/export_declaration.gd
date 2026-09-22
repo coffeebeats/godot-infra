@@ -141,6 +141,16 @@ static func tree() -> PackedStringArray:
 	return _tree
 
 
+# -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
+
+
+func _init() -> void:
+	assert(
+		not OS.is_debug_build(),
+		"Invalid config; this 'Object' should not be instantiated!"
+	)
+
+
 # -- PRIVATE METHODS ----------------------------------------------------------------- #
 
 

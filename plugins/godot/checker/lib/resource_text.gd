@@ -16,3 +16,12 @@ const EXT_RESOURCE_PREFIX := "[ext_resource "
 
 ## REFERENCE_PATTERN matches one quoted `res://` or `uid://` string literal.
 const REFERENCE_PATTERN := '"((?:res|uid)://[^"]*)"'
+
+# -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
+
+
+func _init() -> void:
+	assert(
+		not OS.is_debug_build(),
+		"Invalid config; this 'Object' should not be instantiated!"
+	)
