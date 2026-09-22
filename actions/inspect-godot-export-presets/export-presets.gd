@@ -34,7 +34,12 @@ func _initialize() -> void:
 		return
 
 	if args[0] == "set" and len(args) != 4:
-		_fail("unexpected input; wanted <PRESET> <KEY> <VALUE>, but was: %s" % args.slice(1))
+		_fail(
+			(
+				"unexpected input; wanted <PRESET> <KEY> <VALUE>, but was: %s"
+				% args.slice(1)
+			)
+		)
 		return
 
 	var preset := args[1]
@@ -70,7 +75,7 @@ func _initialize() -> void:
 
 			if cfg.save("res://" + path_export_presets) != OK:
 				_fail("failed to save file: " + path_export_presets)
-				return
+				return  # gdlint:ignore=max-returns
 
 
 func _find_preset_index(cfg: ConfigFile, preset: String) -> int:

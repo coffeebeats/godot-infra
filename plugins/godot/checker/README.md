@@ -3,7 +3,7 @@
 `check.gd` reports problems that a normal boot or import does not surface, and repairs
 the ones it can. The `godot` plugin's edit hook runs it on each edited file,
 `godot-check` runs it by hand, and `check-project.yaml` runs it over the whole project
-in CI. Verified on Godot **4.7.2.stable.official**.
+in CI.
 
 ```sh
 godot-check                         # every rule, every file
@@ -32,13 +32,16 @@ directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` exc
 `export-overrides` and `export-ref` are the exceptions; each covers one file and reads
 the whole project, `addons/` included. `logging` covers nothing until `.gdcheckrc` turns
 it on. The checker exits 1 for a problem or a repair alike, since the engine cannot
-return a code that tells them apart. Follow `--fix` with `godot --import --headless` so
-the assigned uids resolve.
+return a code that tells them apart.
 
-Add a rule only after a pitfall has bitten twice, and add it to this file rather than a
-second script. Booting the project costs 1.17s against about 10ms per rule per file, so
-one boot has to run everything. A rule applies to every repository that enables the
-plugin, so it must hold for any Godot project.
+The checker reads uids from the cache the last import wrote, and a script process never
+rebuilds it. Run `godot --import --headless` after `--fix` and after creating or moving
+a file. Until then a new file's uid reports as unknown and a moved file's as resolving
+to a missing file, which looks like a real dangling reference and is not.
+
+A move in the editor rewrites `[ext_resource]` headers and nothing else, so a `res://`
+string in a property then points at nothing, while a `uid://` reference survives. That
+is why `path-ref` asks for uids.
 
 ## Configuration
 
@@ -73,36 +76,22 @@ An invalid config is reported against `res://.gdcheckrc`, and nothing else is ch
 
 A bare `print()` or `push_error()` bypasses whatever the project logs through, so the
 line carries no logger name, no level and no timestamp, and nothing can filter or route
-it. On Windows it can reach no reader at all. Without `debug/export_console_wrapper` on
-the preset a build attaches to no terminal, and the line survives only in
-`user://logs/godot.log`, which nothing points a reader at.
+it.
 
-The rule reports eleven names, every output function of `@GlobalScope` and `@GDScript`:
-`print`, `printerr`, `printraw`, `print_rich`, `print_verbose`, `printt`, `prints`,
-`print_debug`, `print_stack`, `push_warning` and `push_error`. `Node.print_tree()`,
-`print_tree_pretty()` and the static `print_orphan_nodes()` are callable bare inside a
-node too, and the rule leaves them alone, as it does `assert()`. Each dumps engine state
-or halts rather than emitting a log line a logger could carry.
+The rule reports every output function of `@GlobalScope` and `@GDScript`: `print`,
+`printerr`, `printraw`, `print_rich`, `print_verbose`, `printt`, `prints`,
+`print_debug`, `print_stack`, `push_warning` and `push_error`. It passes over comments
+and strings, anything dotted, such as a logger's own `print` method, and a declaration
+that shadows one of the eleven, at the cost of missing `self.push_error()`.
+`Node.print_tree()`, `print_tree_pretty()`, `print_orphan_nodes()` and `assert()` are
+left alone, since none of them emits a log line.
 
-The rule is off until a project turns it on. It covers no file until
-`disallow_engine_output` is set, which `--list` shows as an empty Covers column. "Never
-call `print()`" does not hold for a project with nothing to call instead, and a rule
-here applies to every repository that enables the plugin.
-
-A match has to be a call in code. Comments and strings are masked before the scan, so a
-doc comment naming `print_rich()` reports nothing, and each masked span keeps the
-newlines it held so a multi-line string shifts no line number under it. Anything dotted
-is skipped, which lets a logger own a `print` method of its own, and so is anything
-preceded by `func `, so a project may declare a method that shadows one of the eleven.
-The cost is a missed `self.push_error()`, cheaper here than a false positive.
-
-Two exemptions are structural rather than incidental. Their paths differ per repository,
-so a project names them itself under `[logging] excludes`:
+Two exemptions are structural. Their paths differ per repository, so a project names
+them under `[logging] excludes`:
 
 - **The sink the logger pushes through**, which is implemented on `push_error` and
-  `push_warning`. There is nothing under it to log through.
-- **CLI tooling**, whose stdout is its product and whose caller parses it. A logger
-  would prefix that output with a category and, at the usual default level, drop it.
+  `push_warning`.
+- **CLI tooling**, whose stdout is its product and whose caller parses it.
 
 ## Export overrides
 
@@ -167,11 +156,9 @@ are not a `.gitignore`'s, in three ways worth knowing before writing one:
 - A pattern is tested against files, never directories, so `**/tests` matches nothing
   while `*/tests/*` matches everything under one.
 - The exporter drops text files before any filter runs and adds a few after, so `*.md`,
-  the icon named by `application/config/icon`, and the 4.8 MB `icudt_godot.dat` are
-  unaffected by any pattern. An entry for one is reported by nothing, since the file
-  does exist, so a dependency `export-ref` reports into it is the only signal.
-- `*.po` is safe to drop. `project.godot` names the compiled `.mo`, and a runtime scan
-  for a `.po` reads `user://`, never `res://`.
+  the icon named by `application/config/icon`, and `icudt_godot.dat` are unaffected by
+  any pattern. An entry for one is reported by nothing, since the file does exist, so a
+  dependency `export-ref` reports into it is the only signal.
 
 Prefer a directory per category. `*/editor/*` drops tooling from every build, and
 `*/steam/*` under `[*-unknown]` drops a storefront from the builds that do not use it,
@@ -203,8 +190,8 @@ editor, where every file is present.
 preset that breaks:
 
 ```
-res://project/main/system.tscn:9: [export-ref] dependency is excluded from
-  main-x86_64-windows-unknown: res://addons/kit/system/debug/editor/bridge.tscn
+res://main/menu.tscn:9: [export-ref] dependency is excluded from
+  x86_64-windows-unknown: res://debug/editor/overlay.tscn
 ```
 
 A header is the whole of what it reports. A `uid://` or `res://` string in a property is
@@ -233,8 +220,8 @@ skipped one only by its `class_name` is not followed.
 ## Warnings
 
 A warning set to level 2 in `project.godot` is raised as a parse error, so `compile`
-reports it. The engine prints warnings only to an attached debugger, and `-d` hangs at a
-`debug>` prompt on the first runtime error, so nothing else surfaces them.
+reports it. A lower level prints only to an attached debugger, so the checker never
+sees it.
 
 ## What it does not cover
 
@@ -243,49 +230,37 @@ translations), but it is neither a scene nor a resource, and the engine reads it
 any of this runs. Scripts are out of scope for `path-ref`, since a broken `preload`
 already fails `compile`.
 
-Nothing here reaches what a stripped export template drops. The checker runs on an
-editor build, which defines every class `disable_3d` removes and every method
-`deprecated="no"` removes, so it cannot see either. Booting the packaged game is what
-finds those, which is the `boot` job in `publish-game.yaml`.
-
-## Engine behavior the checker works around
-
-Each of these returns a plausible wrong answer rather than an error.
-
-- **`--check-only` does not register autoloads**, so every script naming one reports a
-  false `Identifier not found`. `compile` loads scripts inside a running `SceneTree`
-  instead.
-- **A script that fails to parse still loads as non-null.** A compiled script always
-  has a native base type, so `compile` checks `get_instance_base_type()`.
-  `Script.reload()` cannot stand in, since it errors on any script with live instances.
-- **Re-loading the running script hangs the engine**, so `compile` skips its own path.
-  `ResourceLoader.has_cached()` cannot stand in for that skip, since it reports true for
-  scripts the process never loaded.
-- **A `preload`ed script that names anything unresolved hangs the engine**, measured on
-  4.7.2 for an unknown global, a missing preload target and an unknown type; a plain
-  syntax error exits 1 instead. Splitting the rules out also needs
-  `ResourceLoader.load` on an absolute path, since the checker runs from outside the
-  project and `preload` cannot reach its own files. Both are why every rule lives here.
-- **`SceneTree.quit(code)` collapses every non-zero code to 1** under `-s`.
-- **A missing `[ext_resource]` target does not fail a load.** The scene loads without
-  the node that needed it, so `path-ref` validates headers rather than `load`.
-- **A move rewrites `ext_resource` headers and nothing else**, so a `res://` string in a
-  property such as `StdScreen.scene_path` points at nothing until something reads it. A
-  `uid://` reference survives the move.
-- **A script process does not rebuild the uid cache**, so a reference to a file created
-  since the last import reports as unknown, and one to a file moved since then reports as
-  resolving to a missing file. Both clear after `godot --import --headless`; the second
-  reads like a real dangling reference and is not. Uids derive from the path, so every
-  machine assigns the same one.
-- **Quitting mid-load prints parse errors for well-formed scenes**, and the failing set
-  changes between runs. A smoke test uses `--quit-after 30`, and `load` loads
-  synchronously.
+Nothing here sees what a stripped export template removes, since the checker runs on an
+editor build that still defines it. Booting the packaged game finds that, which is the
+`boot` job in `publish-game.yaml`.
 
 ## The edit hook
 
 `hooks/on_edit.sh` fires on `Edit` and `Write` only, so run `godot-check` after a move
-or any other change it never sees. Its feedback goes to stderr, since stdout never
-reaches the agent; a hook that writes there shows up as "No stderr output".
+or any other change it never sees. An edit to `export_overrides.cfg` is checked against
+`export_presets.cfg`, the file the rule covers.
 
-An edit to `export_overrides.cfg` is checked against `export_presets.cfg`, since that is
-the file the rule covers and the pair is meaningless apart.
+## Adding a rule
+
+Add a rule only after a pitfall has bitten twice. A rule applies to every repository
+that enables the plugin, so it must hold for any Godot project, and it runs in the same
+boot as every other rule, since booting costs far more than any rule does.
+
+`check.gd` is the entry point, and it preloads everything else. `core/` holds what every
+run needs: the config, the per-file cache, discovery and the GDExtension gate. `lib/`
+holds what more than one rule reads. `rules/` holds one file per rule, named for the
+rule with `_` in place of `-`.
+
+1. Write `rules/<name>.gd`. It extends `"../core/rule.gd"`, sets `name`, `extensions`
+   and optionally `roots` or `files` in `_init`, and overrides `check`. A rule that can
+   repair what it finds also overrides `fix` and `fixable`, and one a project configures
+   overrides `options` and `configure`.
+2. Add it to `RULES` in `check.gd`, whose order is the order the rules run in.
+3. Add files that break it to `tests/checker/violations/`, along with any it must pass
+   over. Run `uv run scripts/test_project_checker.py --update` and review the lines it
+   adds.
+4. Add its row to the table above.
+
+A rule preloads from `core/` and `lib/`, never another rule; what two rules share moves
+into `lib/`. No file declares a `class_name`, since the checker runs inside a project
+whose class cache it must not add to.
