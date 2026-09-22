@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.18.1 (2026-09-22)
+
+## What's Changed
+* test(checker): assert every rule still reports, against golden output by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/652
+* refactor(checker): split the project checker into a file per rule by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/653
+* fix(checker): resolve dependencies by uid, as the engine does by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/654
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.18.0...v6.18.1
+
 ## 6.18.0 (2026-09-21)
 
 ## What's Changed
