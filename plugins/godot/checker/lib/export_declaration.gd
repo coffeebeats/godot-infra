@@ -137,11 +137,13 @@ static func to_glob(entry: String) -> String:
 
 
 ## tree returns every file the exporter's walk reaches, without the scheme. The project
-## is walked once per run.
+## is walked once per run, and sorted, since a directory lists its entries in whatever
+## order the filesystem keeps them.
 static func tree() -> PackedStringArray:
 	if not _walked:
 		_walked = true
 		_collect("res://", _tree)
+		_tree.sort()
 
 	return _tree
 
