@@ -237,9 +237,10 @@ editor build that still defines it. Booting the packaged game finds that, which 
 
 ## The edit hook
 
-`hooks/on_edit.sh` fires on `Edit` and `Write` only, so run `godot-check` after a move
-or any other change it never sees. An edit to `export_overrides.cfg` is checked against
-`export_presets.cfg`, the file the rule covers.
+`hooks/on_edit.py` fires on an edit only — Claude Code's `Edit` and `Write`, Codex's
+`apply_patch` — so run `godot-check` after a move or any other change it never sees. A
+patch that touches several files is checked in one run. An edit to `export_overrides.cfg`
+is checked against `export_presets.cfg`, the file the rule covers.
 
 ## Adding a rule
 

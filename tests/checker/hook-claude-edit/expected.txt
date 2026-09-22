@@ -1,4 +1,4 @@
 project check reported for no_uid.tres:
 checked 1 file(s), 0 problem(s)
 fixed 1 file(s); run `godot --import --headless` so they resolve
-exit 2
+exit 0
