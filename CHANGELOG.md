@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.19.1 (2026-10-09)
+
+## What's Changed
+* chore(deps): bump docker/setup-buildx-action from 4.2.0 to 4.3.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/659
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.19.0...v6.19.1
+
 ## 6.19.0 (2026-09-22)
 
 ## What's Changed
