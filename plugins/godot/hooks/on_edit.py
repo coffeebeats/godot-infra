@@ -91,6 +91,13 @@ SUMMARY = "= Run Summary"
 # where, and the backtrace below that is left out.
 FAILURE = re.compile(r"^(?:SCRIPT ERROR|ERROR): ")
 
+# BROKEN matches the engine's report of a script that does not compile. GUT skips a test
+# script that fails to load, says nothing was run, and still exits 0.
+BROKEN = re.compile(r"^SCRIPT ERROR: (?:Parse|Compile) Error: ")
+
+# UNCOMPILED matches the checker's report of a script that does not compile.
+UNCOMPILED = re.compile(r"^\s*res://\S+?: \[compile\] ", re.MULTILINE)
+
 # PUSHED matches the line placing an error a script raised through 'push_error'. A test
 # may raise one on purpose, and GUT's summary already names a test that did not expect
 # it, so the engine's errors leave it out.
@@ -166,15 +173,25 @@ def quiet(result: subprocess.CompletedProcess[str]) -> str:
     return "\n".join(bounded(lines_of(f"{result.stdout}{result.stderr}")))
 
 
+def failed(result: subprocess.CompletedProcess[str]) -> bool:
+    """failed reports whether a run failed, by the code it exited with."""
+    return result.returncode != 0
+
+
+def failed_tests(result: subprocess.CompletedProcess[str]) -> bool:
+    """failed_tests reports whether a GUT run failed: by its exit code, or by a script
+    that did not compile, which GUT skips without failing the run.
+    """
+    return failed(result) or any(BROKEN.match(line) for line in lines_of(result.stderr))
+
+
 def summarize(result: subprocess.CompletedProcess[str]) -> str:
     """summarize returns what a failed GUT run found: GUT's run summary, bounded, then
     each distinct error the engine raised, where, and how often. A run with no summary,
-    as when GUT itself fails, reports its whole output, bounded.
+    as when GUT ran nothing, reports all it printed in place of the summary.
     """
     out = lines_of(result.stdout)
-    start = next((i for i, line in enumerate(out) if line.strip() == SUMMARY), None)
-    if start is None:
-        return quiet(result)
+    start = next((i for i, line in enumerate(out) if line.strip() == SUMMARY), 0)
 
     errors: dict[str, int] = {}
     err = lines_of(result.stderr)
@@ -332,12 +349,13 @@ def check(project: Path, files: list[str]) -> list[str]:
         names: list[str],
         result: subprocess.CompletedProcess[str],
         text=quiet,
+        judge=failed,
     ):
-        """reports keeps what text makes of a run's output when the run failed, under a
-        neutral label: the engine cannot tell a problem from a repair through its exit
-        code.
+        """reports keeps what text makes of a run's output when judge finds the run
+        failed, under a neutral label: the engine cannot tell a problem from a repair
+        through its exit code.
         """
-        if result.returncode != 0:
+        if judge(result):
             report.append(f"{label} for {', '.join(names)}:\n{text(result)}")
 
     with ThreadPoolExecutor() as pool:
@@ -385,8 +403,11 @@ def check(project: Path, files: list[str]) -> list[str]:
     if checked is not None:
         reports("project check reported", checks, checked.result())
 
-    if tested is not None:
-        reports("test failed", tests, tested.result(), summarize)
+    # A script that does not compile fails every test that loads it, on the error the
+    # checker has just reported.
+    uncompiled = checked is not None and UNCOMPILED.search(checked.result().stdout)
+    if tested is not None and not uncompiled:
+        reports("test failed", tests, tested.result(), summarize, failed_tests)
 
     return report
 
