@@ -201,7 +201,7 @@ func _initialize() -> void:
 			"fixed %d file(s); run `godot --import --headless` so they resolve" % fixed
 		)
 
-	# NOTE: `SceneTree.quit()` collapses every non-zero code to 1 under `-s`, so a
+	# NOTE: gdenv's `godot` shim reports every failing exit as 1 on Windows, so a
 	# problem found and a repair applied both exit 1.
 	quit(1 if not problems.is_empty() or fixed > 0 else 0)
 
