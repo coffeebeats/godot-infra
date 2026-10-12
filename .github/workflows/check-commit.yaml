@@ -168,7 +168,7 @@ jobs:
           path: tests/project
 
       # NOTE: 'uv run' puts gdtoolkit on the 'PATH', where the edit hook finds it
-      # for a case that edits a script, as it does wherever the cases run locally.
+      # for a case that edits a script.
       - name: Check the checker's cases
         run: uv run scripts/test_project_checker.py
 

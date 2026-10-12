@@ -1,6 +1,9 @@
-## Stands in for GUT's command line when the test it was given does not compile: GUT
-## skips the script, says nothing was run, and exits 0, while the engine reports the
-## parse error on stderr.
+##
+## A stand-in for GUT's command line given a test that does not compile. GUT skips the
+## script, says nothing was run, and exits 0, while the engine reports the parse error
+## on stderr.
+##
+
 extends SceneTree
 
 

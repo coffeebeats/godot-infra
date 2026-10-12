@@ -17,8 +17,8 @@ The report goes out as a JSON decision on stdout and the hook always exits 0. A
 non-zero exit is a failed hook in both harnesses, and PowerShell, which Codex runs hooks
 through on Windows, rewrites the exit code anyway.
 
-NOTE: The checker boots Godot once for every rule, which keeps a check near 2s, and an
-edit takes as long as its slowest tool: GUT's boot (~3s) when a test sits beside the
+NOTE: The checker boots Godot once for every rule, which keeps a check near 2s. An edit
+takes as long as its slowest tool, which is GUT (~3s) when a test sits beside the
 script. Do not add a boot for the checks.
 """
 
@@ -87,12 +87,11 @@ ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 # output, a project's logging included.
 SUMMARY = "= Run Summary"
 
-# FAILURE matches the first line of an error the engine raised. The line after it says
-# where, and the backtrace below that is left out.
+# FAILURE matches the first line of an error the engine raised; the line after it says
+# where.
 FAILURE = re.compile(r"^(?:SCRIPT ERROR|ERROR): ")
 
-# BROKEN matches the engine's report of a script that does not compile. GUT skips a test
-# script that fails to load, says nothing was run, and still exits 0.
+# BROKEN matches the engine's report of a script that does not compile.
 BROKEN = re.compile(r"^SCRIPT ERROR: (?:Parse|Compile) Error: ")
 
 # UNCOMPILED matches the checker's report of a script that does not compile.
@@ -100,12 +99,11 @@ UNCOMPILED = re.compile(r"^\s*res://\S+?: \[compile\] ", re.MULTILINE)
 
 # PUSHED matches the line placing an error a script raised through 'push_error'. A test
 # may raise one on purpose, and GUT's summary already names a test that did not expect
-# it, so the engine's errors leave it out.
+# it, so summarize leaves it out of the engine's errors.
 PUSHED = re.compile(r"^\s*at: push_error ")
 
-# HEAD and TAIL bound each report in lines, keeping its first and last lines. A script
-# that stops compiling fails every test that loads it, and a full report of that would
-# flood the agent's context. The tail keeps GUT's totals.
+# HEAD and TAIL bound each report in lines. A script that stops compiling fails every
+# test that loads it, which would flood the agent's context. The tail keeps the totals.
 HEAD = 60
 TAIL = 15
 
@@ -179,16 +177,16 @@ def failed(result: subprocess.CompletedProcess[str]) -> bool:
 
 
 def failed_tests(result: subprocess.CompletedProcess[str]) -> bool:
-    """failed_tests reports whether a GUT run failed: by its exit code, or by a script
-    that did not compile, which GUT skips without failing the run.
+    """failed_tests reports whether a GUT run failed, by its exit code or by a script
+    that did not compile. GUT skips such a script, says nothing was run, and exits 0.
     """
     return failed(result) or any(BROKEN.match(line) for line in lines_of(result.stderr))
 
 
 def summarize(result: subprocess.CompletedProcess[str]) -> str:
-    """summarize returns what a failed GUT run found: GUT's run summary, bounded, then
-    each distinct error the engine raised, where, and how often. A run with no summary,
-    as when GUT ran nothing, reports all it printed in place of the summary.
+    """summarize returns a failed GUT run's summary, bounded, then each distinct error
+    the engine raised, where, and how often. A run with no summary, as when GUT ran
+    nothing, reports all it printed in place of the summary.
     """
     out = lines_of(result.stdout)
     start = next((i for i, line in enumerate(out) if line.strip() == SUMMARY), 0)
@@ -352,8 +350,8 @@ def check(project: Path, files: list[str]) -> list[str]:
         judge=failed,
     ):
         """reports keeps what text makes of a run's output when judge finds the run
-        failed, under a neutral label: the engine cannot tell a problem from a repair
-        through its exit code.
+        failed, under a neutral label, since the checker exits 1 for a repair as well
+        as a problem.
         """
         if judge(result):
             report.append(f"{label} for {', '.join(names)}:\n{text(result)}")
@@ -375,9 +373,8 @@ def check(project: Path, files: list[str]) -> list[str]:
 
         tested = None
         if tests:
-            # '-gdir=' empties the directories a project's '.gutconfig.json' lists,
-            # which GUT would otherwise run in full beside the named tests. The file's
-            # other options still apply.
+            # '-gdir=' empties the directories '.gutconfig.json' lists, which GUT would
+            # otherwise run in full beside the named tests. Its other options apply.
             gtest = ",".join(f"res://{name}" for name in tests)
             command = [*godot, "-s", GUT, "-gdir=", f"-gtest={gtest}", "-gexit"]
             repairs = any(not name.endswith(".gd") for name in checks)

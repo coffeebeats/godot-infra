@@ -1,7 +1,10 @@
-## Stands in for GUT's command line, printing what a failed run prints: each test's
+##
+## A stand-in for GUT's command line, printing what a failed run prints: each test's
 ## logging, the same engine error once per test with its backtrace, an error a test
 ## raised on purpose, then the run summary, in color where GUT colors it. The summary
 ## opens with the options the hook passed and runs past what a report keeps.
+##
+
 extends SceneTree
 
 
