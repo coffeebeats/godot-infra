@@ -245,12 +245,16 @@ is checked against `export_presets.cfg`, the file the rule covers.
 
 The tools run at once, so an edit takes as long as the slowest of them, which is GUT
 when a test sits beside the edited script and the checker otherwise. GUT runs that test
-alone, not the directories `.gutconfig.json` lists, and a failed run reports GUT's
-summary and each distinct engine error rather than its output, which carries every
-test's logging. GUT skips a test that does not compile and still exits 0, so the hook
-counts a parse error as a failure. It leaves the test out of its report when the checker
-finds the edited script does not compile, since the test can only fail on that same
-error. A tool that runs past two minutes is stopped, along with everything it started.
+alone, not the directories `.gutconfig.json` lists, and the hook reads a failure from
+its JUnit export rather than its output, which carries every test's logging. GUT places
+an error a script raised at line -1, so the report adds where the engine raised it. GUT
+skips a test that does not load and still exits 0, so the hook reports a test the export
+holds nothing from. The checker compiles each test too, and the hook leaves the tests
+out of its report when the checker finds a script that does not compile.
+
+A tool that runs past two minutes is stopped, along with everything it started, and the
+report as a whole stays under 8,000 characters, below the 10,000 at which Claude Code
+moves hook output to a file.
 
 ## Adding a rule
 

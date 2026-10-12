@@ -2,9 +2,8 @@
 
 It runs gdformat and gdlint over the edited '.gd' files, the project checker with
 '--fix' over every file the checker covers, and the '<name>_test.gd' beside each edited
-script, and reports what they say back to the agent. A failed test run reports GUT's
-summary and the engine's distinct errors rather than the run's output, which carries
-every test's logging.
+script, and reports what they say back to the agent. A failed test is read from GUT's
+JUnit export rather than its output, which carries every test's logging.
 
 The tools run at once. Only the checker writes, repairing scenes, resources and export
 files but never scripts, so a test waits for it only when the edit touched one of those.
@@ -32,9 +31,11 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import traceback
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
+from xml.etree import ElementTree
 
 # PLUGIN is the plugin root, which holds the checker this hook runs.
 PLUGIN = Path(__file__).resolve().parent.parent
@@ -61,7 +62,8 @@ CHECKED = (".gd", ".tscn", ".tres")
 PATCH_FILE = re.compile(r"^\*{3} (?:Add File|Update File|Move to): (.+?)\s*$")
 
 # NOISE matches the boilerplate every headless run prints (the banner, godotsteam's
-# settings conversion, teardown notices). Script errors and warnings are never matched.
+# settings conversion, teardown notices, and the exit status gdenv's Windows shim
+# prints). Script errors and warnings are never matched.
 NOISE = re.compile(
     r"Godot Engine v"
     r"|WARNING: Found older |   at: register_settings"
@@ -84,32 +86,25 @@ EXPECTED = re.compile(r"^(?:Expected one of: ?|\t\* \S+)$")
 # nothing.
 ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
-# SUMMARY is the header GUT prints above its run summary, which names each test that did
-# not pass and why, then the totals. Everything printed before it is the tests' own
-# output, a project's logging included.
-SUMMARY = "= Run Summary"
+# SCRIPT_ERROR matches the first line of an error a script raised; the line after it
+# says where. GUT's export places such an error at line -1.
+SCRIPT_ERROR = re.compile(r"^SCRIPT ERROR: ")
 
-# FAILURE matches the first line of an error the engine raised; the line after it says
-# where.
-FAILURE = re.compile(r"^(?:SCRIPT ERROR|ERROR): ")
-
-# BROKEN matches the engine's report of a script that does not compile.
-BROKEN = re.compile(r"^SCRIPT ERROR: (?:Parse|Compile) Error: ")
+# NOTICE matches a warning or error GUT itself prints, such as why it skipped a script.
+NOTICE = re.compile(r"^\[GUT (?:WARNING|ERROR)\]:")
 
 # UNCOMPILED matches the checker's report of a script that does not compile.
 UNCOMPILED = re.compile(r"^\s*res://\S+?: \[compile\] ", re.MULTILINE)
 
-# PUSHED matches the line placing an error a script raised through 'push_error'. A test
-# may raise one on purpose, and GUT's summary already names a test that did not expect
-# it, so summarize leaves it out of the engine's errors.
-PUSHED = re.compile(r"^\s*at: push_error ")
+# LIMIT bounds the whole report in characters. Claude Code moves hook output past 10,000
+# characters to a file, leaving the agent a 2,000-character preview.
+LIMIT = 8000
 
-# HEAD and TAIL bound each report in lines. A script that stops compiling fails every
-# test that loads it, which would flood the agent's context. The tail keeps the totals.
-HEAD = 60
-TAIL = 15
+# WIDTH bounds each line of a report in characters, so one long line, such as a logged
+# dictionary, cannot spend the report alone.
+WIDTH = 300
 
-# ERRORS bounds how many distinct engine errors a failed test run reports.
+# ERRORS bounds how many distinct script errors a failed test run reports.
 ERRORS = 10
 
 # UNAVAILABLE matches uv failing to start a tool, rather than the tool reporting on the
@@ -198,65 +193,160 @@ def lines_of(output: str) -> list[str]:
     return kept
 
 
-def bounded(lines: list[str]) -> list[str]:
-    """bounded returns the first HEAD and the last TAIL of lines, with a line saying how
-    many it left out between them.
-    """
-    if len(lines) <= HEAD + TAIL:
-        return lines
+def clipped(line: str) -> str:
+    """clipped returns line cut to WIDTH characters, saying how many it left out."""
+    if len(line) <= WIDTH:
+        return line
 
-    omitted = len(lines) - HEAD - TAIL
-
-    return [*lines[:HEAD], f"... {omitted} more lines ...", *lines[-TAIL:]]
+    return f"{line[:WIDTH]}... ({len(line) - WIDTH} more characters)"
 
 
 def quiet(result: subprocess.CompletedProcess[str]) -> str:
-    """quiet returns a run's output, bounded, with only the lines lines_of keeps."""
-    return "\n".join(bounded(lines_of(f"{result.stdout}{result.stderr}")))
+    """quiet returns a run's output with only the lines lines_of keeps, each clipped."""
+    lines = lines_of(f"{result.stdout}\n{result.stderr}")
+
+    return "\n".join(clipped(line) for line in lines)
 
 
-def failed(result: subprocess.CompletedProcess[str]) -> bool:
-    """failed reports whether a run failed, by the code it exited with."""
-    return result.returncode != 0
-
-
-def failed_tests(result: subprocess.CompletedProcess[str]) -> bool:
-    """failed_tests reports whether a GUT run failed, by its exit code or by a script
-    that did not compile. GUT skips such a script, says nothing was run, and exits 0.
+def taken(lines: list[str], budget: int) -> list[str]:
+    """taken returns the first of lines that fit in budget characters, newlines
+    included.
     """
-    return failed(result) or any(BROKEN.match(line) for line in lines_of(result.stderr))
+    kept: list[str] = []
+    size = 0
+
+    for line in lines:
+        size += len(line) + 1
+        if size > budget:
+            break
+
+        kept.append(line)
+
+    return kept
 
 
-def summarize(result: subprocess.CompletedProcess[str]) -> str:
-    """summarize returns a failed GUT run's summary, bounded, then each distinct error
-    the engine raised, where, and how often. A run with no summary, as when GUT ran
-    nothing, reports all it printed in place of the summary.
+def fit(text: str, budget: int) -> str:
+    """fit returns text cut to budget characters, keeping its first lines and its last,
+    with a line between saying how many it left out. The last lines hold what a report
+    ends on, such as where the engine raised its errors.
     """
-    out = lines_of(result.stdout)
-    start = next((i for i, line in enumerate(out) if line.strip() == SUMMARY), 0)
+    if len(text) <= budget:
+        return text
 
+    lines = text.splitlines()
+    head = taken(lines, budget * 3 // 4)
+    rest = budget - sum(len(line) + 1 for line in head) - len("... 0000 more lines ...")
+    tail = taken(lines[len(head) :][::-1], rest)[::-1]
+    omitted = len(lines) - len(head) - len(tail)
+
+    return "\n".join([*head, f"... {omitted} more lines ...", *tail])
+
+
+def fitted(parts: list[str]) -> list[str]:
+    """fitted returns parts cut to share LIMIT characters, in their order. A part
+    shorter than its share leaves the rest to the longer parts.
+    """
+    kept = list(parts)
+    left = LIMIT
+
+    for count, i in enumerate(sorted(range(len(parts)), key=lambda i: len(parts[i]))):
+        kept[i] = fit(parts[i], left // (len(parts) - count))
+        left -= len(kept[i]) + 1
+
+    return kept
+
+
+def located(output: str) -> list[str]:
+    """located returns each distinct error a script raised, where, and how often, up to
+    ERRORS of them.
+    """
     errors: dict[str, int] = {}
-    err = lines_of(result.stderr)
-    for i, line in enumerate(err):
-        if not FAILURE.match(line):
+    lines = lines_of(output)
+
+    for i, line in enumerate(lines):
+        if not SCRIPT_ERROR.match(line):
             continue
 
-        after = err[i + 1] if i + 1 < len(err) else ""
-        if PUSHED.match(after):
-            continue
+        error = clipped(line)
+        after = lines[i + 1] if i + 1 < len(lines) else ""
+        if after.strip().startswith("at:"):
+            error = f"{error}\n{clipped(after)}"
 
-        error = f"{line}\n{after}" if after.strip().startswith("at:") else line
         errors[error] = errors.get(error, 0) + 1
 
-    report = bounded(out[start:])
-    if errors:
-        report.append(f"engine errors ({len(errors)} distinct):")
-        shown = list(errors.items())[:ERRORS]
-        report.extend(f"[x{count}] {error}" for error, count in shown)
-        if len(errors) > ERRORS:
-            report.append(f"... {len(errors) - ERRORS} more distinct errors ...")
+    shown = [f"[x{count}] {error}" for error, count in list(errors.items())[:ERRORS]]
+    if len(errors) > ERRORS:
+        shown.append(f"... {len(errors) - ERRORS} more distinct errors ...")
 
-    return "\n".join(report)
+    return shown
+
+
+def failures(export: Path) -> tuple[list[str], list[str]] | None:
+    """failures returns a line for each test GUT's JUnit export records as failed, and
+    the name of each suite it records, or None when there is no export to read.
+    """
+    try:
+        results = ElementTree.parse(export).getroot()
+    except (OSError, ElementTree.ParseError):
+        return None
+
+    lines = []
+    suites = []
+
+    for suite in results.iter("testsuite"):
+        name = suite.get("name", "")
+        suites.append(name)
+
+        for case in suite.iter("testcase"):
+            failure = case.find("failure")
+            if failure is None:
+                continue
+
+            lines.append(f"- {case.get('name')} in {name}")
+            for line in (failure.text or "").strip().splitlines():
+                lines.append(f"    {clipped(line.strip())}")
+
+    return lines, suites
+
+
+def summarize(
+    result: subprocess.CompletedProcess[str], export: Path, tests: list[str]
+) -> str | None:
+    """summarize returns what a GUT run over tests found, or None when every test ran
+    and passed: each failed test, each test script GUT ran nothing from and why, then
+    each distinct error a script raised. A run that exported nothing reports all it
+    printed.
+
+    NOTE: GUT skips a test script that does not load or extend 'GutTest', and still
+    exits 0.
+    """
+    exported = failures(export)
+    if exported is None:
+        return quiet(result)
+
+    lines, suites = exported
+
+    # GUT names a suite by its script's path, and an inner class's by the path and the
+    # class's name.
+    skipped = [
+        test
+        for test in tests
+        if not any(name == test or name.startswith(f"{test}.") for name in suites)
+    ]
+    if skipped:
+        lines.extend(f"- GUT ran none of the tests in {test}" for test in skipped)
+        out = lines_of(result.stdout)
+        lines.extend(clipped(line) for line in out if NOTICE.match(line))
+
+    if not lines:
+        return quiet(result) if result.returncode != 0 else None
+
+    errors = located(result.stderr)
+    if errors:
+        lines.append("script errors, where the engine raised them:")
+        lines.extend(errors)
+
+    return "\n".join(lines)
 
 
 def git_root(cwd: str) -> Path | None:
@@ -323,7 +413,8 @@ def covered(paths: list[str], cwd: str, project: Path) -> list[str]:
 
 def targets(files: list[str], project: Path) -> tuple[list[str], list[str], list[str]]:
     """targets sorts the edited files into the ones each tool takes: the scripts to
-    format and lint, the paths to check, and the tests to run beside them.
+    format and lint, the paths to check, and the tests to run beside them. A test is
+    checked too, so the checker reports one that does not compile.
     """
     scripts, checks, tests = [], [], []
     has_gut = (project / GUT).is_file()
@@ -348,7 +439,9 @@ def targets(files: list[str], project: Path) -> tuple[list[str], list[str], list
         if has_gut and (project / test).is_file():
             tests.append(test)
 
-    return scripts, list(dict.fromkeys(checks)), list(dict.fromkeys(tests))
+    tests = list(dict.fromkeys(tests))
+
+    return scripts, list(dict.fromkeys([*checks, *tests])), tests
 
 
 def gdtoolkit(
@@ -375,27 +468,20 @@ def gdtoolkit(
     return None
 
 
-def check(project: Path, files: list[str]) -> list[str]:
+def check(project: Path, files: list[str], export: Path) -> list[str]:
     """check runs every tool over the files it takes, all at once, and returns what each
-    reported, in the same order however they finish.
+    reported, in the same order however they finish. GUT writes its results to export.
     """
     scripts, checks, tests = targets(files, project)
     godot = ["godot", "--headless", "--path", project.as_posix()]
     report = []
 
-    def reports(
-        label: str,
-        names: list[str],
-        result: subprocess.CompletedProcess[str],
-        text=quiet,
-        judge=failed,
-    ):
-        """reports keeps what text makes of a run's output when judge finds the run
-        failed, under a neutral label, since the checker exits 1 for a repair as well
-        as a problem.
+    def reports(label: str, names: list[str], result: subprocess.CompletedProcess[str]):
+        """reports keeps a run's output when the run failed, under a neutral label,
+        since the checker exits 1 for a repair as well as a problem.
         """
-        if judge(result):
-            report.append(f"{label} for {', '.join(names)}:\n{text(result)}")
+        if result.returncode != 0:
+            report.append(f"{label} for {', '.join(names)}:\n{quiet(result)}")
 
     with ThreadPoolExecutor() as pool:
         linters: list[tuple[str, str, Future]] = []
@@ -418,6 +504,7 @@ def check(project: Path, files: list[str]) -> list[str]:
             # otherwise run in full beside the named tests. Its other options apply.
             gtest = ",".join(f"res://{name}" for name in tests)
             command = [*godot, "-s", GUT, "-gdir=", f"-gtest={gtest}", "-gexit"]
+            command += ["-gdisable_colors", f"-gjunit_xml_file={export.as_posix()}"]
             repairs = any(not name.endswith(".gd") for name in checks)
 
             def test(command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -445,7 +532,9 @@ def check(project: Path, files: list[str]) -> list[str]:
     # checker has just reported.
     uncompiled = checked is not None and UNCOMPILED.search(checked.result().stdout)
     if tested is not None and not uncompiled:
-        reports("test failed", tests, tested.result(), summarize, failed_tests)
+        summary = summarize(tested.result(), export, tests)
+        if summary is not None:
+            report.append(f"test failed for {', '.join(tests)}:\n{summary}")
 
     return report
 
@@ -476,9 +565,16 @@ def main() -> None:
     if not files:
         return
 
-    report = check(project, files)
+    exports = Path(tempfile.mkdtemp())
+    try:
+        report = check(project, files, exports / "results.xml")
+    finally:
+        shutil.rmtree(exports, ignore_errors=True)
+
     if not report:
         return
+
+    report = fitted(report)
 
     # Codex replaces the tool's result with the reason, so a patch is told it applied.
     # Claude Code shows the reason beside the result, which already says so.
@@ -492,5 +588,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception:
-        reason = f"the edit hook failed:\n{traceback.format_exc()}"
+        reason = f"the edit hook failed:\n{fit(traceback.format_exc(), LIMIT)}"
         print(json.dumps({"decision": "block", "reason": reason}))

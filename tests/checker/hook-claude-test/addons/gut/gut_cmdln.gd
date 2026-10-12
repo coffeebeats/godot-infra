@@ -1,14 +1,26 @@
 ##
-## A stand-in for GUT's command line, printing what a failed run prints: each test's
-## logging, the same engine error once per test with its backtrace, an error a test
-## raised on purpose, then the run summary, in color where GUT colors it. The summary
-## opens with the options the hook passed and runs past what a report keeps.
+## A stand-in for GUT's command line, printing and exporting what a failed run of GUT
+## 9.7.1 does: each test's logging, the same script error once per test with its
+## backtrace, and an error a test raised on purpose, then a JUnit file whose failures
+## run past what a report keeps. The first failure echoes the options the hook passed.
 ##
 
 extends SceneTree
 
+const CASE := """
+      <testcase name="%s" assertions="1" status="fail" classname="sum_test.gd" >
+      <failure message="failed"><![CDATA[%s]]></failure></testcase>"""
+
 
 func _initialize() -> void:
+	var export := ""
+	var options: Array[String] = []
+	for arg in OS.get_cmdline_args():
+		if arg.begins_with("-gjunit_xml_file="):
+			export = arg.trim_prefix("-gjunit_xml_file=")
+		elif arg.begins_with("-g"):
+			options.append(arg)
+
 	for i in 40:
 		print("\u001b[36mDEBUG\u001b[0m sum: logged line %d" % i)
 
@@ -24,17 +36,24 @@ func _initialize() -> void:
 	printerr("ERROR: a test raised this on purpose")
 	printerr("   at: push_error (core/variant/variant_utility.cpp:1024)")
 
-	print("==============================================")
-	print("= Run Summary")
-	print("==============================================")
-	for arg in OS.get_cmdline_args():
-		if arg.begins_with("-g"):
-			print("ran with ", arg)
+	var cases := CASE % ["test_sum", "ran with %s" % " ".join(options)]
+	cases += (
+		CASE
+		% ["test_sum_negative", "Unexpected Errors:\n      [1] <engine-2>Invalid call."]
+	)
+	cases += CASE % ["test_sum_large", "[%s] expected to equal [0]" % "1, ".repeat(200)]
+	for i in 120:
+		var failure := (
+			"[%d] expected to equal [%d]\n            at line %d" % [i, i + 1, i]
+		)
+		cases += CASE % ["test_sum_%d" % i, failure]
 
-	for test in ["test_sum", "test_sum_negative", "test_sum_zero"]:
-		print("- %s" % test)
-		for i in 30:
-			print("    [Failed]:  Unexpected Errors: [%d]" % i)
+	var file := FileAccess.open(export, FileAccess.WRITE)
+	file.store_string('<?xml version="1.0" encoding="UTF-8"?>\n')
+	file.store_string('<testsuites name="GutTests" failures="123" tests="124" >\n')
+	file.store_string('  <testsuite name="sum_test.gd" tests="124" failures="123" >')
+	file.store_string(cases)
+	file.store_string("\n  </testsuite>\n</testsuites>")
+	file.close()
 
-	print("\u001b[31m---- 3 failing tests ----\u001b[0m")
 	quit(1)

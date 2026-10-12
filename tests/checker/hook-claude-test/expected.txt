@@ -1,81 +1,297 @@
 test failed for sum_test.gd:
-= Run Summary
-==============================================
-ran with -gdir=
-ran with -gtest=res://sum_test.gd
-ran with -gexit
-- test_sum
-    [Failed]:  Unexpected Errors: [0]
-    [Failed]:  Unexpected Errors: [1]
-    [Failed]:  Unexpected Errors: [2]
-    [Failed]:  Unexpected Errors: [3]
-    [Failed]:  Unexpected Errors: [4]
-    [Failed]:  Unexpected Errors: [5]
-    [Failed]:  Unexpected Errors: [6]
-    [Failed]:  Unexpected Errors: [7]
-    [Failed]:  Unexpected Errors: [8]
-    [Failed]:  Unexpected Errors: [9]
-    [Failed]:  Unexpected Errors: [10]
-    [Failed]:  Unexpected Errors: [11]
-    [Failed]:  Unexpected Errors: [12]
-    [Failed]:  Unexpected Errors: [13]
-    [Failed]:  Unexpected Errors: [14]
-    [Failed]:  Unexpected Errors: [15]
-    [Failed]:  Unexpected Errors: [16]
-    [Failed]:  Unexpected Errors: [17]
-    [Failed]:  Unexpected Errors: [18]
-    [Failed]:  Unexpected Errors: [19]
-    [Failed]:  Unexpected Errors: [20]
-    [Failed]:  Unexpected Errors: [21]
-    [Failed]:  Unexpected Errors: [22]
-    [Failed]:  Unexpected Errors: [23]
-    [Failed]:  Unexpected Errors: [24]
-    [Failed]:  Unexpected Errors: [25]
-    [Failed]:  Unexpected Errors: [26]
-    [Failed]:  Unexpected Errors: [27]
-    [Failed]:  Unexpected Errors: [28]
-    [Failed]:  Unexpected Errors: [29]
-- test_sum_negative
-    [Failed]:  Unexpected Errors: [0]
-    [Failed]:  Unexpected Errors: [1]
-    [Failed]:  Unexpected Errors: [2]
-    [Failed]:  Unexpected Errors: [3]
-    [Failed]:  Unexpected Errors: [4]
-    [Failed]:  Unexpected Errors: [5]
-    [Failed]:  Unexpected Errors: [6]
-    [Failed]:  Unexpected Errors: [7]
-    [Failed]:  Unexpected Errors: [8]
-    [Failed]:  Unexpected Errors: [9]
-    [Failed]:  Unexpected Errors: [10]
-    [Failed]:  Unexpected Errors: [11]
-    [Failed]:  Unexpected Errors: [12]
-    [Failed]:  Unexpected Errors: [13]
-    [Failed]:  Unexpected Errors: [14]
-    [Failed]:  Unexpected Errors: [15]
-    [Failed]:  Unexpected Errors: [16]
-    [Failed]:  Unexpected Errors: [17]
-    [Failed]:  Unexpected Errors: [18]
-    [Failed]:  Unexpected Errors: [19]
-    [Failed]:  Unexpected Errors: [20]
-    [Failed]:  Unexpected Errors: [21]
-    [Failed]:  Unexpected Errors: [22]
-... 24 more lines ...
-    [Failed]:  Unexpected Errors: [16]
-    [Failed]:  Unexpected Errors: [17]
-    [Failed]:  Unexpected Errors: [18]
-    [Failed]:  Unexpected Errors: [19]
-    [Failed]:  Unexpected Errors: [20]
-    [Failed]:  Unexpected Errors: [21]
-    [Failed]:  Unexpected Errors: [22]
-    [Failed]:  Unexpected Errors: [23]
-    [Failed]:  Unexpected Errors: [24]
-    [Failed]:  Unexpected Errors: [25]
-    [Failed]:  Unexpected Errors: [26]
-    [Failed]:  Unexpected Errors: [27]
-    [Failed]:  Unexpected Errors: [28]
-    [Failed]:  Unexpected Errors: [29]
----- 3 failing tests ----
-engine errors (1 distinct):
+- test_sum in sum_test.gd
+    ran with -gdir= -gtest=res://sum_test.gd -gexit -gdisable_colors
+- test_sum_negative in sum_test.gd
+    Unexpected Errors:
+    [1] <engine-2>Invalid call.
+- test_sum_large in sum_test.gd
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,... (324 more characters)
+- test_sum_0 in sum_test.gd
+    [0] expected to equal [1]
+    at line 0
+- test_sum_1 in sum_test.gd
+    [1] expected to equal [2]
+    at line 1
+- test_sum_2 in sum_test.gd
+    [2] expected to equal [3]
+    at line 2
+- test_sum_3 in sum_test.gd
+    [3] expected to equal [4]
+    at line 3
+- test_sum_4 in sum_test.gd
+    [4] expected to equal [5]
+    at line 4
+- test_sum_5 in sum_test.gd
+    [5] expected to equal [6]
+    at line 5
+- test_sum_6 in sum_test.gd
+    [6] expected to equal [7]
+    at line 6
+- test_sum_7 in sum_test.gd
+    [7] expected to equal [8]
+    at line 7
+- test_sum_8 in sum_test.gd
+    [8] expected to equal [9]
+    at line 8
+- test_sum_9 in sum_test.gd
+    [9] expected to equal [10]
+    at line 9
+- test_sum_10 in sum_test.gd
+    [10] expected to equal [11]
+    at line 10
+- test_sum_11 in sum_test.gd
+    [11] expected to equal [12]
+    at line 11
+- test_sum_12 in sum_test.gd
+    [12] expected to equal [13]
+    at line 12
+- test_sum_13 in sum_test.gd
+    [13] expected to equal [14]
+    at line 13
+- test_sum_14 in sum_test.gd
+    [14] expected to equal [15]
+    at line 14
+- test_sum_15 in sum_test.gd
+    [15] expected to equal [16]
+    at line 15
+- test_sum_16 in sum_test.gd
+    [16] expected to equal [17]
+    at line 16
+- test_sum_17 in sum_test.gd
+    [17] expected to equal [18]
+    at line 17
+- test_sum_18 in sum_test.gd
+    [18] expected to equal [19]
+    at line 18
+- test_sum_19 in sum_test.gd
+    [19] expected to equal [20]
+    at line 19
+- test_sum_20 in sum_test.gd
+    [20] expected to equal [21]
+    at line 20
+- test_sum_21 in sum_test.gd
+    [21] expected to equal [22]
+    at line 21
+- test_sum_22 in sum_test.gd
+    [22] expected to equal [23]
+    at line 22
+- test_sum_23 in sum_test.gd
+    [23] expected to equal [24]
+    at line 23
+- test_sum_24 in sum_test.gd
+    [24] expected to equal [25]
+    at line 24
+- test_sum_25 in sum_test.gd
+    [25] expected to equal [26]
+    at line 25
+- test_sum_26 in sum_test.gd
+    [26] expected to equal [27]
+    at line 26
+- test_sum_27 in sum_test.gd
+    [27] expected to equal [28]
+    at line 27
+- test_sum_28 in sum_test.gd
+    [28] expected to equal [29]
+    at line 28
+- test_sum_29 in sum_test.gd
+    [29] expected to equal [30]
+    at line 29
+- test_sum_30 in sum_test.gd
+    [30] expected to equal [31]
+    at line 30
+- test_sum_31 in sum_test.gd
+    [31] expected to equal [32]
+    at line 31
+- test_sum_32 in sum_test.gd
+    [32] expected to equal [33]
+    at line 32
+- test_sum_33 in sum_test.gd
+    [33] expected to equal [34]
+    at line 33
+- test_sum_34 in sum_test.gd
+    [34] expected to equal [35]
+    at line 34
+- test_sum_35 in sum_test.gd
+    [35] expected to equal [36]
+    at line 35
+- test_sum_36 in sum_test.gd
+    [36] expected to equal [37]
+    at line 36
+- test_sum_37 in sum_test.gd
+    [37] expected to equal [38]
+    at line 37
+- test_sum_38 in sum_test.gd
+    [38] expected to equal [39]
+    at line 38
+- test_sum_39 in sum_test.gd
+    [39] expected to equal [40]
+    at line 39
+- test_sum_40 in sum_test.gd
+    [40] expected to equal [41]
+    at line 40
+- test_sum_41 in sum_test.gd
+    [41] expected to equal [42]
+    at line 41
+- test_sum_42 in sum_test.gd
+    [42] expected to equal [43]
+    at line 42
+- test_sum_43 in sum_test.gd
+    [43] expected to equal [44]
+    at line 43
+- test_sum_44 in sum_test.gd
+    [44] expected to equal [45]
+    at line 44
+- test_sum_45 in sum_test.gd
+    [45] expected to equal [46]
+    at line 45
+- test_sum_46 in sum_test.gd
+    [46] expected to equal [47]
+    at line 46
+- test_sum_47 in sum_test.gd
+    [47] expected to equal [48]
+    at line 47
+- test_sum_48 in sum_test.gd
+    [48] expected to equal [49]
+    at line 48
+- test_sum_49 in sum_test.gd
+    [49] expected to equal [50]
+    at line 49
+- test_sum_50 in sum_test.gd
+    [50] expected to equal [51]
+    at line 50
+- test_sum_51 in sum_test.gd
+    [51] expected to equal [52]
+    at line 51
+- test_sum_52 in sum_test.gd
+    [52] expected to equal [53]
+    at line 52
+- test_sum_53 in sum_test.gd
+    [53] expected to equal [54]
+    at line 53
+- test_sum_54 in sum_test.gd
+    [54] expected to equal [55]
+    at line 54
+- test_sum_55 in sum_test.gd
+    [55] expected to equal [56]
+    at line 55
+- test_sum_56 in sum_test.gd
+    [56] expected to equal [57]
+    at line 56
+- test_sum_57 in sum_test.gd
+    [57] expected to equal [58]
+    at line 57
+- test_sum_58 in sum_test.gd
+    [58] expected to equal [59]
+    at line 58
+- test_sum_59 in sum_test.gd
+    [59] expected to equal [60]
+    at line 59
+- test_sum_60 in sum_test.gd
+    [60] expected to equal [61]
+    at line 60
+- test_sum_61 in sum_test.gd
+    [61] expected to equal [62]
+    at line 61
+- test_sum_62 in sum_test.gd
+    [62] expected to equal [63]
+    at line 62
+- test_sum_63 in sum_test.gd
+    [63] expected to equal [64]
+    at line 63
+- test_sum_64 in sum_test.gd
+    [64] expected to equal [65]
+    at line 64
+- test_sum_65 in sum_test.gd
+    [65] expected to equal [66]
+    at line 65
+- test_sum_66 in sum_test.gd
+    [66] expected to equal [67]
+    at line 66
+- test_sum_67 in sum_test.gd
+    [67] expected to equal [68]
+    at line 67
+- test_sum_68 in sum_test.gd
+    [68] expected to equal [69]
+    at line 68
+- test_sum_69 in sum_test.gd
+    [69] expected to equal [70]
+    at line 69
+- test_sum_70 in sum_test.gd
+    [70] expected to equal [71]
+    at line 70
+- test_sum_71 in sum_test.gd
+    [71] expected to equal [72]
+... 76 more lines ...
+- test_sum_97 in sum_test.gd
+    [97] expected to equal [98]
+    at line 97
+- test_sum_98 in sum_test.gd
+    [98] expected to equal [99]
+    at line 98
+- test_sum_99 in sum_test.gd
+    [99] expected to equal [100]
+    at line 99
+- test_sum_100 in sum_test.gd
+    [100] expected to equal [101]
+    at line 100
+- test_sum_101 in sum_test.gd
+    [101] expected to equal [102]
+    at line 101
+- test_sum_102 in sum_test.gd
+    [102] expected to equal [103]
+    at line 102
+- test_sum_103 in sum_test.gd
+    [103] expected to equal [104]
+    at line 103
+- test_sum_104 in sum_test.gd
+    [104] expected to equal [105]
+    at line 104
+- test_sum_105 in sum_test.gd
+    [105] expected to equal [106]
+    at line 105
+- test_sum_106 in sum_test.gd
+    [106] expected to equal [107]
+    at line 106
+- test_sum_107 in sum_test.gd
+    [107] expected to equal [108]
+    at line 107
+- test_sum_108 in sum_test.gd
+    [108] expected to equal [109]
+    at line 108
+- test_sum_109 in sum_test.gd
+    [109] expected to equal [110]
+    at line 109
+- test_sum_110 in sum_test.gd
+    [110] expected to equal [111]
+    at line 110
+- test_sum_111 in sum_test.gd
+    [111] expected to equal [112]
+    at line 111
+- test_sum_112 in sum_test.gd
+    [112] expected to equal [113]
+    at line 112
+- test_sum_113 in sum_test.gd
+    [113] expected to equal [114]
+    at line 113
+- test_sum_114 in sum_test.gd
+    [114] expected to equal [115]
+    at line 114
+- test_sum_115 in sum_test.gd
+    [115] expected to equal [116]
+    at line 115
+- test_sum_116 in sum_test.gd
+    [116] expected to equal [117]
+    at line 116
+- test_sum_117 in sum_test.gd
+    [117] expected to equal [118]
+    at line 117
+- test_sum_118 in sum_test.gd
+    [118] expected to equal [119]
+    at line 118
+- test_sum_119 in sum_test.gd
+    [119] expected to equal [120]
+    at line 119
+script errors, where the engine raised them:
 [x3] SCRIPT ERROR: Invalid call. Nonexistent function 'debug' in base 'Nil'.
    at: _log (res://sum.gd:9)
 exit 0

@@ -1,10 +1,5 @@
 test failed for sum_test.gd:
----  GUT  ---
+- GUT ran none of the tests in sum_test.gd
 [GUT WARNING]:  Ignoring script res://sum_test.gd because it does not extend GutTest
 [GUT ERROR]:  Nothing was run.
-engine errors (2 distinct):
-[x1] SCRIPT ERROR: Parse Error: Identifier "Sum" not declared in the current scope.
-   at: GDScript::reload (res://sum_test.gd:7)
-[x1] ERROR: Failed to load script "res://sum_test.gd" with error "Parse error".
-   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
 exit 0
