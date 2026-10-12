@@ -243,9 +243,10 @@ editor build that still defines it. Booting the packaged game finds that, which 
 patch that touches several files is checked in one run. An edit to `export_overrides.cfg`
 is checked against `export_presets.cfg`, the file the rule covers.
 
-GUT runs the test beside an edited script alone, not the directories `.gutconfig.json`
-lists, and a failed run reports GUT's summary and each distinct engine error rather than
-its output, which carries every test's logging.
+The tools run at once, so an edit takes as long as the slowest: the checker, or GUT when
+a test sits beside the edited script. GUT runs that test alone, not the directories
+`.gutconfig.json` lists, and a failed run reports GUT's summary and each distinct engine
+error rather than its output, which carries every test's logging.
 
 ## Adding a rule
 

@@ -6,6 +6,9 @@ script, and reports what they say back to the agent. A failed test run reports G
 summary and the engine's distinct errors rather than the run's output, which carries
 every test's logging.
 
+The tools run at once. Only the checker writes, repairing scenes, resources and export
+files but never scripts, so a test waits for it only when the edit touched one of those.
+
 Claude Code sends one file in 'tool_input.file_path'. Codex sends a patch in
 'tool_input.command', which may touch many files, so every tool runs once over all of
 them rather than once per file.
@@ -14,8 +17,9 @@ The report goes out as a JSON decision on stdout and the hook always exits 0. A
 non-zero exit is a failed hook in both harnesses, and PowerShell, which Codex runs hooks
 through on Windows, rewrites the exit code anyway.
 
-NOTE: The checker boots Godot once for every rule, which keeps a check near 1.1s; a test
-beside the script adds a ~4s GUT boot. Do not add a boot for the checks.
+NOTE: The checker boots Godot once for every rule, which keeps a check near 2s, and an
+edit takes as long as its slowest tool: GUT's boot (~3s) when a test sits beside the
+script. Do not add a boot for the checks.
 """
 
 from __future__ import annotations
@@ -27,6 +31,7 @@ import shutil
 import subprocess
 import sys
 import traceback
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 
 # PLUGIN is the plugin root, which holds the checker this hook runs.
@@ -315,8 +320,11 @@ def gdtoolkit(
 
 
 def check(project: Path, files: list[str]) -> list[str]:
-    """check runs every tool over the files it takes and returns what each reported."""
+    """check runs every tool over the files it takes, all at once, and returns what each
+    reported, in the same order however they finish.
+    """
     scripts, checks, tests = targets(files, project)
+    godot = ["godot", "--headless", "--path", project.as_posix()]
     report = []
 
     def reports(
@@ -332,47 +340,53 @@ def check(project: Path, files: list[str]) -> list[str]:
         if result.returncode != 0:
             report.append(f"{label} for {', '.join(names)}:\n{text(result)}")
 
-    for command, label in (
-        (["gdformat", "--check"], "gdformat --check failed"),
-        (["gdlint"], "gdlint failed"),
-    ):
-        if not scripts:
-            break
+    with ThreadPoolExecutor() as pool:
+        linters: list[tuple[str, str, Future]] = []
+        if scripts:
+            for command, label in (
+                (["gdformat", "--check"], "gdformat --check failed"),
+                (["gdlint"], "gdlint failed"),
+            ):
+                started = pool.submit(gdtoolkit, project, [*command, *scripts])
+                linters.append((command[0], label, started))
 
-        result = gdtoolkit(project, [*command, *scripts])
+        checked = None
+        if checks:
+            command = [*godot, "-s", CHECKER, "--", "--fix", *checks]
+            checked = pool.submit(run, command, project)
+
+        tested = None
+        if tests:
+            # '-gdir=' empties the directories a project's '.gutconfig.json' lists,
+            # which GUT would otherwise run in full beside the named tests. The file's
+            # other options still apply.
+            gtest = ",".join(f"res://{name}" for name in tests)
+            command = [*godot, "-s", GUT, "-gdir=", f"-gtest={gtest}", "-gexit"]
+            repairs = any(not name.endswith(".gd") for name in checks)
+
+            def test(command: list[str]) -> subprocess.CompletedProcess[str]:
+                """test runs the tests once the checker has repaired any file they
+                might load.
+                """
+                if checked is not None and repairs:
+                    checked.result()
+
+                return run(command, project)
+
+            tested = pool.submit(test, command)
+
+    for tool, label, started in linters:
+        result = started.result()
         if result is None:
-            report.append(
-                f"{command[0]} was skipped: neither uv nor the PATH could start it"
-            )
+            report.append(f"{tool} was skipped: neither uv nor the PATH could start it")
         else:
             reports(label, scripts, result)
 
-    if checks:
-        reports(
-            "project check reported",
-            checks,
-            run(
-                ["godot", "--headless", "--path", project.as_posix()]
-                + ["-s", CHECKER, "--", "--fix", *checks],
-                project,
-            ),
-        )
+    if checked is not None:
+        reports("project check reported", checks, checked.result())
 
-    if tests:
-        # '-gdir=' empties the directories a project's '.gutconfig.json' lists, which
-        # GUT would otherwise run in full beside the named tests. The file's other
-        # options still apply.
-        gtest = ",".join(f"res://{name}" for name in tests)
-        reports(
-            "test failed",
-            tests,
-            run(
-                ["godot", "--headless", "--path", project.as_posix()]
-                + ["-s", GUT, "-gdir=", f"-gtest={gtest}", "-gexit"],
-                project,
-            ),
-            summarize,
-        )
+    if tested is not None:
+        reports("test failed", tests, tested.result(), summarize)
 
     return report
 
