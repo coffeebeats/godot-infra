@@ -250,7 +250,7 @@ summary and each distinct engine error rather than its output, which carries eve
 test's logging. GUT skips a test that does not compile and still exits 0, so the hook
 counts a parse error as a failure. It leaves the test out of its report when the checker
 finds the edited script does not compile, since the test can only fail on that same
-error.
+error. A tool that runs past two minutes is stopped, along with everything it started.
 
 ## Adding a rule
 

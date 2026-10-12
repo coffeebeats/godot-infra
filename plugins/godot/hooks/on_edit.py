@@ -24,10 +24,12 @@ script. Do not add a boot for the checks.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import traceback
@@ -114,22 +116,64 @@ ERRORS = 10
 # files: a sandbox denying uv its cache, or a project that does not depend on the tool.
 UNAVAILABLE = re.compile(r"^error: Failed to (?:initialize cache|spawn)", re.MULTILINE)
 
-# TIMEOUT bounds each call in seconds, since a checker file that fails to compile can
-# hang the engine rather than exit.
-TIMEOUT = 300
+# TIMEOUT bounds each call in seconds, since a test awaiting a signal that never comes,
+# or a checker file that fails to compile, can hang the engine rather than exit.
+TIMEOUT = 120
+
+
+def stop(process: subprocess.Popen[str]) -> None:
+    """stop kills a process and every process it started.
+
+    NOTE: On Windows, gdenv's 'godot' shim runs the engine as its child, which killing
+    the shim alone would leave running.
+    """
+    with contextlib.suppress(OSError, subprocess.SubprocessError):
+        if os.name == "nt":
+            command = ["taskkill", "/F", "/T", "/PID", str(process.pid)]
+            subprocess.run(command, capture_output=True, timeout=30)
+        else:
+            os.killpg(process.pid, signal.SIGKILL)
+
+    process.kill()
 
 
 def run(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
-    """run runs a command in a directory and returns the finished process."""
-    return subprocess.run(
-        command,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=TIMEOUT,
-    )
+    """run runs a command in a directory and returns the finished process. A command
+    that cannot start, or that runs past TIMEOUT, returns as a failed run that says so.
+    """
+    try:
+        process = subprocess.Popen(
+            command,
+            cwd=cwd,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            start_new_session=os.name != "nt",
+        )
+    except OSError as e:
+        return subprocess.CompletedProcess(command, 1, f"{command[0]}: {e}", "")
+
+    with process:
+        try:
+            stdout, stderr = process.communicate(timeout=TIMEOUT)
+        except subprocess.TimeoutExpired:
+            stop(process)
+
+            # A process the kill missed can hold the pipes open, so the output read
+            # after it is bounded too.
+            try:
+                stdout, stderr = process.communicate(timeout=30)
+            except subprocess.TimeoutExpired:
+                stdout, stderr = "", ""
+
+            stdout = f"{command[0]} ran past {TIMEOUT}s and was stopped\n{stdout}"
+
+            return subprocess.CompletedProcess(command, 1, stdout, stderr)
+
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
 
 def lines_of(output: str) -> list[str]:
@@ -219,10 +263,7 @@ def git_root(cwd: str) -> Path | None:
     """git_root returns the repository a directory sits in, which is where a harness
     that names no project directory was started.
     """
-    try:
-        result = run(["git", "-C", cwd, "rev-parse", "--show-toplevel"], Path(cwd))
-    except OSError:
-        return None
+    result = run(["git", "-C", cwd, "rev-parse", "--show-toplevel"], Path(cwd))
 
     return Path(result.stdout.strip()) if result.returncode == 0 else None
 
