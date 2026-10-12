@@ -1,9 +1,14 @@
 """Check the files an agent just edited, as the 'godot' plugin's PostToolUse hook.
 
 It runs gdformat and gdlint over the edited '.gd' files, the project checker with
-'--fix' over every file the checker covers, and the '<name>_test.gd' beside each edited
-script, and reports what they say back to the agent. A failed test is read from GUT's
-JUnit export rather than its output, which carries every test's logging.
+'--fix' over every file the checker covers, and GUT over each edited script's tests, and
+reports what they say back to the agent. A failed test is read from GUT's JUnit export
+rather than its output, which carries every test's logging.
+
+An edited file belongs to the nearest 'project.godot' above it, no higher than the
+directory the session works in. A script's test is its '<name>_test.gd', the name
+'check-project.yaml' runs GUT with, or the test '.gutconfig.json' names for it through
+its prefix and suffix, beside the script or else in the directories the file lists.
 
 The tools run at once. Only the checker writes, repairing scenes, resources and export
 files but never scripts, so a test waits for it only when the edit touched one of those.
@@ -17,8 +22,8 @@ non-zero exit is a failed hook in both harnesses, and PowerShell, which Codex ru
 through on Windows, rewrites the exit code anyway.
 
 NOTE: The checker boots Godot once for every rule, which keeps a check near 2s. An edit
-takes as long as its slowest tool, which is GUT (~3s) when a test sits beside the
-script. Do not add a boot for the checks.
+takes as long as its slowest tool, which is GUT (~3s) when a script has a test. Do not
+add a boot for the checks.
 """
 
 from __future__ import annotations
@@ -46,6 +51,13 @@ CHECKER = (PLUGIN / "checker" / "check.gd").as_posix()
 
 # GUT is the test runner, which only a project that vendors it can run.
 GUT = "addons/gut/gut_cmdln.gd"
+
+# GUT_CONFIG is the file GUT reads its options from, how it finds tests included.
+GUT_CONFIG = ".gutconfig.json"
+
+# SUFFIX ends the name of a script's test in any project, since 'check-project.yaml'
+# runs GUT with it whatever '.gutconfig.json' says.
+SUFFIX = "_test.gd"
 
 # PRESETS and OVERRIDES are the export files. The export rule reads the declaration and
 # the presets from the presets file, so an edit to either is checked there.
@@ -358,16 +370,31 @@ def git_root(cwd: str) -> Path | None:
     return Path(result.stdout.strip()) if result.returncode == 0 else None
 
 
-def project_dir(payload: dict) -> Path | None:
-    """project_dir returns the Godot project the edit belongs to, or None when the
-    session is not in one. The plugin is enabled per repository, but a repository need
-    not be a Godot project.
+def session_root(payload: dict) -> Path:
+    """session_root returns the directory the session works in, above which no project
+    is looked for: the one the harness names, else the repository holding the session's
+    directory, else that directory.
     """
     cwd = str(payload.get("cwd") or Path.cwd())
     named = os.environ.get("CLAUDE_PROJECT_DIR")
     root = Path(named) if named else (git_root(cwd) or Path(cwd))
 
-    return root.resolve() if (root / "project.godot").is_file() else None
+    return root.resolve()
+
+
+def project_of(path: Path, root: Path) -> Path | None:
+    """project_of returns the nearest directory above path holding a 'project.godot',
+    no higher than root, or None. The plugin is enabled per repository, but a repository
+    need not hold a Godot project.
+    """
+    for parent in path.parents:
+        if (parent / "project.godot").is_file():
+            return parent
+
+        if parent == root:
+            break
+
+    return None
 
 
 def edited(payload: dict) -> list[str]:
@@ -384,12 +411,12 @@ def edited(payload: dict) -> list[str]:
     return [str(tool_input["file_path"])] if tool_input.get("file_path") else []
 
 
-def covered(paths: list[str], cwd: str, project: Path) -> list[str]:
-    """covered returns the project-relative files the checks cover, dropping the rest:
-    a path outside the project, a file that no longer exists, and the vendored addons,
-    which follow their upstream style.
+def covered(paths: list[str], cwd: str, root: Path) -> dict[Path, list[str]]:
+    """covered returns the files the checks cover, by the project holding each and
+    relative to it, dropping the rest: a path outside root or any project, a file that
+    no longer exists, and the vendored addons, which follow their upstream style.
     """
-    kept = []
+    projects: dict[Path, list[str]] = {}
 
     for path in paths:
         absolute = Path(path)
@@ -397,27 +424,85 @@ def covered(paths: list[str], cwd: str, project: Path) -> list[str]:
             absolute = Path(cwd) / absolute
 
         try:
-            relative = absolute.resolve().relative_to(project)
+            absolute = absolute.resolve()
+            absolute.relative_to(root)
         except (ValueError, OSError):
             continue
 
-        # 'relative' has no parts when the path is the project root itself, which the
-        # file test rejects first.
-        if not absolute.is_file() or relative.parts[0] == "addons":
+        project = project_of(absolute, root) if absolute.is_file() else None
+        if project is None:
             continue
 
-        kept.append(relative.as_posix())
+        relative = absolute.relative_to(project)
+        if relative.parts[0] != "addons":
+            projects.setdefault(project, []).append(relative.as_posix())
 
-    return list(dict.fromkeys(kept))
+    return {project: list(dict.fromkeys(names)) for project, names in projects.items()}
+
+
+def found(directory: Path, names: list[str], deep: bool) -> list[Path]:
+    """found returns the files in directory, and below it when deep, that carry one of
+    names, outside hidden directories such as '.godot'.
+    """
+    if not deep:
+        return [directory / name for name in names if (directory / name).is_file()]
+
+    hits = []
+
+    for parent, children, files in os.walk(directory):
+        children[:] = [child for child in children if not child.startswith(".")]
+        hits.extend(Path(parent) / name for name in names if name in files)
+
+    return hits
+
+
+def tests_of(project: Path, scripts: list[str]) -> list[str]:
+    """tests_of returns the tests of scripts: each script that is a test itself, and for
+    any other its '<name>_test.gd' or the test '.gutconfig.json' names for it through
+    its prefix and suffix, beside the script or else in the directories the file lists.
+    """
+    try:
+        config = json.loads((project / GUT_CONFIG).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        config = {}
+
+    if not isinstance(config, dict):
+        config = {}
+
+    # The fallbacks are GUT's own defaults.
+    prefix = str(config.get("prefix", "test_"))
+    suffix = str(config.get("suffix", ".gd"))
+    dirs = config.get("dirs") if isinstance(config.get("dirs"), list) else []
+    deep = bool(config.get("include_subdirs", False))
+    tests = []
+
+    for name in scripts:
+        script = Path(name)
+        if script.name.endswith(SUFFIX) or (
+            script.name.startswith(prefix) and script.name.endswith(suffix)
+        ):
+            tests.append(name)
+            continue
+
+        names = [f"{script.stem}{SUFFIX}", f"{prefix}{script.stem}{suffix}"]
+        hits = found(project / script.parent, names, False)
+
+        if not hits:
+            for directory in dirs:
+                path = project / str(directory).removeprefix("res://")
+                hits += found(path, names, deep)
+
+        tests.extend(hit.relative_to(project).as_posix() for hit in hits)
+
+    return list(dict.fromkeys(tests))
 
 
 def targets(files: list[str], project: Path) -> tuple[list[str], list[str], list[str]]:
     """targets sorts the edited files into the ones each tool takes: the scripts to
-    format and lint, the paths to check, and the tests to run beside them. A test is
-    checked too, so the checker reports one that does not compile.
+    format and lint, the paths to check, and the tests to run. A test is checked too, so
+    the checker reports one that does not compile.
     """
-    scripts, checks, tests = [], [], []
-    has_gut = (project / GUT).is_file()
+    scripts, checks = [], []
 
     for name in files:
         if name in (PRESETS, OVERRIDES):
@@ -429,17 +514,10 @@ def targets(files: list[str], project: Path) -> tuple[list[str], list[str], list
             continue
 
         checks.append(name)
+        if name.endswith(".gd"):
+            scripts.append(name)
 
-        if not name.endswith(".gd"):
-            continue
-
-        scripts.append(name)
-
-        test = name if name.endswith("_test.gd") else f"{name[: -len('.gd')]}_test.gd"
-        if has_gut and (project / test).is_file():
-            tests.append(test)
-
-    tests = list(dict.fromkeys(tests))
+    tests = tests_of(project, scripts) if (project / GUT).is_file() else []
 
     return scripts, list(dict.fromkeys([*checks, *tests])), tests
 
@@ -468,7 +546,7 @@ def gdtoolkit(
     return None
 
 
-def check(project: Path, files: list[str], export: Path) -> list[str]:
+def check(project: Path, root: Path, files: list[str], export: Path) -> list[str]:
     """check runs every tool over the files it takes, all at once, and returns what each
     reported, in the same order however they finish. GUT writes its results to export.
     """
@@ -476,12 +554,18 @@ def check(project: Path, files: list[str], export: Path) -> list[str]:
     godot = ["godot", "--headless", "--path", project.as_posix()]
     report = []
 
+    def named(names: list[str]) -> str:
+        """named returns names as the agent knows them, relative to root."""
+        paths = [(project / name).relative_to(root).as_posix() for name in names]
+
+        return ", ".join(paths)
+
     def reports(label: str, names: list[str], result: subprocess.CompletedProcess[str]):
         """reports keeps a run's output when the run failed, under a neutral label,
         since the checker exits 1 for a repair as well as a problem.
         """
         if result.returncode != 0:
-            report.append(f"{label} for {', '.join(names)}:\n{quiet(result)}")
+            report.append(f"{label} for {named(names)}:\n{quiet(result)}")
 
     with ThreadPoolExecutor() as pool:
         linters: list[tuple[str, str, Future]] = []
@@ -534,7 +618,7 @@ def check(project: Path, files: list[str], export: Path) -> list[str]:
     if tested is not None and not uncompiled:
         summary = summarize(tested.result(), export, tests)
         if summary is not None:
-            report.append(f"test failed for {', '.join(tests)}:\n{summary}")
+            report.append(f"test failed for {named(tests)}:\n{summary}")
 
     return report
 
@@ -553,23 +637,19 @@ def main() -> None:
     except ValueError:
         return
 
-    if not isinstance(payload, dict):
-        return
-
-    project = project_dir(payload)
-    if project is None or not shutil.which("godot"):
+    if not isinstance(payload, dict) or not shutil.which("godot"):
         return
 
     cwd = str(payload.get("cwd") or Path.cwd())
-    files = covered(edited(payload), cwd, project)
-    if not files:
-        return
+    root = session_root(payload)
+    report = []
 
-    exports = Path(tempfile.mkdtemp())
-    try:
-        report = check(project, files, exports / "results.xml")
-    finally:
-        shutil.rmtree(exports, ignore_errors=True)
+    for project, files in covered(edited(payload), cwd, root).items():
+        exports = Path(tempfile.mkdtemp())
+        try:
+            report.extend(check(project, root, files, exports / "results.xml"))
+        finally:
+            shutil.rmtree(exports, ignore_errors=True)
 
     if not report:
         return

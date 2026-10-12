@@ -243,14 +243,20 @@ editor build that still defines it. Booting the packaged game finds that, which 
 patch that touches several files is checked in one run. An edit to `export_overrides.cfg`
 is checked against `export_presets.cfg`, the file the rule covers.
 
+An edited file belongs to the nearest `project.godot` above it, no higher than the
+directory the session works in, so a project need not sit at the repository root. A
+script's test is its `<name>_test.gd`, the name `check-project.yaml` runs GUT with, or
+the one `.gutconfig.json` names through its `prefix` and `suffix`. The hook looks beside
+the script first, then in the directories the file lists.
+
 The tools run at once, so an edit takes as long as the slowest of them, which is GUT
-when a test sits beside the edited script and the checker otherwise. GUT runs that test
-alone, not the directories `.gutconfig.json` lists, and the hook reads a failure from
-its JUnit export rather than its output, which carries every test's logging. GUT places
-an error a script raised at line -1, so the report adds where the engine raised it. GUT
-skips a test that does not load and still exits 0, so the hook reports a test the export
-holds nothing from. The checker compiles each test too, and the hook leaves the tests
-out of its report when the checker finds a script that does not compile.
+when a script has a test and the checker otherwise. GUT runs that test alone, not the
+directories `.gutconfig.json` lists, and the hook reads a failure from its JUnit export
+rather than its output, which carries every test's logging. GUT places an error a script
+raised at line -1, so the report adds where the engine raised it. GUT skips a test that
+does not load and still exits 0, so the hook reports a test the export holds nothing
+from. The checker compiles each test too, and the hook leaves the tests out of its
+report when the checker finds a script that does not compile.
 
 A tool that runs past two minutes is stopped, along with everything it started, and the
 report as a whole stays under 8,000 characters, below the 10,000 at which Claude Code
