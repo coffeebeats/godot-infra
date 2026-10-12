@@ -258,9 +258,10 @@ does not load and still exits 0, so the hook reports a test the export holds not
 from. The checker compiles each test too, and the hook leaves the tests out of its
 report when the checker finds a script that does not compile.
 
-A tool that runs past two minutes is stopped, along with everything it started, and the
-report as a whole stays under 8,000 characters, below the 10,000 at which Claude Code
-moves hook output to a file.
+gdformat rewrites a script it would reformat once the other tools are done reading it,
+and the report says so. A tool that runs past two minutes is stopped, along with
+everything it started, and the report as a whole stays under 8,000 characters, below the
+10,000 at which Claude Code moves hook output to a file.
 
 ## Adding a rule
 

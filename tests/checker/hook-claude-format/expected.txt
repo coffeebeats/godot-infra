@@ -1,0 +1,2 @@
+gdformat reformatted sum.gd; read it again
+exit 0

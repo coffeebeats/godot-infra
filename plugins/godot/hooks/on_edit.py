@@ -12,6 +12,8 @@ its prefix and suffix, beside the script or else in the directories the file lis
 
 The tools run at once. Only the checker writes, repairing scenes, resources and export
 files but never scripts, so a test waits for it only when the edit touched one of those.
+gdformat reformats a script once the others are done reading it, so their reports count
+lines from before the reformat.
 
 Claude Code sends one file in 'tool_input.file_path'. Codex sends a patch in
 'tool_input.command', which may touch many files, so every tool runs once over all of
@@ -606,8 +608,24 @@ def check(project: Path, root: Path, files: list[str], export: Path) -> list[str
         result = started.result()
         if result is None:
             report.append(f"{tool} was skipped: neither uv nor the PATH could start it")
-        else:
-            reports(label, scripts, result)
+            continue
+
+        # The other tools are done reading the scripts, so gdformat can rewrite them.
+        if tool == "gdformat" and "would reformat" in result.stderr:
+            changed = [
+                Path(line.removeprefix("would reformat ")).as_posix()
+                for line in lines_of(result.stderr)
+                if line.startswith("would reformat ")
+            ]
+
+            result = gdtoolkit(project, ["gdformat", *scripts]) or result
+            if result.returncode == 0:
+                report.append(f"gdformat reformatted {named(changed)}; read it again")
+                continue
+
+            label = "gdformat failed"
+
+        reports(label, scripts, result)
 
     if checked is not None:
         reports("project check reported", checks, checked.result())
