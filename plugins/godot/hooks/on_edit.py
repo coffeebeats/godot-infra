@@ -415,9 +415,15 @@ def main() -> None:
     """
     # A payload that will not parse is nothing to check rather than something to report:
     # the launcher's '||' hands the second interpreter a stream the first has drained.
+    #
+    # NOTE: The payload is read as bytes, since Python decodes a piped stdin by the
+    # locale, which is not the UTF-8 a harness writes on Windows.
     try:
-        payload = json.loads(sys.stdin.read())
-    except (json.JSONDecodeError, UnicodeDecodeError):
+        payload = json.loads(sys.stdin.buffer.read())
+    except ValueError:
+        return
+
+    if not isinstance(payload, dict):
         return
 
     project = project_dir(payload)
