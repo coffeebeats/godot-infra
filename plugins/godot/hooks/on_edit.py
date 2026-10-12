@@ -2,7 +2,9 @@
 
 It runs gdformat and gdlint over the edited '.gd' files, the project checker with
 '--fix' over every file the checker covers, and the '<name>_test.gd' beside each edited
-script, and reports what they say back to the agent.
+script, and reports what they say back to the agent. A failed test run reports GUT's
+summary and the engine's distinct errors rather than the run's output, which carries
+every test's logging.
 
 Claude Code sends one file in 'tool_input.file_path'. Codex sends a patch in
 'tool_input.command', which may touch many files, so every tool runs once over all of
@@ -61,6 +63,43 @@ NOISE = re.compile(
     r"|exit status \d+$"
 )
 
+# BACKTRACE matches the line the engine prints above an error's GDScript backtrace, and
+# FRAME each frame below it. The frames are often a tool's own, and the error's 'at:'
+# line already says where it was raised.
+BACKTRACE = re.compile(r"^\s*GDScript backtrace \(most recent call first\):$")
+FRAME = re.compile(r"^\s*\[\d+\] .+ \(.+:\d+\)$")
+
+# EXPECTED matches the list of tokens gdtoolkit's parser would have accepted below a
+# syntax error, which runs to dozens of lines. The error's line and column say where.
+EXPECTED = re.compile(r"^(?:Expected one of: ?|\t\* \S+)$")
+
+# ANSI matches the color codes a tool or a project's logger writes, which tell an agent
+# nothing.
+ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+# SUMMARY is the header GUT prints above its run summary, which names each test that did
+# not pass and why, then the totals. Everything printed before it is the tests' own
+# output, a project's logging included.
+SUMMARY = "= Run Summary"
+
+# FAILURE matches the first line of an error the engine raised. The line after it says
+# where, and the backtrace below that is left out.
+FAILURE = re.compile(r"^(?:SCRIPT ERROR|ERROR): ")
+
+# PUSHED matches the line placing an error a script raised through 'push_error'. A test
+# may raise one on purpose, and GUT's summary already names a test that did not expect
+# it, so the engine's errors leave it out.
+PUSHED = re.compile(r"^\s*at: push_error ")
+
+# HEAD and TAIL bound each report in lines, keeping its first and last lines. A script
+# that stops compiling fails every test that loads it, and a full report of that would
+# flood the agent's context. The tail keeps GUT's totals.
+HEAD = 60
+TAIL = 15
+
+# ERRORS bounds how many distinct engine errors a failed test run reports.
+ERRORS = 10
+
 # UNAVAILABLE matches uv failing to start a tool, rather than the tool reporting on the
 # files: a sandbox denying uv its cache, or a project that does not depend on the tool.
 UNAVAILABLE = re.compile(r"^error: Failed to (?:initialize cache|spawn)", re.MULTILINE)
@@ -83,11 +122,77 @@ def run(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def quiet(result: subprocess.CompletedProcess[str]) -> str:
-    """quiet returns a run's output without the boilerplate or the blank lines."""
-    lines = f"{result.stdout}{result.stderr}".replace("\r\n", "\n").splitlines()
+def lines_of(output: str) -> list[str]:
+    """lines_of returns output's lines without the color codes, the boilerplate, the
+    backtraces, the parser's expected tokens or the blank lines.
+    """
+    kept = []
+    frames = False
 
-    return "\n".join(line for line in lines if line.strip() and not NOISE.match(line))
+    for line in ANSI.sub("", output).replace("\r\n", "\n").splitlines():
+        if BACKTRACE.match(line):
+            frames = True
+            continue
+
+        if frames and FRAME.match(line):
+            continue
+
+        frames = False
+        if line.strip() and not NOISE.match(line) and not EXPECTED.match(line):
+            kept.append(line)
+
+    return kept
+
+
+def bounded(lines: list[str]) -> list[str]:
+    """bounded returns the first HEAD and the last TAIL of lines, with a line saying how
+    many it left out between them.
+    """
+    if len(lines) <= HEAD + TAIL:
+        return lines
+
+    omitted = len(lines) - HEAD - TAIL
+
+    return [*lines[:HEAD], f"... {omitted} more lines ...", *lines[-TAIL:]]
+
+
+def quiet(result: subprocess.CompletedProcess[str]) -> str:
+    """quiet returns a run's output, bounded, with only the lines lines_of keeps."""
+    return "\n".join(bounded(lines_of(f"{result.stdout}{result.stderr}")))
+
+
+def summarize(result: subprocess.CompletedProcess[str]) -> str:
+    """summarize returns what a failed GUT run found: GUT's run summary, bounded, then
+    each distinct error the engine raised, where, and how often. A run with no summary,
+    as when GUT itself fails, reports its whole output, bounded.
+    """
+    out = lines_of(result.stdout)
+    start = next((i for i, line in enumerate(out) if line.strip() == SUMMARY), None)
+    if start is None:
+        return quiet(result)
+
+    errors: dict[str, int] = {}
+    err = lines_of(result.stderr)
+    for i, line in enumerate(err):
+        if not FAILURE.match(line):
+            continue
+
+        after = err[i + 1] if i + 1 < len(err) else ""
+        if PUSHED.match(after):
+            continue
+
+        error = f"{line}\n{after}" if after.strip().startswith("at:") else line
+        errors[error] = errors.get(error, 0) + 1
+
+    report = bounded(out[start:])
+    if errors:
+        report.append(f"engine errors ({len(errors)} distinct):")
+        shown = list(errors.items())[:ERRORS]
+        report.extend(f"[x{count}] {error}" for error, count in shown)
+        if len(errors) > ERRORS:
+            report.append(f"... {len(errors) - ERRORS} more distinct errors ...")
+
+    return "\n".join(report)
 
 
 def git_root(cwd: str) -> Path | None:
@@ -214,12 +319,18 @@ def check(project: Path, files: list[str]) -> list[str]:
     scripts, checks, tests = targets(files, project)
     report = []
 
-    def reports(label: str, names: list[str], result: subprocess.CompletedProcess[str]):
-        """reports keeps a run's output when the run failed, under a neutral label: the
-        engine cannot tell a problem from a repair through its exit code.
+    def reports(
+        label: str,
+        names: list[str],
+        result: subprocess.CompletedProcess[str],
+        text=quiet,
+    ):
+        """reports keeps what text makes of a run's output when the run failed, under a
+        neutral label: the engine cannot tell a problem from a repair through its exit
+        code.
         """
         if result.returncode != 0:
-            report.append(f"{label} for {', '.join(names)}:\n{quiet(result)}")
+            report.append(f"{label} for {', '.join(names)}:\n{text(result)}")
 
     for command, label in (
         (["gdformat", "--check"], "gdformat --check failed"),
@@ -248,15 +359,19 @@ def check(project: Path, files: list[str]) -> list[str]:
         )
 
     if tests:
+        # '-gdir=' empties the directories a project's '.gutconfig.json' lists, which
+        # GUT would otherwise run in full beside the named tests. The file's other
+        # options still apply.
         gtest = ",".join(f"res://{name}" for name in tests)
         reports(
             "test failed",
             tests,
             run(
                 ["godot", "--headless", "--path", project.as_posix()]
-                + ["-s", GUT, f"-gtest={gtest}", "-gexit"],
+                + ["-s", GUT, "-gdir=", f"-gtest={gtest}", "-gexit"],
                 project,
             ),
+            summarize,
         )
 
     return report
