@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.20.0 (2026-10-13)
+
+## What's Changed
+* chore(deps): bump docker/setup-buildx-action from 4.2.0 to 4.3.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/659
+* feat(plugins): run an edited script's tests and read what GUT and the checker find from their reports by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/661
+* fix(checker): fail a run the checker's own scripts break, rather than hang or pass it by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/662
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.19.0...v6.20.0
+
 ## 6.19.0 (2026-09-22)
 
 ## What's Changed
