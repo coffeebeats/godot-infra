@@ -79,7 +79,7 @@ PATCH_FILE = re.compile(r"^\*{3} (?:Add File|Update File|Move to): (.+?)\s*$")
 
 # NOISE matches the boilerplate every headless run prints (the banner, godotsteam's
 # settings conversion, teardown notices, and the exit status gdenv's Windows shim
-# prints). Script errors and warnings are never matched.
+# printed before v0.6.37). Script errors and warnings are never matched.
 NOISE = re.compile(
     r"Godot Engine v"
     r"|WARNING: Found older |   at: register_settings"
@@ -136,8 +136,8 @@ TIMEOUT = 120
 def stop(process: subprocess.Popen[str]) -> None:
     """stop kills a process and every process it started.
 
-    NOTE: On Windows, gdenv's 'godot' shim runs the engine as its child, which killing
-    the shim alone would leave running.
+    NOTE: Windows has no 'killpg', so 'taskkill /T' ends the tree. Killing only a
+    gdenv 'godot' shim older than v0.6.37 leaves the engine running.
     """
     with contextlib.suppress(OSError, subprocess.SubprocessError):
         if os.name == "nt":

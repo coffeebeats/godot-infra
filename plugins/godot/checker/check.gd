@@ -254,8 +254,6 @@ func _initialize() -> void:
 		}
 	)
 
-	# NOTE: gdenv's `godot` shim reports every failing exit as 1 on Windows, so a
-	# problem found and a repair applied both exit 1.
 	_finish(1 if not problems.is_empty() or not fixed.is_empty() else 0)
 
 

@@ -33,11 +33,10 @@ Every rule covers the whole project apart from `addons/`, `script_templates/`, h
 directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
 `export-overrides` and `export-ref` are the exceptions; each covers one file and reads
 the whole project, `addons/` included. `logging` covers nothing until `.gdcheckrc` turns
-it on. The checker exits 1 for a problem or a repair alike, since gdenv's `godot` shim
-reports every failing exit as 1 on Windows; the `--report` file tells them apart, and
-`check.gd`'s header lists what it holds. An error in the checker's own scripts fails
-the run too: one raised while a rule checks a file is a problem on that file, and one
-that stops the run exits 1 with a line saying so.
+it on. The checker exits 1 for a problem or a repair alike; the `--report` file tells
+them apart, and `check.gd`'s header lists what it holds. An error in the checker's own
+scripts fails the run too: one raised while a rule checks a file is a problem on that
+file, and one that stops the run exits 1 with a line saying so.
 
 The checker reads uids from the cache the last import wrote, and a script process never
 rebuilds it. Run `godot --import --headless` after `--fix` and after creating or moving
