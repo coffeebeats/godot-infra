@@ -11,10 +11,11 @@ directory the session works in. A script's test is its '<name>_test.gd', the nam
 'check-project.yaml' runs GUT with, or the test '.gutconfig.json' names for it through
 its prefix and suffix, beside the script or else in the directories the file lists.
 
-The tools run at once. Only the checker writes, repairing scenes, resources and export
-files but never scripts, so a test waits for it only when the edit touched one of those.
-gdformat reformats a script once the others are done reading it, so their reports count
-lines from before the reformat.
+The tools run at once, apart from gdformat and gdlint, which take turns. Only the
+checker writes, repairing scenes, resources and export files but never scripts, so a
+test waits for it only when the edit touched one of those. gdformat reformats a script
+once the others are done reading it, so their reports count lines from before the
+reformat.
 
 Claude Code sends one file in 'tool_input.file_path'. Codex sends a patch in
 'tool_input.command', which may touch many files, so every tool runs once over all of
@@ -41,7 +42,7 @@ import subprocess
 import sys
 import tempfile
 import traceback
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -594,9 +595,9 @@ def gdtoolkit(
 
 
 def check(project: Path, root: Path, files: list[str], exports: Path) -> list[str]:
-    """check runs every tool over the files it takes, all at once, and returns what each
-    reported, in the same order however they finish. The checker and GUT export their
-    reports into the directory exports.
+    """check runs every tool over the files it takes and returns what each reported, in
+    the same order however they finish. The checker and GUT export their reports into
+    the directory exports.
     """
     scripts, checks, tests = targets(files, project)
     godot = ["godot", "--headless", "--path", project.as_posix()]
@@ -615,15 +616,22 @@ def check(project: Path, root: Path, files: list[str], exports: Path) -> list[st
         if result.returncode != 0:
             report.append(f"{label} for {named(names)}:\n{quiet(result)}")
 
-    with ThreadPoolExecutor() as pool:
-        linters: list[tuple[str, str, Future]] = []
-        if scripts:
+    def lint() -> list[tuple[str, str, subprocess.CompletedProcess[str] | None]]:
+        """lint runs gdformat's check and then gdlint over the scripts.
+
+        NOTE: The two take turns, since each creates gdtoolkit's parser cache on its
+        first run, and whichever loses the race to create it fails with "File exists".
+        """
+        return [
+            (command[0], label, gdtoolkit(project, [*command, *scripts]))
             for command, label in (
                 (["gdformat", "--check"], "gdformat --check failed"),
                 (["gdlint"], "gdlint failed"),
-            ):
-                started = pool.submit(gdtoolkit, project, [*command, *scripts])
-                linters.append((command[0], label, started))
+            )
+        ]
+
+    with ThreadPoolExecutor() as pool:
+        linted = pool.submit(lint) if scripts else None
 
         checked = None
         if checks:
@@ -651,8 +659,7 @@ def check(project: Path, root: Path, files: list[str], exports: Path) -> list[st
 
             tested = pool.submit(test, command)
 
-    for tool, label, started in linters:
-        result = started.result()
+    for tool, label, result in linted.result() if linted is not None else []:
         if result is None:
             report.append(f"{tool} was skipped: neither uv nor the PATH could start it")
             continue
