@@ -27,12 +27,11 @@ Usage: test_project_checker.py [--update] [CASE...]
 
 from __future__ import annotations
 
-import contextlib
 import difflib
+import importlib.util
 import json
 import os
 import shutil
-import signal
 import subprocess
 import sys
 import tempfile
@@ -59,8 +58,7 @@ CHECKER = (ROOT / "plugins" / "godot" / "checker" / "check.gd").as_posix()
 # BANNER opens the line naming the engine build, which Godot prints ahead of any output.
 BANNER = "Godot Engine v"
 
-# TIMEOUT bounds each Godot call in seconds, since a checker file that fails to compile
-# can hang the engine rather than exit.
+# TIMEOUT bounds each Godot call in seconds, since the engine can hang rather than exit.
 TIMEOUT = 120
 
 
@@ -78,20 +76,19 @@ class Run:
     actual: str
 
 
-def stop(process: subprocess.Popen[str]) -> None:
-    """stop kills a process and every process it started.
-
-    NOTE: On Windows, gdenv's 'godot' shim runs the engine as its child, which killing
-    the shim alone would leave running, holding the pipes the output is read from.
+def edit_hook():
+    """edit_hook returns the edit hook's module, whose 'stop' ends a run that hangs
+    along with every process it started, as the hook ends one.
     """
-    with contextlib.suppress(OSError, subprocess.SubprocessError):
-        if os.name == "nt":
-            command = ["taskkill", "/F", "/T", "/PID", str(process.pid)]
-            subprocess.run(command, capture_output=True, timeout=30)
-        else:
-            os.killpg(process.pid, signal.SIGKILL)
+    module = sys.modules.get("on_edit")
+    if module is None:
+        path = ROOT / "plugins" / "godot" / "hooks" / "on_edit.py"
+        spec = importlib.util.spec_from_file_location("on_edit", path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules["on_edit"] = module
+        spec.loader.exec_module(module)
 
-    process.kill()
+    return module
 
 
 def godot(project: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -110,8 +107,13 @@ def godot(project: Path, *args: str) -> subprocess.CompletedProcess[str]:
         try:
             stdout, stderr = process.communicate(timeout=TIMEOUT)
         except subprocess.TimeoutExpired as e:
-            stop(process)
+            edit_hook().stop(process)
             raise Failure(f"'{' '.join(args)}' timed out after {TIMEOUT}s") from e
+        except BaseException:
+            # An interrupt reaches the runner alone, since the engine runs in a session
+            # of its own outside Windows.
+            edit_hook().stop(process)
+            raise
 
     return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
