@@ -9,6 +9,7 @@ in CI.
 godot-check                         # every rule, every file
 godot-check a.gd b.tscn             # only the given files
 godot-check --fix a.tscn            # repair, then re-check
+godot-check --report=out.json       # also write the findings as JSON
 godot-check --list                  # print the rule registry
 ```
 
@@ -33,7 +34,8 @@ directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` exc
 `export-overrides` and `export-ref` are the exceptions; each covers one file and reads
 the whole project, `addons/` included. `logging` covers nothing until `.gdcheckrc` turns
 it on. The checker exits 1 for a problem or a repair alike, since gdenv's `godot` shim
-reports every failing exit as 1 on Windows.
+reports every failing exit as 1 on Windows; the `--report` file tells them apart, and
+`check.gd`'s header lists what it holds.
 
 The checker reads uids from the cache the last import wrote, and a script process never
 rebuilds it. Run `godot --import --headless` after `--fix` and after creating or moving

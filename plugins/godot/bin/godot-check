@@ -8,6 +8,7 @@
 #   godot-check                  # every rule, every file
 #   godot-check a.gd b.tscn      # only the given files
 #   godot-check --fix a.tscn     # repair, then re-check
+#   godot-check --report=out.json  # also write the findings as JSON
 #   godot-check --list           # print the rule registry
 
 set -eu

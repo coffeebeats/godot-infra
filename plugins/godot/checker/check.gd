@@ -12,10 +12,16 @@
 ##   godot --headless -s <checker>                       # every rule, every file
 ##   godot --headless -s <checker> -- a.gd b.tscn        # only the given files
 ##   godot --headless -s <checker> -- --fix a.tscn       # repair, then re-check
+##   godot --headless -s <checker> -- --report=out.json  # also write it as JSON
 ##   godot --headless -s <checker> -- --list             # print the rule registry
 ##
 ## Reads `res://.gdcheckrc`, when present, for files to exclude and for the GDExtensions
 ## that may not load; see `core/config.gd`.
+##
+## The report holds what the summary prints: the files `checked`, how many `.gdcheckrc`
+## `excluded`, the `problems` found, the files `fixed`, the files whose loading rules
+## were `skipped`, and the GDExtensions `unloaded`. A problem holds its `path`, `line`
+## (0 for none), `rule` and `message`.
 ##
 ## Exits 1 when a problem is found or a repair applied, and 0 otherwise.
 ##
@@ -48,6 +54,9 @@ const RULES: Array[Script] = [
 	preload("rules/export_ref.gd"),
 ]
 
+## REPORT opens the argument naming the file the report is written to.
+const REPORT := "--report="
+
 # -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
 
 
@@ -66,6 +75,7 @@ func _initialize() -> void:
 			print("  ", problem.format())
 
 		print("checked 0 file(s); fix %s first" % Config.PATH)
+		_report(args, config.problems)
 		quit(1)
 		return
 
@@ -133,7 +143,7 @@ func _initialize() -> void:
 	paths = kept
 
 	var problems: Array[Problem] = []
-	var fixed := 0
+	var fixed := {}
 	var skipped: Array[String] = []
 
 	for path in paths:
@@ -153,7 +163,7 @@ func _initialize() -> void:
 
 			if not found.is_empty() and should_fix and rule.fixable():
 				if rule.fix(file):
-					fixed += 1
+					fixed[path] = true
 					file.reset()
 					found = rule.check(file)
 
@@ -196,14 +206,29 @@ func _initialize() -> void:
 			)
 		)
 
-	if fixed > 0:
+	if not fixed.is_empty():
 		print(
-			"fixed %d file(s); run `godot --import --headless` so they resolve" % fixed
+			(
+				"fixed %d file(s); run `godot --import --headless` so they resolve"
+				% fixed.size()
+			)
 		)
+
+	_report(
+		args,
+		problems,
+		{
+			"checked": paths,
+			"excluded": excluded,
+			"fixed": fixed.keys(),
+			"skipped": skipped,
+			"unloaded": gate.missing.keys(),
+		}
+	)
 
 	# NOTE: gdenv's `godot` shim reports every failing exit as 1 on Windows, so a
 	# problem found and a repair applied both exit 1.
-	quit(1 if not problems.is_empty() or fixed > 0 else 0)
+	quit(1 if not problems.is_empty() or not fixed.is_empty() else 0)
 
 
 # -- PRIVATE METHODS ----------------------------------------------------------------- #
@@ -228,6 +253,40 @@ func _list(rules: Array[Rule]) -> void:
 				]
 			)
 		)
+
+
+## _report writes problems and the rest of a run's findings as JSON to the file a
+## `--report=<path>` argument names, if one does. A finding the run never reached is
+## written empty.
+func _report(
+	args: PackedStringArray, problems: Array[Problem], findings: Dictionary = {}
+) -> void:
+	var path := ""
+	for arg in args:
+		if arg.begins_with(REPORT):
+			path = arg.trim_prefix(REPORT)
+
+	if path.is_empty():
+		return
+
+	var report := {
+		"checked": [],
+		"excluded": 0,
+		"problems": problems.map(func(problem: Problem): return problem.to_dict()),
+		"fixed": [],
+		"skipped": [],
+		"unloaded": [],
+	}
+	report.merge(findings, true)
+
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		var error := error_string(FileAccess.get_open_error())
+		printerr("could not write the report to %s: %s" % [path, error])
+		return
+
+	file.store_string(JSON.stringify(report, "  ", false))
+	file.close()
 
 
 ## _registry returns a new instance of every rule in `RULES`, in order.
