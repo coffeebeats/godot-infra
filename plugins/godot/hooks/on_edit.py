@@ -128,8 +128,8 @@ ERRORS = 10
 # files: a sandbox denying uv its cache, or a project that does not depend on the tool.
 UNAVAILABLE = re.compile(r"^error: Failed to (?:initialize cache|spawn)", re.MULTILINE)
 
-# TIMEOUT bounds each call in seconds, since a test awaiting a signal that never comes,
-# or a checker file that fails to compile, can hang the engine rather than exit.
+# TIMEOUT bounds each call in seconds, since a test awaiting a signal that never comes
+# can hang the engine rather than exit.
 TIMEOUT = 120
 
 

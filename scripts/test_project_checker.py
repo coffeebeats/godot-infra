@@ -15,6 +15,9 @@ followed by the code the checker exited with. A case may also hold these files:
   whichever channel it used.
 - 'env' lists 'NAME=value' lines to set for the hook. 'CLAUDE_PROJECT_DIR' belongs here,
   since only some harnesses set it.
+- 'fault.json' plants a bug in a copy of the checker, which the case runs instead: in
+  the script at 'file', relative to the checker, it replaces 'find', which must appear
+  once, with 'replace'.
 
 '{root}' in 'payload.json' and 'env' becomes the path of the copy the case runs on.
 
@@ -28,6 +31,7 @@ Usage: test_project_checker.py [--update] [CASE...]
 from __future__ import annotations
 
 import difflib
+import importlib.util
 import json
 import os
 import shutil
@@ -57,8 +61,7 @@ CHECKER = (ROOT / "plugins" / "godot" / "checker" / "check.gd").as_posix()
 # BANNER opens the line naming the engine build, which Godot prints ahead of any output.
 BANNER = "Godot Engine v"
 
-# TIMEOUT bounds each Godot call in seconds, since a checker file that fails to compile
-# can hang the engine rather than exit.
+# TIMEOUT bounds each Godot call in seconds, since the engine can hang rather than exit.
 TIMEOUT = 120
 
 
@@ -76,28 +79,53 @@ class Run:
     actual: str
 
 
+def edit_hook():
+    """edit_hook returns the edit hook's module, whose 'stop' ends a run that hangs
+    along with every process it started, as the hook ends one.
+    """
+    module = sys.modules.get("on_edit")
+    if module is None:
+        path = ROOT / "plugins" / "godot" / "hooks" / "on_edit.py"
+        spec = importlib.util.spec_from_file_location("on_edit", path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules["on_edit"] = module
+        spec.loader.exec_module(module)
+
+    return module
+
+
 def godot(project: Path, *args: str) -> subprocess.CompletedProcess[str]:
     """godot runs the engine headless on a project and returns the finished process."""
     command = ["godot", "--headless", "--path", project.as_posix(), *args]
 
-    try:
-        return subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=TIMEOUT,
-        )
-    except subprocess.TimeoutExpired as e:
-        raise Failure(f"'{' '.join(args)}' timed out after {TIMEOUT}s") from e
+    with subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        start_new_session=os.name != "nt",
+    ) as process:
+        try:
+            stdout, stderr = process.communicate(timeout=TIMEOUT)
+        except subprocess.TimeoutExpired as e:
+            edit_hook().stop(process)
+            raise Failure(f"'{' '.join(args)}' timed out after {TIMEOUT}s") from e
+        except BaseException:
+            # An interrupt reaches the runner alone, since the engine runs in a session
+            # of its own outside Windows.
+            edit_hook().stop(process)
+            raise
+
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
 
-def checker(project: Path, args: list[str]) -> str:
-    """checker runs the checker over a project and returns its output, followed by the
-    code it exited with.
+def checker(project: Path, args: list[str], script: str = CHECKER) -> str:
+    """checker runs the checker at script over a project and returns its output,
+    followed by the code it exited with.
     """
-    result = godot(project, "-s", CHECKER, "--", *args)
+    result = godot(project, "-s", script, "--", *args)
 
     lines = result.stdout.replace("\r\n", "\n").splitlines()
     kept = [line.rstrip() for line in lines if not line.startswith(BANNER)]
@@ -175,6 +203,23 @@ def hook(project: Path, case: Path) -> str:
     return f"{reported(result)}\nexit {result.returncode}\n".lstrip("\n")
 
 
+def planted(fault: Path, directory: Path) -> str:
+    """planted copies the checker into directory with the bug a case's 'fault.json'
+    describes, and returns the copy's entry script.
+    """
+    bug = json.loads(fault.read_text(encoding="utf-8"))
+    shutil.copytree(Path(CHECKER).parent, directory)
+
+    target = directory / bug["file"]
+    text = target.read_text(encoding="utf-8")
+    if text.count(bug["find"]) != 1:
+        raise Failure(f"'find' in {fault} is not in {bug['file']} exactly once")
+
+    target.write_bytes(text.replace(bug["find"], bug["replace"]).encode("utf-8"))
+
+    return (directory / "check.gd").as_posix()
+
+
 def import_project(project: Path) -> None:
     """import_project imports a project, so the uids its files carry resolve."""
     godot(project, "--quit", "--import")
@@ -205,13 +250,17 @@ def run_case(case: Path) -> list[Run]:
         if (case / "payload.json").exists():
             return [Run(case / "expected.txt", hook(project, case))]
 
-        runs = [Run(case / "expected.txt", checker(project, args))]
+        script = CHECKER
+        if (case / "fault.json").exists():
+            script = planted(case / "fault.json", Path(tmpdir, "checker"))
+
+        runs = [Run(case / "expected.txt", checker(project, args, script))]
 
         fixed = case / "expected-fixed.txt"
         if fixed.exists():
-            checker(project, ["--fix", *args])
+            checker(project, ["--fix", *args], script)
             import_project(project)
-            runs.append(Run(fixed, checker(project, args)))
+            runs.append(Run(fixed, checker(project, args, script)))
 
     return runs
 

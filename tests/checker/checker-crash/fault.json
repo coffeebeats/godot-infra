@@ -1,0 +1,5 @@
+{
+  "file": "rules/load.gd",
+  "find": "func check(file: SourceFile) -> Array[Problem]:\n",
+  "replace": "func check(file: SourceFile) -> Array[Problem]:\n\tvar missing: Node = null\n\tmissing.get_name()\n"
+}

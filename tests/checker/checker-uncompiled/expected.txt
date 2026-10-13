@@ -1,0 +1,2 @@
+the checker stopped on an error before it finished
+exit 1

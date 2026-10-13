@@ -28,6 +28,8 @@ The references use four placeholders. `<NEW>` is the minor being added and `<NEW
 
 2. **Branch** `chore/godot/upgrade` off `main` and append `<NEW>` to `godot-versions.txt`. The file holds the two newest minors, matching the two that upstream still patches, so drop the oldest line when appending would make three; by then every active repository is on one of the two that remain. Dropping a line stops the self-test and the image rebuilds for that minor; its published tags are never deleted, so a project pinned there keeps building.
 
+   Then add any GDScript warning the release enables by default to `tests/checker/strict-warnings/project.godot`, raised as an error (`=2`). Nothing fails when that list goes stale, but the projects using the checker can raise the new warning, and a checker script that trips it fails to compile there. `ProjectSettings.get_property_list()` holds the warnings under `debug/gdscript/warnings/`, and `ProjectSettings.get_setting()` gives each one's default level.
+
 3. **Re-pin the dependencies.** Work `references/dependency-research.md` in full. Its second half diffs upstream's build configuration for options that newly default to on, which is how the 4.7 upgrade shipped without AccessKit or WinRT while every pin was correct.
 
 4. **Update the README's version references.** Four places name a version by hand, and nothing fails when they go stale:
