@@ -27,10 +27,12 @@ Usage: test_project_checker.py [--update] [CASE...]
 
 from __future__ import annotations
 
+import contextlib
 import difflib
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -76,21 +78,42 @@ class Run:
     actual: str
 
 
+def stop(process: subprocess.Popen[str]) -> None:
+    """stop kills a process and every process it started.
+
+    NOTE: On Windows, gdenv's 'godot' shim runs the engine as its child, which killing
+    the shim alone would leave running, holding the pipes the output is read from.
+    """
+    with contextlib.suppress(OSError, subprocess.SubprocessError):
+        if os.name == "nt":
+            command = ["taskkill", "/F", "/T", "/PID", str(process.pid)]
+            subprocess.run(command, capture_output=True, timeout=30)
+        else:
+            os.killpg(process.pid, signal.SIGKILL)
+
+    process.kill()
+
+
 def godot(project: Path, *args: str) -> subprocess.CompletedProcess[str]:
     """godot runs the engine headless on a project and returns the finished process."""
     command = ["godot", "--headless", "--path", project.as_posix(), *args]
 
-    try:
-        return subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=TIMEOUT,
-        )
-    except subprocess.TimeoutExpired as e:
-        raise Failure(f"'{' '.join(args)}' timed out after {TIMEOUT}s") from e
+    with subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        start_new_session=os.name != "nt",
+    ) as process:
+        try:
+            stdout, stderr = process.communicate(timeout=TIMEOUT)
+        except subprocess.TimeoutExpired as e:
+            stop(process)
+            raise Failure(f"'{' '.join(args)}' timed out after {TIMEOUT}s") from e
+
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
 
 def checker(project: Path, args: list[str]) -> str:
