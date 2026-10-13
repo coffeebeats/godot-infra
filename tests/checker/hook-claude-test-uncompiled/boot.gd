@@ -1,7 +1,6 @@
 ##
-## An autoload that logs at boot, as a project's own do. The checker boots it too; the
-## hook's report leaves out what it prints and keeps the warning it raises, as it keeps
-## any the engine raises.
+## An autoload that logs at boot, as a project's own do. The checker boots it too, and
+## the hook's report leaves what it logs out.
 ##
 
 extends Node

@@ -1,10 +1,3 @@
 project check failed for sum.gd, sum_test.gd:
-- res://sum_test.gd: [compile] does not compile
-errors and warnings, where the engine raised them:
-[x1] SCRIPT ERROR: Parse Error: Identifier "Sum" not declared in the current scope.
-   at: GDScript::reload (res://sum_test.gd:9)
-[x1] ERROR: Failed to load script "res://sum_test.gd" with error "Parse error".
-   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
-[x1] WARNING: a warning a project raises at boot
-   at: push_warning (core/variant/variant_utility.cpp:1033)
+- res://sum_test.gd:9: [compile] Parse Error: Identifier "Sum" not declared in the current scope.
 exit 0
