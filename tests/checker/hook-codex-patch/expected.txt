@@ -1,5 +1,3 @@
 The patch was applied. Checks on the files it touched:
-project check reported for added.tres, no_uid.tres, moved.tres:
-checked 3 file(s), 0 problem(s)
-fixed 1 file(s); run `godot --import --headless` so they resolve
+project check repaired no_uid.tres; read it again, then run `godot --import --headless`
 exit 0

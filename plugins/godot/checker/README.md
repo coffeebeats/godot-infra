@@ -254,11 +254,13 @@ the script first, then in the directories the file lists.
 The tools run at once, so an edit takes as long as the slowest of them, which is GUT
 when a script has a test and the checker otherwise. GUT runs that test alone, not the
 directories `.gutconfig.json` lists, and the hook reads a failure from its JUnit export
-rather than its output, which carries every test's logging. GUT places an error a script
-raised at line -1, so the report adds where the engine raised it. GUT skips a test that
-does not load and still exits 0, so the hook reports a test the export holds nothing
-from. The checker compiles each test too, and the hook leaves the tests out of its
-report when the checker finds a script that does not compile.
+rather than its output, which carries every test's logging. It reads the checker's
+`--report` for the same reason, since a checker run boots the project's autoloads and
+its output carries whatever they log. GUT places an error a script raised at line -1,
+so the report adds where the engine raised it. GUT skips a test that does not load and
+still exits 0, so the hook reports a test the export holds nothing from. The checker
+compiles each test too, and the hook leaves the tests out of its report when the
+checker finds a script that does not compile.
 
 gdformat rewrites a script it would reformat once the other tools are done reading it,
 and the report says so. A tool that runs past two minutes is stopped, along with

@@ -1,4 +1,2 @@
-project check reported for schöne.tres:
-checked 1 file(s), 0 problem(s)
-fixed 1 file(s); run `godot --import --headless` so they resolve
+project check repaired schöne.tres; read it again, then run `godot --import --headless`
 exit 0

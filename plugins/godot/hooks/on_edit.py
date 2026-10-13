@@ -2,8 +2,9 @@
 
 It runs gdformat and gdlint over the edited '.gd' files, the project checker with
 '--fix' over every file the checker covers, and GUT over each edited script's tests, and
-reports what they say back to the agent. A failed test is read from GUT's JUnit export
-rather than its output, which carries every test's logging.
+reports what they say back to the agent. What the checker finds, and a failed test, are
+read from the reports the two export rather than from their output, which carries
+whatever the project logs.
 
 An edited file belongs to the nearest 'project.godot' above it, no higher than the
 directory the session works in. A script's test is its '<name>_test.gd', the name
@@ -110,9 +111,6 @@ SCRIPT_ERROR = re.compile(r"^SCRIPT ERROR: ")
 
 # NOTICE matches a warning or error GUT itself prints, such as why it skipped a script.
 NOTICE = re.compile(r"^\[GUT (?:WARNING|ERROR)\]:")
-
-# UNCOMPILED matches the checker's report of a script that does not compile.
-UNCOMPILED = re.compile(r"^\s*res://\S+?: \[compile\] ", re.MULTILINE)
 
 # LIMIT bounds the whole report in characters. Claude Code moves hook output past 10,000
 # characters to a file, leaving the agent a 2,000-character preview.
@@ -369,6 +367,52 @@ def summarize(
     return "\n".join(lines)
 
 
+def inspected(
+    result: subprocess.CompletedProcess[str], export: Path
+) -> tuple[list[str], str | None, bool]:
+    """inspected returns the files a checker run repaired, as its export names them,
+    then what it found, or None when it found nothing, and whether a script it found
+    does not compile. A run that exported nothing reports all it printed if it failed.
+    """
+    try:
+        exported = json.loads(export.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        exported = None
+
+    if not isinstance(exported, dict):
+        return [], quiet(result) if result.returncode != 0 else None, False
+
+    fixed = [str(path).removeprefix("res://") for path in exported.get("fixed", [])]
+    problems = [p for p in exported.get("problems", []) if isinstance(p, dict)]
+    if not problems:
+        return fixed, None, False
+
+    lines = []
+    for problem in problems:
+        where = str(problem.get("path"))
+        if int(problem.get("line") or 0) > 0:
+            where = f"{where}:{int(problem['line'])}"
+
+        rule, message = problem.get("rule"), problem.get("message")
+        lines.append(clipped(f"- {where}: [{rule}] {message}"))
+
+    unloaded = ", ".join(str(name) for name in exported.get("unloaded", []))
+    if unloaded:
+        lines.append(
+            f"note: {unloaded} is not loaded here; if a script above uses a name it"
+            " defines, add the name under `extensions` in res://.gdcheckrc"
+        )
+
+    errors = located(result.stderr)
+    if errors:
+        lines.append("script errors, where the engine raised them:")
+        lines.extend(errors)
+
+    uncompiled = any(problem.get("rule") == "compile" for problem in problems)
+
+    return fixed, "\n".join(lines), uncompiled
+
+
 def git_root(cwd: str) -> Path | None:
     """git_root returns the repository a directory sits in, which is where a harness
     that names no project directory was started.
@@ -554,12 +598,15 @@ def gdtoolkit(
     return None
 
 
-def check(project: Path, root: Path, files: list[str], export: Path) -> list[str]:
+def check(project: Path, root: Path, files: list[str], exports: Path) -> list[str]:
     """check runs every tool over the files it takes, all at once, and returns what each
-    reported, in the same order however they finish. GUT writes its results to export.
+    reported, in the same order however they finish. The checker and GUT export their
+    reports into the directory exports.
     """
     scripts, checks, tests = targets(files, project)
     godot = ["godot", "--headless", "--path", project.as_posix()]
+    findings = exports / "check.json"
+    results = exports / "results.xml"
     report = []
 
     def named(names: list[str]) -> str:
@@ -569,9 +616,7 @@ def check(project: Path, root: Path, files: list[str], export: Path) -> list[str
         return ", ".join(paths)
 
     def reports(label: str, names: list[str], result: subprocess.CompletedProcess[str]):
-        """reports keeps a run's output when the run failed, under a neutral label,
-        since the checker exits 1 for a repair as well as a problem.
-        """
+        """reports keeps a run's output under label when the run failed."""
         if result.returncode != 0:
             report.append(f"{label} for {named(names)}:\n{quiet(result)}")
 
@@ -587,7 +632,8 @@ def check(project: Path, root: Path, files: list[str], export: Path) -> list[str
 
         checked = None
         if checks:
-            command = [*godot, "-s", CHECKER, "--", "--fix", *checks]
+            command = [*godot, "-s", CHECKER, "--", "--fix"]
+            command += [f"--report={findings.as_posix()}", *checks]
             checked = pool.submit(run, command, project)
 
         tested = None
@@ -596,7 +642,7 @@ def check(project: Path, root: Path, files: list[str], export: Path) -> list[str
             # otherwise run in full beside the named tests. Its other options apply.
             gtest = ",".join(f"res://{name}" for name in tests)
             command = [*godot, "-s", GUT, "-gdir=", f"-gtest={gtest}", "-gexit"]
-            command += ["-gdisable_colors", f"-gjunit_xml_file={export.as_posix()}"]
+            command += ["-gdisable_colors", f"-gjunit_xml_file={results.as_posix()}"]
             repairs = any(not name.endswith(".gd") for name in checks)
 
             def test(command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -633,14 +679,22 @@ def check(project: Path, root: Path, files: list[str], export: Path) -> list[str
 
         reports(label, scripts, result)
 
+    uncompiled = False
     if checked is not None:
-        reports("project check reported", checks, checked.result())
+        fixed, found, uncompiled = inspected(checked.result(), findings)
+        if fixed:
+            report.append(
+                f"project check repaired {named(fixed)}; read it again, then run"
+                " `godot --import --headless`"
+            )
+
+        if found is not None:
+            report.append(f"project check failed for {named(checks)}:\n{found}")
 
     # A script that does not compile fails every test that loads it, on the error the
     # checker has just reported.
-    uncompiled = checked is not None and UNCOMPILED.search(checked.result().stdout)
     if tested is not None and not uncompiled:
-        summary = summarize(tested.result(), export, tests)
+        summary = summarize(tested.result(), results, tests)
         if summary is not None:
             report.append(f"test failed for {named(tests)}:\n{summary}")
 
@@ -671,7 +725,7 @@ def main() -> None:
     for project, files in covered(edited(payload), cwd, root).items():
         exports = Path(tempfile.mkdtemp())
         try:
-            report.extend(check(project, root, files, exports / "results.xml"))
+            report.extend(check(project, root, files, exports))
         finally:
             shutil.rmtree(exports, ignore_errors=True)
 
