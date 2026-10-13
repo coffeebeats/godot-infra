@@ -1,0 +1,5 @@
+{
+  "file": "core/source_file.gd",
+  "find": "var path: String\n",
+  "replace": "var path: String\nvar broken: int = \"text\"\n"
+}

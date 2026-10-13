@@ -1,7 +1,6 @@
 ; The projects using the checker raise many GDScript warnings as errors, and a checker
-; script that trips one fails to compile there, which hangs the engine. This project
-; raises every warning Godot enables by default as an error, so such a script fails
-; here first.
+; script that trips one fails to compile there. This project raises every warning Godot
+; enables by default as an error, so such a script fails here first.
 
 config_version=5
 

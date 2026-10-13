@@ -6,7 +6,7 @@
 ## and `check-project.yaml` runs it over the whole project.
 ##
 ## NOTE: Every file here preloads others by relative path and declares no `class_name`.
-## One that fails to compile hangs the engine, or exits 0 having checked nothing.
+## An error in any of them fails the run, whether it stops the run or a rule's check.
 ##
 ## Usage, from the project root:
 ##   godot --headless -s <checker>                       # every rule, every file
@@ -23,7 +23,8 @@
 ## were `skipped`, and the GDExtensions `unloaded`. A problem holds its `path`, `line`
 ## (0 for none), `rule` and `message`.
 ##
-## Exits 1 when a problem is found or a repair applied, and 0 otherwise.
+## Exits 1 when a problem is found, a repair applied or the checker fails, and 0
+## otherwise.
 ##
 
 extends SceneTree
@@ -32,6 +33,7 @@ extends SceneTree
 
 const Config := preload("core/config.gd")
 const Discovery := preload("core/discovery.gd")
+const ErrorLog := preload("core/error_log.gd")
 const ExtensionGate := preload("core/extension_gate.gd")
 const Problem := preload("core/problem.gd")
 const Rule := preload("core/rule.gd")
@@ -57,10 +59,30 @@ const RULES: Array[Script] = [
 ## REPORT opens the argument naming the file the report is written to.
 const REPORT := "--report="
 
+# -- INITIALIZATION ------------------------------------------------------------------ #
+
+## _checker_dir is the directory holding this checker, which an error its own scripts
+## raise is located in.
+var _checker_dir: String = ""
+
+## _finished is whether the run reached an exit of its own.
+var _finished: bool = false
+
+## _log records every error the engine raises during the run.
+var _log := ErrorLog.new()
+
 # -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
 
 
 func _initialize() -> void:
+	# NOTE: An error in a script cuts this method short before it can quit, and the
+	# engine then runs until stopped, so the run ends on the next frame unless it
+	# finished.
+	_stopped.call_deferred()
+
+	_checker_dir = (get_script() as Script).resource_path.get_base_dir()
+	OS.add_logger(_log)
+
 	var args := OS.get_cmdline_user_args()
 	var rules := _registry()
 
@@ -71,12 +93,14 @@ func _initialize() -> void:
 	var config := Config.parse(sections)
 
 	if not config.problems.is_empty():
+		config.problems.append_array(_failures(0))
+
 		for problem in config.problems:
 			print("  ", problem.format())
 
 		print("checked 0 file(s); fix %s first" % Config.PATH)
 		_report(args, config.problems)
-		quit(1)
+		_finish(1)
 		return
 
 	# A rule the project configures learns it here rather than in `_registry`, which
@@ -86,7 +110,7 @@ func _initialize() -> void:
 
 	if args.has("--list"):
 		_list(rules)
-		quit(0)
+		_finish(0)
 		return
 
 	var should_fix := args.has("--fix")
@@ -159,6 +183,7 @@ func _initialize() -> void:
 				held = true
 				continue
 
+			var raised := _log.errors.size()
 			var found := rule.check(file)
 
 			if not found.is_empty() and should_fix and rule.fixable():
@@ -168,11 +193,14 @@ func _initialize() -> void:
 					found = rule.check(file)
 
 			problems.append_array(found)
+			problems.append_array(_failures(raised, path, rule.name))
 
 		if held:
 			skipped.append(path)
 
 		file.release()
+
+	problems.append_array(_failures(0))
 
 	for problem in problems:
 		print("  ", problem.format())
@@ -228,10 +256,44 @@ func _initialize() -> void:
 
 	# NOTE: gdenv's `godot` shim reports every failing exit as 1 on Windows, so a
 	# problem found and a repair applied both exit 1.
-	quit(1 if not problems.is_empty() or not fixed.is_empty() else 0)
+	_finish(1 if not problems.is_empty() or not fixed.is_empty() else 0)
 
 
 # -- PRIVATE METHODS ----------------------------------------------------------------- #
+
+
+## _failures returns a problem for each error the checker's own scripts raised from the
+## log's since-th error on that no problem reports yet. An error raised while rule
+## checked path is reported on path, and any other where the checker raised it.
+func _failures(
+	since: int, path: String = "", rule: StringName = &"checker"
+) -> Array[Problem]:
+	var failures: Array[Problem] = []
+
+	for error in _log.errors.slice(since):
+		if (
+			error.get("reported", false)
+			or not error.path.begins_with(_checker_dir + "/")
+		):
+			continue
+
+		error.reported = true
+		var at := "%s:%d" % [error.path.trim_prefix(_checker_dir + "/"), error.line]
+
+		if path.is_empty():
+			failures.append(Problem.new(at, 0, rule, error.message))
+		else:
+			var message := "the checker failed at %s: %s" % [at, error.message]
+			failures.append(Problem.new(path, 0, rule, message))
+
+	return failures
+
+
+## _finish ends the run with code.
+func _finish(code: int) -> void:
+	_finished = true
+	OS.remove_logger(_log)
+	quit(code)
 
 
 ## _list prints each rule with the files it covers and whether it can fix them.
@@ -297,3 +359,11 @@ func _registry() -> Array[Rule]:
 		rules.append(script.new())
 
 	return rules
+
+
+## _stopped ends the run with code 1 unless it finished, which an error in a script
+## prevents.
+func _stopped() -> void:
+	if not _finished:
+		print("the checker stopped on an error before it finished")
+		quit(1)

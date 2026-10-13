@@ -15,6 +15,9 @@ followed by the code the checker exited with. A case may also hold these files:
   whichever channel it used.
 - 'env' lists 'NAME=value' lines to set for the hook. 'CLAUDE_PROJECT_DIR' belongs here,
   since only some harnesses set it.
+- 'fault.json' plants a bug in a copy of the checker, which the case runs instead: in
+  the script at 'file', relative to the checker, it replaces 'find', which must appear
+  once, with 'replace'.
 
 '{root}' in 'payload.json' and 'env' becomes the path of the copy the case runs on.
 
@@ -118,11 +121,11 @@ def godot(project: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
 
-def checker(project: Path, args: list[str]) -> str:
-    """checker runs the checker over a project and returns its output, followed by the
-    code it exited with.
+def checker(project: Path, args: list[str], script: str = CHECKER) -> str:
+    """checker runs the checker at script over a project and returns its output,
+    followed by the code it exited with.
     """
-    result = godot(project, "-s", CHECKER, "--", *args)
+    result = godot(project, "-s", script, "--", *args)
 
     lines = result.stdout.replace("\r\n", "\n").splitlines()
     kept = [line.rstrip() for line in lines if not line.startswith(BANNER)]
@@ -200,6 +203,23 @@ def hook(project: Path, case: Path) -> str:
     return f"{reported(result)}\nexit {result.returncode}\n".lstrip("\n")
 
 
+def planted(fault: Path, directory: Path) -> str:
+    """planted copies the checker into directory with the bug a case's 'fault.json'
+    describes, and returns the copy's entry script.
+    """
+    bug = json.loads(fault.read_text(encoding="utf-8"))
+    shutil.copytree(Path(CHECKER).parent, directory)
+
+    target = directory / bug["file"]
+    text = target.read_text(encoding="utf-8")
+    if text.count(bug["find"]) != 1:
+        raise Failure(f"'find' in {fault} is not in {bug['file']} exactly once")
+
+    target.write_bytes(text.replace(bug["find"], bug["replace"]).encode("utf-8"))
+
+    return (directory / "check.gd").as_posix()
+
+
 def import_project(project: Path) -> None:
     """import_project imports a project, so the uids its files carry resolve."""
     godot(project, "--quit", "--import")
@@ -230,13 +250,17 @@ def run_case(case: Path) -> list[Run]:
         if (case / "payload.json").exists():
             return [Run(case / "expected.txt", hook(project, case))]
 
-        runs = [Run(case / "expected.txt", checker(project, args))]
+        script = CHECKER
+        if (case / "fault.json").exists():
+            script = planted(case / "fault.json", Path(tmpdir, "checker"))
+
+        runs = [Run(case / "expected.txt", checker(project, args, script))]
 
         fixed = case / "expected-fixed.txt"
         if fixed.exists():
-            checker(project, ["--fix", *args])
+            checker(project, ["--fix", *args], script)
             import_project(project)
-            runs.append(Run(fixed, checker(project, args)))
+            runs.append(Run(fixed, checker(project, args, script)))
 
     return runs
 

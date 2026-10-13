@@ -2,7 +2,7 @@
 ## plugins/godot/checker/core/error_log.gd
 ##
 ## ErrorLog records the errors the engine raises while `OS.add_logger` registers it,
-## which `SourceFile` does around each load.
+## which `SourceFile` does around each load and `check.gd` for the whole run.
 ##
 ## NOTE: The engine calls a logger from whichever thread raised the error.
 ##
@@ -37,7 +37,7 @@ func _log_error(
 	}
 
 	# An error a script did not raise names a line of the engine's own source.
-	if error_type == ERROR_TYPE_SCRIPT and file.begins_with("res://"):
+	if error_type == ERROR_TYPE_SCRIPT:
 		error.path = file
 		error.line = line
 
