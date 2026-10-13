@@ -1,0 +1,5 @@
+test failed for sum_test.gd:
+- GUT ran none of the tests in sum_test.gd
+[GUT WARNING]:  Ignoring script res://sum_test.gd because it does not extend GutTest
+[GUT ERROR]:  Nothing was run.
+exit 0

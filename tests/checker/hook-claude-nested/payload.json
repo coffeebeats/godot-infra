@@ -1,0 +1,17 @@
+{
+  "session_id": "0198f0f2-0000-7000-8000-000000000001",
+  "transcript_path": "{root}/transcript.jsonl",
+  "cwd": "{root}",
+  "permission_mode": "default",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "{root}/game/sum.gd",
+    "old_string": "return a - b",
+    "new_string": "return a + b"
+  },
+  "tool_response": {
+    "filePath": "{root}/game/sum.gd",
+    "success": true
+  }
+}

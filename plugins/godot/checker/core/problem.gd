@@ -26,6 +26,11 @@ func format() -> String:
 	return "%s: [%s] %s" % [path, rule, message]
 
 
+## to_dict returns the problem's fields by name, as a JSON report holds them.
+func to_dict() -> Dictionary:
+	return {"path": path, "line": line, "rule": String(rule), "message": message}
+
+
 # -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #
 
 

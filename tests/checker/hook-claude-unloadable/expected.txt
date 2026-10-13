@@ -1,0 +1,3 @@
+project check failed for broken.tres:
+- res://broken.tres: [load] failed to load: res://broken.tres:5 - Parse Error: Expected float in constructor.
+exit 0

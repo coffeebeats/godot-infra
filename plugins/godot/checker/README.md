@@ -9,6 +9,7 @@ in CI.
 godot-check                         # every rule, every file
 godot-check a.gd b.tscn             # only the given files
 godot-check --fix a.tscn            # repair, then re-check
+godot-check --report=out.json       # also write the findings as JSON
 godot-check --list                  # print the rule registry
 ```
 
@@ -18,11 +19,11 @@ Where the plugin's `bin/` is not on `PATH`, as under Codex, run
 
 | Rule | Covers | Reports | Fixable |
 | --- | --- | --- | --- |
-| `compile` | `.gd` | a script that does not compile, a promoted warning included | |
+| `compile` | `.gd` | a script that does not compile, a promoted warning included, with each error the engine raised | |
 | `logging` | `.gd` | a bare `print` or `push_error` in a project that disallows engine output | |
 | `uid` | `.tscn` `.tres` | a header carrying no `uid=` | yes |
 | `path-ref` | `.tscn` `.tres` | a reference that does not resolve, a `res://` string that should be a uid, and a dependency whose `path` disagrees with its `uid` | yes |
-| `load` | `.tscn` `.tres` | a file that does not parse or instantiate | |
+| `load` | `.tscn` `.tres` | a file that does not parse or instantiate, with the first error the engine raised | |
 | `script-order` | `.tscn` `.tres` | a property assigned ahead of `script =` | |
 | `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
 | `export-overrides` | `export_presets.cfg` | a preset value differing from `export_overrides.cfg` | yes |
@@ -32,8 +33,9 @@ Every rule covers the whole project apart from `addons/`, `script_templates/`, h
 directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
 `export-overrides` and `export-ref` are the exceptions; each covers one file and reads
 the whole project, `addons/` included. `logging` covers nothing until `.gdcheckrc` turns
-it on. The checker exits 1 for a problem or a repair alike, since the engine cannot
-return a code that tells them apart.
+it on. The checker exits 1 for a problem or a repair alike, since gdenv's `godot` shim
+reports every failing exit as 1 on Windows; the `--report` file tells them apart, and
+`check.gd`'s header lists what it holds.
 
 The checker reads uids from the cache the last import wrote, and a script process never
 rebuilds it. Run `godot --import --headless` after `--fix` and after creating or moving
@@ -242,6 +244,28 @@ editor build that still defines it. Booting the packaged game finds that, which 
 `apply_patch` — so run `godot-check` after a move or any other change it never sees. A
 patch that touches several files is checked in one run. An edit to `export_overrides.cfg`
 is checked against `export_presets.cfg`, the file the rule covers.
+
+An edited file belongs to the nearest `project.godot` above it, no higher than the
+directory the session works in, so a project need not sit at the repository root. A
+script's test is its `<name>_test.gd`, the name `check-project.yaml` runs GUT with, or
+the one `.gutconfig.json` names through its `prefix` and `suffix`. The hook looks beside
+the script first, then in the directories the file lists.
+
+The tools run at once, so an edit takes as long as the slowest of them, which is GUT
+when a script has a test and the checker otherwise. GUT runs that test alone, not the
+directories `.gutconfig.json` lists, and the hook reads a failure from its JUnit export
+rather than its output, which carries every test's logging. It reads the checker's
+`--report` for the same reason, since a checker run boots the project's autoloads and
+its output carries whatever they print. GUT places an error a script raised at line -1,
+so the report adds where the engine raised it. GUT skips a test that does not load and
+still exits 0, so the hook reports a test the export holds nothing from. The checker
+compiles each test too, and the hook leaves the tests out of its report when the
+checker finds a script that does not compile.
+
+gdformat rewrites a script it would reformat once the other tools are done reading it,
+and the report says so. A tool that runs past two minutes is stopped, along with
+everything it started, and the report as a whole stays under 8,000 characters, below the
+10,000 at which Claude Code moves hook output to a file.
 
 ## Adding a rule
 

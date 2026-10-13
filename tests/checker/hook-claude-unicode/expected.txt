@@ -1,0 +1,2 @@
+project check repaired schöne.tres; read it again, then run `godot --import --headless`
+exit 0

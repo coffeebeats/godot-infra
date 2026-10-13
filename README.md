@@ -178,7 +178,7 @@ The script deliberately leaves SHA pinning off. Dependent repositories consume g
 
 This repository is also a plugin marketplace holding one plugin, [`godot`](./plugins/godot). [Claude Code](https://code.claude.com/docs/en/plugin-marketplaces) and Codex both read it, from the same `.claude-plugin/` files. Nothing is published anywhere; a repository references it by GitHub path. The plugin carries the Godot tooling that is the same in every repository:
 
-- An edit hook that runs `gdformat` and `gdlint` on each edited `.gd` file, the [project checker](./plugins/godot/checker/README.md) with `--fix` on each edited `.gd`, `.tscn` or `.tres` file, and the `<name>_test.gd` beside each edited script. It fires on Claude Code's `Edit` and `Write` and on Codex's `apply_patch`, and a patch that touches several files is checked in one run.
+- An edit hook that runs `gdformat` and `gdlint` on each edited `.gd` file, the [project checker](./plugins/godot/checker/README.md) with `--fix` on each edited `.gd`, `.tscn` or `.tres` file, and GUT over each edited script's tests. The tools run at once, gdformat rewrites a script it would reformat, and what the checker finds and a failed test are read from the reports the two export rather than from their output, which carries whatever the project prints. It fires on Claude Code's `Edit` and `Write` and on Codex's `apply_patch`, and a patch that touches several files is checked in one run.
 - `godot-check`, which runs the same checker over the whole project, for changes the hook never sees such as a move.
 - The `godot-api` skill, which dumps engine, addon and project class references for lookups.
 - `godot-locale`, which updates a gettext catalogue from its message template, compiles the `.mo` files the engine loads, and validates both — including that each translation keeps the placeholders its English text declares, which gettext cannot check for a catalogue keyed by message ID. Set `LOCALE_DIR` where the catalogue is not `project/locale`.
@@ -428,7 +428,7 @@ The `release` profile enables link-time optimization, so compiles are slow under
 
 ### Testing the project checker and the edit hook
 
-`check-plugin` runs the [project checker](./plugins/godot/checker/README.md) over each case in [`tests/checker`](./tests/checker). A case is a small Godot project, and its `expected.txt` holds the output the checker must produce. A case that holds a `payload.json` runs the edit hook over the project instead, with that payload on stdin and through the command line `hooks.json` carries, so the `hook-*` cases cover what each harness sends: one file from Claude Code, a patch of several from Codex. The same runs locally:
+`check-plugin` runs the [project checker](./plugins/godot/checker/README.md) over each case in [`tests/checker`](./tests/checker). A case is a small Godot project, and its `expected.txt` holds the output the checker must produce. A case that holds a `payload.json` runs the edit hook over the project instead, with that payload on stdin and through the command line `hooks.json` carries, so the `hook-*` cases cover what each harness sends: one file from Claude Code, a patch of several from Codex. In the `hook-claude-test*` cases, a script at `addons/gut/gut_cmdln.gd` stands in for GUT, printing and exporting what GUT 9.7.1 does. A case that edits a script needs gdtoolkit, which `uv run` provides. The same runs locally:
 
 ```sh
 uv run scripts/test_project_checker.py              # every case

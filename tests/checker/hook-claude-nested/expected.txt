@@ -1,0 +1,4 @@
+test failed for game/test/unit/test_sum.gd:
+- test_sum in test/unit/test_sum.gd
+    ran with -gtest=res://test/unit/test_sum.gd
+exit 0

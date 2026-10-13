@@ -1,0 +1,3 @@
+project check failed for sum.gd, sum_test.gd:
+- res://sum_test.gd:9: [compile] Parse Error: Identifier "Sum" not declared in the current scope.
+exit 0
