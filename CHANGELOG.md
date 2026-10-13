@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.20.1 (2026-10-13)
+
+## What's Changed
+* docs(plugins): drop the notes on gdenv's Windows shim that v0.6.37 made stale by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/663
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.20.0...v6.20.1
+
 ## 6.20.0 (2026-10-13)
 
 ## What's Changed
