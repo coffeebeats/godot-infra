@@ -19,11 +19,11 @@ Where the plugin's `bin/` is not on `PATH`, as under Codex, run
 
 | Rule | Covers | Reports | Fixable |
 | --- | --- | --- | --- |
-| `compile` | `.gd` | a script that does not compile, a promoted warning included | |
+| `compile` | `.gd` | a script that does not compile, a promoted warning included, with each error the engine raised | |
 | `logging` | `.gd` | a bare `print` or `push_error` in a project that disallows engine output | |
 | `uid` | `.tscn` `.tres` | a header carrying no `uid=` | yes |
 | `path-ref` | `.tscn` `.tres` | a reference that does not resolve, a `res://` string that should be a uid, and a dependency whose `path` disagrees with its `uid` | yes |
-| `load` | `.tscn` `.tres` | a file that does not parse or instantiate | |
+| `load` | `.tscn` `.tres` | a file that does not parse or instantiate, with the first error the engine raised | |
 | `script-order` | `.tscn` `.tres` | a property assigned ahead of `script =` | |
 | `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
 | `export-overrides` | `export_presets.cfg` | a preset value differing from `export_overrides.cfg` | yes |

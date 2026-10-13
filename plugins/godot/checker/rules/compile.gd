@@ -1,7 +1,8 @@
 ##
 ## plugins/godot/checker/rules/compile.gd
 ##
-## `compile` reports scripts that do not compile.
+## `compile` reports each error the engine raised at a line of a script that does not
+## compile, or the first error it raised when none names a line of the script.
 ##
 ## NOTE: A script that fails to parse still loads as non-null, so compilation is judged
 ## by its native base type; `--check-only` and `reload()` both misreport it.
@@ -22,14 +23,25 @@ func check(file: SourceFile) -> Array[Problem]:
 	if file.path.begins_with(_checker_dir + "/"):
 		return []
 
-	var script: Script = ResourceLoader.load(
-		file.path, "Script", ResourceLoader.CACHE_MODE_IGNORE_DEEP
-	)
-
+	var script := file.resource() as Script
 	if script != null and script.get_instance_base_type() != &"":
 		return []
 
-	return [Problem.new(file.path, 0, name, "does not compile")]
+	var problems: Array[Problem] = []
+	var seen := {}
+
+	for error in file.errors():
+		var key := "%d %s" % [error.line, error.message]
+		if error.path == file.path and not seen.has(key):
+			seen[key] = true
+			problems.append(Problem.new(file.path, error.line, name, error.message))
+
+	if problems.is_empty():
+		problems.append(
+			Problem.new(file.path, 0, name, file.explained("does not compile"))
+		)
+
+	return problems
 
 
 func loads_file() -> bool:
