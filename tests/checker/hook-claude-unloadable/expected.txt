@@ -1,0 +1,10 @@
+project check failed for broken.tres:
+- res://broken.tres: [load] failed to load
+errors and warnings, where the engine raised them:
+[x1] ERROR: res://broken.tres:5 - Parse Error: Expected float in constructor.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+[x1] ERROR: Failed loading resource: res://broken.tres.
+   at: _load (core/io/resource_loader.cpp:317)
+[x1] ERROR: Error loading resource: 'res://broken.tres'.
+   at: load (core/core_bind.cpp:82)
+exit 0

@@ -4,7 +4,8 @@ It runs gdformat and gdlint over the edited '.gd' files, the project checker wit
 '--fix' over every file the checker covers, and GUT over each edited script's tests, and
 reports what they say back to the agent. What the checker finds, and a failed test, are
 read from the reports the two export rather than from their output, which carries
-whatever the project logs.
+whatever the project prints. The engine's errors and warnings are kept, since they say
+why a file failed to load.
 
 An edited file belongs to the nearest 'project.godot' above it, no higher than the
 directory the session works in. A script's test is its '<name>_test.gd', the name
@@ -108,6 +109,11 @@ LOCATION = re.compile(r"^\s+at: ")
 # SCRIPT_ERROR matches the first line of an error a script raised; the line after it
 # says where. GUT's export places such an error at line -1.
 SCRIPT_ERROR = re.compile(r"^SCRIPT ERROR: ")
+
+# ENGINE_ERROR matches the first line of any error or warning the engine prints. A file
+# that fails to load is one the checker reports without the reason, which only these
+# say, such as the line a resource fails to parse at.
+ENGINE_ERROR = re.compile(r"^(?:SCRIPT ERROR|ERROR|WARNING): ")
 
 # NOTICE matches a warning or error GUT itself prints, such as why it skipped a script.
 NOTICE = re.compile(r"^\[GUT (?:WARNING|ERROR)\]:")
@@ -274,15 +280,15 @@ def fitted(parts: list[str]) -> list[str]:
     return kept
 
 
-def located(output: str) -> list[str]:
-    """located returns each distinct error a script raised, where, and how often, up to
-    ERRORS of them.
+def located(output: str, kind: re.Pattern[str] = SCRIPT_ERROR) -> list[str]:
+    """located returns each distinct error of a kind the engine printed to output,
+    where, and how often, up to ERRORS of them.
     """
     errors: dict[str, int] = {}
     lines = lines_of(output)
 
     for i, line in enumerate(lines):
-        if not SCRIPT_ERROR.match(line):
+        if not kind.match(line):
             continue
 
         error = clipped(line)
@@ -403,9 +409,11 @@ def inspected(
             " defines, add the name under `extensions` in res://.gdcheckrc"
         )
 
-    errors = located(result.stderr)
+    # NOTE: These include what the project's autoloads raise at boot, which the checker
+    # boots too, since nothing in the output tells them apart from what a check raised.
+    errors = located(result.stderr, ENGINE_ERROR)
     if errors:
-        lines.append("script errors, where the engine raised them:")
+        lines.append("errors and warnings, where the engine raised them:")
         lines.extend(errors)
 
     uncompiled = any(problem.get("rule") == "compile" for problem in problems)
