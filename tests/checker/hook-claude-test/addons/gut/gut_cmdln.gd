@@ -1,8 +1,9 @@
 ##
 ## A stand-in for GUT's command line, printing and exporting what a failed run of GUT
 ## 9.7.1 does: each test's logging, the same script error once per test with its
-## backtrace, and an error a test raised on purpose, then a JUnit file whose failures
-## run past what a report keeps. The first failure echoes the options the hook passed.
+## backtrace and its location indented as on Linux, and an error a test raised on
+## purpose, then a JUnit file whose failures run past what a report keeps. The first
+## failure echoes the options the hook passed.
 ##
 
 extends SceneTree
@@ -28,7 +29,7 @@ func _initialize() -> void:
 		printerr(
 			"SCRIPT ERROR: Invalid call. Nonexistent function 'debug' in base 'Nil'."
 		)
-		printerr("   at: _log (res://sum.gd:9)")
+		printerr("          at: _log (res://sum.gd:9)")
 		printerr("   GDScript backtrace (most recent call first):")
 		printerr("       [0] _log (res://sum.gd:9)")
 		printerr("       [1] %s (res://sum_test.gd:12)" % test)

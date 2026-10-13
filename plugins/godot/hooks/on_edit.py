@@ -100,6 +100,10 @@ EXPECTED = re.compile(r"^(?:Expected one of: ?|\t\* \S+)$")
 # nothing.
 ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
+# LOCATION matches the line below an engine error that says where it was raised, which
+# the engine indents by the error's kind on Linux and by three spaces on Windows.
+LOCATION = re.compile(r"^\s+at: ")
+
 # SCRIPT_ERROR matches the first line of an error a script raised; the line after it
 # says where. GUT's export places such an error at line -1.
 SCRIPT_ERROR = re.compile(r"^SCRIPT ERROR: ")
@@ -187,12 +191,14 @@ def run(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
 
 def lines_of(output: str) -> list[str]:
     """lines_of returns output's lines without the color codes, the boilerplate, the
-    backtraces, the parser's expected tokens or the blank lines.
+    backtraces, the parser's expected tokens or the blank lines, with every error's
+    location indented by three spaces.
     """
     kept = []
     frames = False
 
     for line in ANSI.sub("", output).replace("\r\n", "\n").splitlines():
+        line = LOCATION.sub("   at: ", line)
         if BACKTRACE.match(line):
             frames = True
             continue
