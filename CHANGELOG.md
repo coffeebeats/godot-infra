@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.21.0 (2026-10-15)
+
+## What's Changed
+* feat(checker): fail a scene that instantiates unlike its declaration by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/666
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.20.1...v6.21.0
+
 ## 6.20.1 (2026-10-13)
 
 ## What's Changed
