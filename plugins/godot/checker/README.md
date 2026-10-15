@@ -23,7 +23,7 @@ Where the plugin's `bin/` is not on `PATH`, as under Codex, run
 | `logging` | `.gd` | a bare `print` or `push_error` in a project that disallows engine output | |
 | `uid` | `.tscn` `.tres` | a header carrying no `uid=` | yes |
 | `path-ref` | `.tscn` `.tres` | a reference that does not resolve, a `res://` string that should be a uid, and a dependency whose `path` disagrees with its `uid` | yes |
-| `load` | `.tscn` `.tres` | a file that does not parse or instantiate, with the first error the engine raised | |
+| `load` | `.tscn` `.tres` | a file that does not parse or instantiate, and a scene node instantiated missing, as another class, or without its script, with the first error the engine raised | |
 | `script-order` | `.tscn` `.tres` | a property assigned ahead of `script =` | |
 | `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
 | `export-overrides` | `export_presets.cfg` | a preset value differing from `export_overrides.cfg` | yes |
@@ -235,6 +235,11 @@ translations), but it is neither a scene nor a resource, and the engine reads it
 any of this runs. Scripts are out of scope for `path-ref`, since a broken `preload`
 already fails `compile`.
 
+`load` compares each node a scene declares with the node it instantiates, which must
+exist, be of the declared class, and carry the declared script. A misspelled property, a
+value of the wrong type, and an error a script raises in `_init` still pass it; GUT
+catches the last.
+
 Nothing here sees what a stripped export template removes, since the checker runs on an
 editor build that still defines it. Booting the packaged game finds that, which is the
 `boot` job in `publish-game.yaml`.
@@ -244,7 +249,9 @@ editor build that still defines it. Booting the packaged game finds that, which 
 `hooks/on_edit.py` fires on an edit only — Claude Code's `Edit` and `Write`, Codex's
 `apply_patch` — so run `godot-check` after a move or any other change it never sees. A
 patch that touches several files is checked in one run. An edit to `export_overrides.cfg`
-is checked against `export_presets.cfg`, the file the rule covers.
+is checked against `export_presets.cfg`, the file the rule covers. Only the edited files
+are checked, so a scene a renamed node or a changed `extends` breaks elsewhere waits for
+the next whole-project run.
 
 An edited file belongs to the nearest `project.godot` above it, no higher than the
 directory the session works in, so a project need not sit at the repository root. A

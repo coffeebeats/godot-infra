@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b465enw7abo20"]
+
+[sub_resource type="Resource" id="Resource_stub"]
+
+[node name="Root" type="Node"]
+script = SubResource("Resource_stub")

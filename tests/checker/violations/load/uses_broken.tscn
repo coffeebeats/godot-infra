@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8002nes4ojkd"]
+
+[ext_resource type="Script" uid="uid://c7xxtk1hw4fau" path="res://compile/broken.gd" id="1_broken"]
+
+[node name="Root" type="Node"]
+script = ExtResource("1_broken")
