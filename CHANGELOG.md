@@ -1,5 +1,29 @@
 # Changelog
 
+## 6.22.0 (2026-10-25)
+
+## What's Changed
+* feat(boot): boot web exports in headless Chrome before packaging them by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/668
+* chore(deps): bump setuptools from 84.0.0 to 84.1.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/670
+* chore(deps): bump astral-sh/setup-uv from 10.0.1 to 10.2.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/671
+* chore(deps): bump docker/build-push-action from 7.3.0 to 7.4.0 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/673
+* chore(deps): bump docker/setup-buildx-action from 4.3.0 to 4.4.1 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/672
+* chore(ci): extend Dependabot to composite actions, container images and Python tooling by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/674
+* chore(deps-dev): bump ruff from 0.16.6 to 0.16.9 by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/675
+* chore(deps): bump actions/upload-artifact from 4 to 6 in /actions/export-godot-project-preset by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/683
+* chore(deps): bump actions/cache from 3 to 6 in /actions/compile-godot-export-template by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/682
+* chore(deps): bump actions/upload-artifact from 4 to 6 in /actions/compile-godot-export-template by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/681
+* chore(deps): bump astral-sh/setup-uv from 10.0.1 to 10.2.0 in /actions/check-godot-project by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/680
+* chore(deps): bump actions/cache from 4.2.2 to 6.1.0 in /.github/actions/setup-godot by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/679
+* chore(deps): bump actions/cache from 4.2.2 to 6.1.0 in /.github/actions/setup-butler by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/678
+* chore(deps): bump actions/upload-artifact from 7.0.0 to 7.0.1 in /.github/actions/install-godot-source by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/677
+* chore(deps): bump actions/checkout from 4.2.2 to 7.0.1 in /.github/actions/archive-moltenvk-sdk by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/676
+* chore(ci): group Dependabot updates by ecosystem by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/685
+* chore(ci): run the self-test twice a week to keep export template caches warm by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/684
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.21.0...v6.22.0
+
 ## 6.21.0 (2026-10-15)
 
 ## What's Changed
