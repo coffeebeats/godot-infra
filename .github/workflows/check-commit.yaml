@@ -21,7 +21,7 @@ permissions:
 # running alongside the first is worse.
 concurrency:
   group: "${{ github.workflow }}-${{ github.head_ref || github.ref }}"
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 defaults:
   run:
