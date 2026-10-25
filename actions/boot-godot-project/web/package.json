@@ -1,0 +1,11 @@
+{
+  "name": "boot-godot-project-web",
+  "private": true,
+  "description": "Boots a Godot project exported for the Web in the runner's Chrome.",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "playwright-core": "1.64.1"
+  }
+}
