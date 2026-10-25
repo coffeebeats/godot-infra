@@ -189,7 +189,7 @@ runs:
     # stale 'build' directory it restores stops the output from moving there.
     - name: Cache the Godot build artifact
       id: godot-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         # NOTE: This path must match the one expected by the container action.
         # IF/ELSE: Update the 'save' step below if this changes.
@@ -208,7 +208,7 @@ runs:
 
     - name: Cache the 'SCons' build directory
       if: steps.godot-cache.outputs.cache-hit != 'true'
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         # NOTE: This path must match the one expected by the container action.
         path: ${{ github.workspace }}/.scons
@@ -338,7 +338,7 @@ runs:
 
     # Save the export template cache (ahead of artifact steps). Note that this
     # ensures progress is saved even if later steps fail.
-    - uses: actions/cache/save@v3
+    - uses: actions/cache/save@v6
       if: steps.godot-cache.outputs.cache-hit != 'true'
       with:
         # IF/ELSE: Update the 'cache' step above if this changes.
