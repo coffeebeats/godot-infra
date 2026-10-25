@@ -8,6 +8,12 @@ on:
     branches:
       - main
 
+  # NOTE: GitHub evicts a cache unused for 7 days, and a pull request can only
+  # restore one saved by 'main'. Running the self-test twice a week keeps the
+  # export template caches warm for whichever pull request comes next.
+  schedule:
+    - cron: "0 6 * * 1,4"
+
 permissions:
   contents: read
 
@@ -27,7 +33,7 @@ jobs:
     timeout-minutes: 5
 
     outputs:
-      has_pipeline_change: "${{ steps.check-pipeline.outputs.any_modified == 'true' }}"
+      has_pipeline_change: "${{ github.event_name == 'schedule' || steps.check-pipeline.outputs.any_modified == 'true' }}"
       godot-versions: ${{ steps.versions.outputs.value }}
 
     steps:
@@ -40,6 +46,7 @@ jobs:
       # or releases).
       - name: Check for pipeline changes
         id: check-pipeline
+        if: github.event_name != 'schedule'
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
         with:
           files: |
