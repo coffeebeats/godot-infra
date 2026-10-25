@@ -22,14 +22,13 @@ if (!shellPath) {
 	process.exit(2);
 }
 
-// DEADLINE_MS bounds a game that never exits, which a shell that could not
-// start the engine never does either.
+// DEADLINE_MS bounds a game that never exits.
 const DEADLINE_MS = 5 * 60 * 1000;
 
 // EXIT_BINDING names the page function the patched shell calls on exit.
 const EXIT_BINDING = '__godotBootExit';
 
-// HEADERS are what the editor's own run server sends: a threaded build needs
+// HEADERS match the editor's own run server; a threaded build needs
 // cross-origin isolation before the browser grants it a SharedArrayBuffer.
 const HEADERS = {
 	'Cross-Origin-Opener-Policy': 'same-origin',

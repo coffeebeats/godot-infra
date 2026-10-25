@@ -112,7 +112,7 @@ runs:
         fi
 
         # A script the template cannot parse takes down everything depending on
-        # it, and the engine keeps running regardless: it logs the error, drops
+        # it, and the engine keeps running regardless; it logs the error, drops
         # the main scene and carries on. The log decides, and the exit code only
         # confirms.
         #
