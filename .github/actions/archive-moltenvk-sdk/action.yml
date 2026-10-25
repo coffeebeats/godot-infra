@@ -54,7 +54,7 @@ runs:
         sudo xcode-select -s /Applications/Xcode_${{ inputs.xcode-version }}.app
         xcodebuild -version
 
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         repository: "KhronosGroup/MoltenVK"
         ref: "v${{ inputs.version }}"
