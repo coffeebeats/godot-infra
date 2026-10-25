@@ -378,10 +378,6 @@ jobs:
   package:
     needs: ["config", "export", "boot"]
 
-    # NOTE: 'boot' skips a web export, and a skipped dependency would otherwise
-    # skip this job along with it.
-    if: ${{ !cancelled() && needs.export.result == 'success' && needs.boot.result != 'failure' }}
-
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -486,13 +482,12 @@ jobs:
   # else here runs on that engine. This gates 'package', so a game that cannot
   # boot is never published.
   #
-  # NOTE: A web export needs a browser to boot, so it is skipped. A storefront
+  # NOTE: A web export boots in the Chrome the runner ships. A storefront
   # build is booted without its client; that failure lands well after the
   # extension loaded and the scripts parsed, which is what this gate catches.
   # The caller passes the errors a missing client logs as 'boot-ignored-logs'.
   boot:
     needs: ["config", "export"]
-    if: inputs.platform != 'web'
 
     runs-on: ${{ inputs.platform == 'macos' && 'macos-latest' || inputs.platform == 'windows' && 'windows-latest' || 'ubuntu-latest' }}
     timeout-minutes: 10
