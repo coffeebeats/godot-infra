@@ -432,7 +432,7 @@ runs:
             exit 1
         esac
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       if: inputs.publish == 'true'
       with:
         name: ${{ steps.artifact.outputs.name }}
