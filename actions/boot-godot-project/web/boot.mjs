@@ -112,14 +112,28 @@ const finished = new Promise((resolve) => {
 
 page.on('console', (message) => console.log(message.text()));
 
-// An exception the shell did not catch, or a tab that died, says nothing in
-// the engine's own words, so the harness reports it in them and the same
-// failure patterns apply.
-page.on('pageerror', (error) => console.log(`ERROR: Uncaught exception: ${error.message}`));
+// An uncaught exception or a dead tab is reported in the engine's own words,
+// so the same failure patterns apply.
+//
+// NOTE: The engine's loader never rejects a '.wasm' it cannot fetch or
+// instantiate, so the exception is the only sign and nothing calls 'onExit'.
+page.on('pageerror', (error) => {
+	console.log(`ERROR: Uncaught exception: ${error.message}`);
+	finish(1);
+});
 page.on('crash', () => {
 	console.log('ERROR: The browser tab crashed.');
 	finish(1);
 });
+
+// A browser that dies outright closes the page without crashing it. The
+// harness closes the page itself once the game has exited, so this handler
+// comes off before then.
+const closed = () => {
+	console.log('ERROR: The browser closed before the game exited.');
+	finish(1);
+};
+page.on('close', closed);
 
 await page.exposeFunction(EXIT_BINDING, finish);
 
@@ -133,9 +147,21 @@ page.goto(`http://127.0.0.1:${port}/${basename(shell)}`).catch((error) => {
 	finish(1);
 });
 
+// A missing feature raises no exception; the shell logs the reason, shows its
+// notice and never calls 'onExit'. The wait polls the page a few times a
+// second and is dropped when the page closes; a custom shell without the
+// notice falls back to the deadline.
+page.waitForSelector('#status-notice', { state: 'visible', timeout: 0 })
+	.then(() => {
+		console.log('ERROR: The shell reported a failure before the game started.');
+		finish(1);
+	})
+	.catch(() => {});
+
 const code = await finished;
 
 clearTimeout(deadline);
+page.off('close', closed);
 await browser.close();
 server.close();
 
