@@ -6,7 +6,7 @@ inputs:
     description: "Path to the directory holding the exported game's '.tar' archives."
     required: true
   platform:
-    description: "The platform the game was exported for ('windows', 'macos' or 'linux')."
+    description: "The platform the game was exported for ('windows', 'macos', 'linux' or 'web')."
     required: true
   expected-logs:
     description: "Newline-separated extended regexes; the boot log must match every one."
@@ -64,6 +64,11 @@ runs:
           linux)
             FILTER=(-type f -perm -u+x ! -name '*.so' ! -name '*.pck' ! -name '*.sh')
             ;;
+          web)
+            # NOTE: 'export.sh' names the shell 'index.html'; a PWA export adds
+            # an offline page beside it.
+            FILTER=(-type f -name 'index.html')
+            ;;
           *)
             echo "::error::Cannot boot a game exported for '$PLATFORM'."
             exit 1
@@ -83,10 +88,19 @@ runs:
 
         echo "path=${GAMES[0]}" >> "$GITHUB_OUTPUT"
 
+    # NOTE: The harness drives the Chrome the runner image ships, so nothing
+    # downloads a browser; 'web/package-lock.json' pins the driver.
+    - name: Install the browser harness
+      if: inputs.platform == 'web'
+      shell: bash
+      working-directory: ${{ github.action_path }}/web
+      run: npm ci --no-audit --no-fund
+
     - name: Boot the game
       shell: bash
       env:
         GAME: ${{ steps.game.outputs.path }}
+        PLATFORM: ${{ inputs.platform }}
         LOG_PATH: ${{ runner.temp }}/boot.log
         REPORT_PATH: ${{ runner.temp }}/boot-report.log
         EXPECTED_LOGS: ${{ inputs.expected-logs }}
@@ -98,7 +112,7 @@ runs:
         fi
 
         # A script the template cannot parse takes down everything depending on
-        # it, and the engine keeps running regardless: it logs the error, drops
+        # it, and the engine keeps running regardless; it logs the error, drops
         # the main scene and carries on. The log decides, and the exit code only
         # confirms.
         #
@@ -128,8 +142,15 @@ runs:
 
         # NOTE: 300 frames covers autoloads, the main scene and a first draw.
         # The run is uncapped headless, so it costs a moment.
+        #
+        # A web export runs in the runner's Chrome instead. 'web/boot.mjs'
+        # prints the page's console and exits with the engine's code, so the
+        # checks below read every platform alike.
         set +e
-        "$GAME" --headless --quit-after 300 >"$LOG_PATH" 2>&1
+        case "$PLATFORM" in
+          web) node "$GITHUB_ACTION_PATH/web/boot.mjs" "$GAME" --quit-after 300 >"$LOG_PATH" 2>&1 ;;
+          *) "$GAME" --headless --quit-after 300 >"$LOG_PATH" 2>&1 ;;
+        esac
         CODE=$?
         set -e
 

@@ -29,6 +29,9 @@ thirdparty/moltenvk/*
 # Python-related ignores
 __pycache__/
 
+# Node-related ignores
+node_modules/
+
 # Python tooling
 .venv/
 .ruff_cache/

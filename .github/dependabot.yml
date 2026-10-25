@@ -14,3 +14,13 @@ updates:
       interval: "monthly"
     cooldown:
       default-days: 30
+
+  # Update the Web boot harness' npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/actions/boot-godot-project/web"
+    reviewers:
+      - coffeebeats
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 30
