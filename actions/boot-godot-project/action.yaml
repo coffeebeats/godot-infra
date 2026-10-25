@@ -65,7 +65,9 @@ runs:
             FILTER=(-type f -perm -u+x ! -name '*.so' ! -name '*.pck' ! -name '*.sh')
             ;;
           web)
-            FILTER=(-type f -name '*.html')
+            # NOTE: 'export.sh' names the shell 'index.html'; a PWA export adds
+            # an offline page beside it.
+            FILTER=(-type f -name 'index.html')
             ;;
           *)
             echo "::error::Cannot boot a game exported for '$PLATFORM'."
