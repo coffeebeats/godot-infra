@@ -17,6 +17,10 @@ updates:
       interval: "monthly"
     cooldown:
       default-days: 30
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   # Update the base images of the export and compile containers
   - package-ecosystem: "docker"
@@ -28,6 +32,10 @@ updates:
       interval: "monthly"
     cooldown:
       default-days: 30
+    groups:
+      docker:
+        patterns:
+          - "*"
 
   # Update Python tooling dependencies
   - package-ecosystem: "uv"
@@ -38,6 +46,10 @@ updates:
       interval: "monthly"
     cooldown:
       default-days: 30
+    groups:
+      python:
+        patterns:
+          - "*"
 
   # Update the Web boot harness' npm dependencies
   - package-ecosystem: "npm"
@@ -48,3 +60,7 @@ updates:
       interval: "monthly"
     cooldown:
       default-days: 30
+    groups:
+      npm:
+        patterns:
+          - "*"
