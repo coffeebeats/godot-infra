@@ -394,7 +394,7 @@ runs:
         tar -cf "$ARCHIVE_PATH" -C "$GITHUB_WORKSPACE/dist" .
         echo "path=$ARCHIVE_PATH" >> "$GITHUB_OUTPUT"
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       if: inputs.publish == 'true'
       with:
         name: ${{ steps.artifact.outputs.name }}
