@@ -7,6 +7,30 @@ version: 2
 updates:
   # Update 'GitHub Actions' dependencies
   - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/actions/*"
+      - "/.github/actions/*"
+    reviewers:
+      - coffeebeats
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 30
+
+  # Update the base images of the export and compile containers
+  - package-ecosystem: "docker"
+    directories:
+      - "/actions/*/*"
+    reviewers:
+      - coffeebeats
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 30
+
+  # Update Python tooling dependencies
+  - package-ecosystem: "uv"
     directory: "/"
     reviewers:
       - coffeebeats
