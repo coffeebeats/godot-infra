@@ -12,7 +12,7 @@ on:
   # restore one saved by 'main'. Running the self-test twice a week keeps the
   # export template caches warm for whichever pull request comes next.
   schedule:
-    - cron: "0 6 * * 1,4"
+    - cron: "17 6 * * 1,4"
 
 permissions:
   contents: read
