@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.22.1 (2026-11-01)
+
+## What's Changed
+* chore(deps-dev): bump ruff from 0.16.9 to 0.16.10 in the python group by @dependabot[bot] in https://github.com/coffeebeats/godot-infra/pull/687
+* docs(checker): stop saying `GodotSteam` has no Linux build by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/691
+* fix(check-project): run the tests on a change that only bumps a submodule by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/690
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.22.0...v6.22.1
+
 ## 6.22.0 (2026-10-25)
 
 ## What's Changed
