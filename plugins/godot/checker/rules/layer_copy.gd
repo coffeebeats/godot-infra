@@ -34,9 +34,9 @@ const ACTION_PROPERTIES := {
 	&"actions_analog_2d": " (analog 2D)",
 }
 
-## LAYER_MARKER is the text a file must hold to be read as a possible source, which
-## spares loading every resource under `addons/` when one layer is checked. It covers
-## every kind of action, since a file doesn't save an empty list.
+## LAYER_MARKER is the text a file must hold to be loaded as a layer, which spares
+## loading every resource when one layer is checked. It covers every kind of action,
+## since a file doesn't save an empty list.
 const LAYER_MARKER := "actions_"
 
 # -- INITIALIZATION ------------------------------------------------------------------ #
