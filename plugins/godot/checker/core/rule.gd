@@ -11,10 +11,15 @@ extends RefCounted
 
 # -- DEPENDENCIES -------------------------------------------------------------------- #
 
+const Config := preload("config.gd")
 const Problem := preload("problem.gd")
 const SourceFile := preload("source_file.gd")
 
 # -- CONFIGURATION ------------------------------------------------------------------- #
+
+## config is the project's `.gdcheckrc`, set before any file is checked, for a rule that
+## reads files besides the one it checks and must leave out those the project excludes.
+var config: Config = null
 
 ## name identifies the rule in a report, in `--list` and as a `.gdcheckrc` section.
 var name: StringName = &""

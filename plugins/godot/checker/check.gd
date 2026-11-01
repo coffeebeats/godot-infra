@@ -51,6 +51,7 @@ const RULES: Array[Script] = [
 	preload("rules/path_ref.gd"),
 	preload("rules/load.gd"),
 	preload("rules/script_order.gd"),
+	preload("rules/layer_copy.gd"),
 	preload("rules/nodepath.gd"),
 	preload("rules/export_overrides.gd"),
 	preload("rules/export_ref.gd"),
@@ -106,6 +107,7 @@ func _initialize() -> void:
 	# A rule the project configures learns it here rather than in `_registry`, which
 	# runs first because parsing the config needs the options each rule declares.
 	for rule in rules:
+		rule.config = config
 		rule.configure(config.options(rule.name))
 
 	if args.has("--list"):

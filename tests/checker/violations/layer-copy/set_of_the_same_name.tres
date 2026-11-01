@@ -1,0 +1,8 @@
+[gd_resource type="Resource" format=3 uid="uid://cn3j8me6cdjbf"]
+
+[ext_resource type="Script" uid="uid://0w2y2yhom81e" path="res://layer-copy/action_set.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+name = &"Options"
+actions_digital = Array[StringName]([&"toggle"])

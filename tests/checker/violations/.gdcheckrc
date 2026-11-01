@@ -1,10 +1,14 @@
-; Configures the checker for this case: an exclusion under `[all]` and one under a single
-; rule, an extension that never loads, and the `logging` rule turned on.
+; Configures the checker for this case: an exclusion under `[all]` and one under each
+; of two rules, an extension that never loads, and the `logging` rule turned on.
 
 [all]
 
 excludes=["res://scratch/*"]
 extensions={"res://absent.gdextension": ["AbsentApi"]}
+
+[layer-copy]
+
+excludes=["res://layer-copy/kept_excluded.tres"]
 
 [logging]
 

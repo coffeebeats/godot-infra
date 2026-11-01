@@ -8,6 +8,12 @@
   res://export_presets.cfg: [export-overrides] universal-macos-unknown: carries no `options/no_such/option`; check the key against the platform
   res://export-ref/uses_tool.tscn:3: [export-ref] dependency is excluded from universal-macos-unknown, x86_64-windows-unknown: res://export-ref/editor/tool.tscn
   res://export-ref/uses_tool/again.tscn:6: [export-ref] dependency is excluded from universal-macos-unknown, x86_64-windows-unknown: res://export-ref/editor/tool.tscn
+  res://layer-copy/analog_stale.tres: [layer-copy] layer 'Analog' lists different actions from res://addons/shared/analog.tres: missing zoom (analog 1D); extra pan (analog 1D)
+  res://layer-copy/fork_stale.tres: [layer-copy] layer 'Fork' lists different actions from res://addons/other/fork.tres: missing two; extra three
+  res://layer-copy/fork_stale.tres: [layer-copy] layer 'Fork' lists different actions from res://addons/shared/fork.tres: missing one; extra three
+  res://layer-copy/own_left.tres: [layer-copy] layer 'Own' lists different actions from res://layer-copy/own_right.tres: missing two
+  res://layer-copy/own_right.tres: [layer-copy] layer 'Own' lists different actions from res://layer-copy/own_left.tres: extra two
+  res://layer-copy/stale.tres: [layer-copy] layer 'Options' lists different actions from res://addons/shared/options.tres: missing confirm, zoom (analog 1D); extra added, zoom
   res://load/inherited.tscn: [load] node './Arm' was not instantiated: Node './Arm' was modified from inside an instance, but it has vanished.
   res://load/no_root.tscn: [load] failed to instantiate: Invalid scene: root node Orphan cannot specify a parent node.
   res://load/two_defects.tscn: [load] node './Sprite' is declared as NotARealType but instantiated as Node
@@ -25,8 +31,8 @@
   res://script-order/misordered.tscn:7: [script-order] speed assigned before `script =`; silently dropped
   res://script-order/reordered.tscn:7: [script-order] speed assigned before `script =`; silently dropped
   res://script-order/stale_path.tscn:7: [script-order] speed assigned before `script =`; silently dropped
-checked 33 file(s), 27 problem(s)
-excluded 1 file(s) through res://.gdcheckrc
+checked 46 file(s), 33 problem(s)
+excluded 2 file(s) through res://.gdcheckrc
 skipped the loading rules for 5 file(s): res://absent.gdextension not loaded
   res://gated/holds_user.tscn
   res://gated/preloads_by_uid.gd

@@ -25,6 +25,7 @@ Where the plugin's `bin/` is not on `PATH`, as under Codex, run
 | `path-ref` | `.tscn` `.tres` | a reference that does not resolve, a `res://` string that should be a uid, and a dependency whose `path` disagrees with its `uid` | yes |
 | `load` | `.tscn` `.tres` | a file that does not parse or instantiate, and a scene node instantiated missing, as another class, or without its script, with the first error the engine raised | |
 | `script-order` | `.tscn` `.tres` | a property assigned ahead of `script =` | |
+| `layer-copy` | `.tres` | an action set layer whose actions differ from another layer of the same name | |
 | `nodepath` | `.tscn` | a `NodePath` export that resolves to null | |
 | `export-overrides` | `export_presets.cfg` | a preset value differing from `export_overrides.cfg` | yes |
 | `export-ref` | `export_presets.cfg` | a file a preset keeps whose dependency that same preset excludes | |
@@ -32,11 +33,13 @@ Where the plugin's `bin/` is not on `PATH`, as under Codex, run
 Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
 directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
 `export-overrides` and `export-ref` are the exceptions; each covers one file and reads
-the whole project, `addons/` included. `logging` covers nothing until `.gdcheckrc` turns
-it on. The checker exits 1 for a problem or a repair alike; the `--report` file tells
-them apart, and `check.gd`'s header lists what it holds. An error in the checker's own
-scripts fails the run too: one raised while a rule checks a file is a problem on that
-file, and one that stops the run exits 1 with a line saying so.
+the whole project, `addons/` included. `layer-copy` checks a project's own layers and
+also reads those under `addons/`, apart from any file `.gdcheckrc` excludes; a layer
+passes by matching any same-named layer under `addons/`. `logging` covers nothing until
+`.gdcheckrc` turns it on. The checker exits 1 for a problem or a repair alike; the
+`--report` file tells them apart, and `check.gd`'s header lists what it holds. An error
+in the checker's own scripts fails the run too: one raised while a rule checks a file is
+a problem on that file, and one that stops the run exits 1 with a line saying so.
 
 The checker reads uids from the cache the last import wrote, and a script process never
 rebuilds it. Run `godot --import --headless` after `--fix` and after creating or moving

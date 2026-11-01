@@ -1,0 +1,8 @@
+[gd_resource type="Resource" format=3 uid="uid://bq3mf7kx2tn5h"]
+
+[ext_resource type="Script" uid="uid://d0nieguqa0eqh" path="res://layer-copy/layer.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+name = &"Analog"
+actions_analog_1d = Array[StringName]([&"zoom"])

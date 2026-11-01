@@ -17,7 +17,6 @@ extends "../core/rule.gd"
 
 # -- DEPENDENCIES -------------------------------------------------------------------- #
 
-const Config := preload("../core/config.gd")
 const ExportDeclaration := preload("../lib/export_declaration.gd")
 
 # -- PUBLIC METHODS (OVERRIDES) ------------------------------------------------------ #

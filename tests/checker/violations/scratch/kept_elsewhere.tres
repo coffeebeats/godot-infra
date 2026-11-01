@@ -1,0 +1,8 @@
+[gd_resource type="Resource" format=3 uid="uid://dq7fm2ts6bg4y"]
+
+[ext_resource type="Script" uid="uid://d0nieguqa0eqh" path="res://layer-copy/layer.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+name = &"Kept"
+actions_digital = Array[StringName]([&"another"])
