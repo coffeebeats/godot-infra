@@ -52,7 +52,6 @@ jobs:
     timeout-minutes: 5
 
     outputs:
-      has_change: "${{ steps.check-non-source.outputs.any_modified == 'true' || steps.check-source.outputs.any_modified == 'true' }}"
       has_source_change: "${{ steps.check-source.outputs.any_modified == 'true' }}"
       has_pot_change: "${{ steps.check-pot.outputs.any_modified == 'true' }}"
       has_po_change: "${{ steps.check-po.outputs.any_modified == 'true' }}"
@@ -65,13 +64,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-
-      - name: Check for any non-source code changes
-        id: check-non-source
-        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
-        with:
-          exclude_submodules: true
-          files_ignore: "**/*.gd"
 
       - name: Check for any source code changes
         id: check-source
@@ -164,7 +156,6 @@ jobs:
   check-python:
     needs: ["changes"]
     if: |
-      needs.changes.outputs.has_change == 'true' &&
       needs.changes.outputs.has_python == 'true' &&
       github.actor != 'dependabot[bot]'
 
@@ -343,9 +334,10 @@ jobs:
         with:
           description: "updating translation files"
 
+  # NOTE: This runs on every change, since 'changes' can't see a submodule bump and a
+  # bump alone can break the project.
   test:
     needs: ["changes"]
-    if: needs.changes.outputs.has_change == 'true'
 
     # NOTE: The tests commit nothing back, so each version runs in parallel.
     strategy:
