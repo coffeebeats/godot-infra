@@ -343,9 +343,10 @@ jobs:
         with:
           description: "updating translation files"
 
+  # NOTE: This runs on every change, since 'changes' can't see a submodule bump and a
+  # bump alone can break the project.
   test:
     needs: ["changes"]
-    if: needs.changes.outputs.has_change == 'true'
 
     # NOTE: The tests commit nothing back, so each version runs in parallel.
     strategy:
