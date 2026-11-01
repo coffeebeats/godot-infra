@@ -128,7 +128,7 @@ func _dependencies(path: String, text: String) -> PackedStringArray:
 ## an uninitialized submodule, counts as not loaded.
 ##
 ## NOTE: A GDExtension with no binary for the platform does not load, so scripts naming
-## its API fail to parse. GodotSteam ships no Linux binary.
+## its API fail to parse.
 func _missing_extensions(config: Config) -> Dictionary:
 	var unloaded := {}
 

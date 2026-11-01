@@ -212,8 +212,8 @@ and the whole-project run catches a crossing introduced by editing a scene.
 ## GDExtensions that did not load
 
 A script naming the API of a GDExtension that did not load fails to parse, which reports
-the machine rather than the script. GodotSteam has no Linux build, so a Linux runner has
-no `Steam` singleton.
+the machine rather than the script. An addon pinned to a commit with no library for the
+runner's platform leaves its names undefined there.
 
 While an extension listed under `extensions` is unloaded, the rules that load files skip
 each script using one of its names in code, outside comments and strings, and each file
