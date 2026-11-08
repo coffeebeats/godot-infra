@@ -6,7 +6,8 @@
 # project root:
 #
 #   godot-locale validate            # every '.pot' and '.po' compiles and keeps the
-#                                    # placeholders its English text declares
+#                                    # '%s' and '{name}' placeholders its English
+#                                    # text declares
 #   godot-locale update              # merge 'messages.pot' into every '.po'
 #   godot-locale compile             # build the '.mo' files the engine loads, leaving
 #                                    # out fuzzy translations nobody reviewed
@@ -97,9 +98,9 @@ _verify_stable() {
 
 # -------------------------------- Subcommands ------------------------------- #
 
-# Report a translation that drops or doubles a placeholder its English text declares.
-# pofilter exits 0 whatever it finds and writes a file only for a catalogue it has
-# findings for, so what it leaves in the report directory is the whole signal.
+# Report a translation that drops or doubles a printf placeholder ('%s') or drops or
+# renames a named one ('{action}'). pofilter always exits 0 and writes a file only for
+# a catalogue with findings, so what it leaves in the report directory is the signal.
 #
 # NOTE: 'en_US.po' is excluded because it is keyed by message ID, so a '%s' in its
 # English text reads as a mismatch against a key that cannot carry one.
@@ -109,7 +110,8 @@ _check_placeholders() {
 	REPORT_DIR="$(mktemp -d)"
 
 	echo "Checking placeholders: $LOCALE_DIR"
-	_toolkit pofilter -t printf -x en_US.po "$LOCALE_DIR" "$REPORT_DIR"
+	_toolkit pofilter -t printf -t pythonbraceformat -x en_US.po \
+		"$LOCALE_DIR" "$REPORT_DIR"
 
 	if [ -z "$(ls -A "$REPORT_DIR")" ]; then
 		return
