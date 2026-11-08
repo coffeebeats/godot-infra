@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 # plugins/godot/bin/godot-locale
 #
-# Manages a Godot project's gettext catalogue: updating '.po' files from the message
+# Manages a Godot project's gettext catalogue, updating '.po' files from the message
 # template, compiling '.po' to '.mo', and validating what is there. Run it from the
 # project root:
 #
 #   godot-locale validate            # every '.pot' and '.po' compiles and keeps the
 #                                    # placeholders its English text declares
 #   godot-locale update              # merge 'messages.pot' into every '.po'
-#   godot-locale compile             # build the '.mo' files the engine loads
+#   godot-locale compile             # build the '.mo' files the engine loads, leaving
+#                                    # out fuzzy translations nobody reviewed
 #   godot-locale compile --verify    # also assert the transform is deterministic
 #
 # Set LOCALE_DIR to the catalogue's directory; it defaults to 'project/locale'.
 #
-# Dependencies: msgfmt, msgmerge (gettext), and uv, which fetches poswap and pofilter
-# from translate-toolkit.
+# Every '.po' but 'en_US.po' is keyed by English text, so translators see English.
+# 'update' swaps it from the message IDs, and 'compile' swaps it back.
+#
+# Dependencies: msgfmt, msgmerge (gettext), and uv, which fetches translate-toolkit for
+# poswap, pofilter and the reverse swap.
 #
 # NOTE: gettext wraps long and non-ASCII '.po' lines differently between releases, so
 # 'update' and 'compile' rewrite a catalogue that CI produced with another version.
@@ -49,8 +53,8 @@ _require_cmd() {
 	fi
 }
 
-# NOTE: Pin translate-toolkit exactly. poswap's output lands in committed '.po' files, so
-# a version bump rewrites catalogues and has to be its own commit.
+# NOTE: Pin translate-toolkit exactly. poswap's output lands in committed '.po' files,
+# so a version bump rewrites catalogues and has to be its own commit.
 TRANSLATE_TOOLKIT="translate-toolkit==3.20.0"
 
 # Run a translate-toolkit command without depending on the project's environment, so a
@@ -97,10 +101,8 @@ _verify_stable() {
 # pofilter exits 0 whatever it finds and writes a file only for a catalogue it has
 # findings for, so what it leaves in the report directory is the whole signal.
 #
-# NOTE: 'en_US.po' is excluded because it is keyed by message ID rather than by English
-# text, so an entry whose translation carries a '%s' reads as a mismatch against a key
-# that cannot. Every locale poswap has rewritten is checked, which is every locale a
-# translator edits.
+# NOTE: 'en_US.po' is excluded because it is keyed by message ID, so a '%s' in its
+# English text reads as a mismatch against a key that cannot carry one.
 _check_placeholders() {
 	local f
 
@@ -147,11 +149,9 @@ _update_non_english_po() {
 }
 
 cmd_update() {
-	# Update en_US.po from the message template.
 	echo "Updating: $EN_US_PO"
 	msgmerge --update --backup=none "$EN_US_PO" "$POT_FILE"
 
-	# Update non-English .po files via poswap.
 	for f in "$LOCALE_DIR"/*.po; do
 		[ "$(basename "$f")" = "en_US.po" ] && continue
 
@@ -165,28 +165,85 @@ cmd_update() {
 	done
 }
 
+# Rewrite a translator's '.po', keyed by English text, as one keyed by message ID. Each
+# 'en_US.po' entry takes the translation of the entry with the same context and English
+# text, and the result keeps the translator file's header.
+#
+# NOTE: 'poswap --reverse' pairs entries by English text alone, which gives every key
+# that shares its English text with another the first one's translation.
+#
+# Arguments:
+#   $1 - the 'en_US.po' file
+#   $2 - the translator's '.po' file
+#   $3 - output file path
+_reverse_swap() {
+	_toolkit python -I - "$@" <<'EOF'
+import sys
+
+from translate.storage import po
+
+en_path, translated_path, out_path = sys.argv[1:4]
+
+with open(en_path, "rb") as fh:
+    english = po.pofile(fh)
+with open(translated_path, "rb") as fh:
+    translated = po.pofile(fh)
+
+
+# Returns a source or target as a tuple of its forms, so plurals compare whole.
+def text(value):
+    return tuple(getattr(value, "strings", [value]))
+
+
+# Returns the text 'update' keys an 'en_US.po' entry by, which is its reviewed English
+# text or, without one, its message ID.
+def english_text(unit):
+    if unit.target and not unit.isfuzzy():
+        return text(unit.target)
+    return text(unit.source)
+
+
+translations = {}
+for unit in translated.units:
+    if unit.isheader() or unit.isobsolete():
+        continue
+    # NOTE: A fuzzy translation is a guess nobody reviewed; leave it out, so the game
+    # shows the English text until someone does.
+    if unit.target and not unit.isfuzzy():
+        translations[(unit.getcontext(), text(unit.source))] = unit.target
+
+units = [translated.header()] if translated.header() else []
+for unit in english.units:
+    if unit.isheader() or unit.isobsolete():
+        continue
+    unit.target = translations.get((unit.getcontext(), english_text(unit)), "")
+    unit.markfuzzy(False)
+    units.append(unit)
+
+# NOTE: msgfmt drops a fuzzy header, and the engine reads the plural forms from it.
+if units and units[0].isheader():
+    units[0].markfuzzy(False)
+
+translated.units = units
+with open(out_path, "wb") as fh:
+    translated.serialize(fh)
+EOF
+}
+
 _compile_non_english_po() {
 	local f="$1"
 	local mo
 	mo="$(get_mo_filepath "$f")"
 
-	# Reverse poswap so msgids match the template for compilation.
-	_toolkit poswap --reverse "$EN_US_PO" -t "$f" -o "${f}.tmp"
-
-	# poswap drops the header; merge it back from the original.
-	msgmerge "$f" "${f}.tmp" -o "${f}.tmp"
-
-	# NOTE: Merging the header marks some translations fuzzy; use -f to keep them.
-	msgfmt --no-hash -f "${f}.tmp" -o "$mo"
+	_reverse_swap "$EN_US_PO" "$f" "${f}.tmp"
+	msgfmt --no-hash "${f}.tmp" -o "$mo"
 	rm "${f}.tmp"
 }
 
 cmd_compile() {
-	# Compile en_US.po.
 	echo "Compiling: $EN_US_PO"
 	msgfmt --no-hash "$EN_US_PO" -o "$(get_mo_filepath "$EN_US_PO")"
 
-	# Compile non-English .po files.
 	for f in "$LOCALE_DIR"/*.po; do
 		[ "$(basename "$f")" = "en_US.po" ] && continue
 
@@ -207,7 +264,6 @@ if [ ! -d "$LOCALE_DIR" ]; then
 	exit 1
 fi
 
-# Parse arguments.
 COMMAND="${1:-}"
 shift || true
 
@@ -231,8 +287,7 @@ case "$COMMAND" in
 		;;
 	compile)
 		_require_cmd msgfmt "Install gettext."
-		_require_cmd msgmerge "Install gettext."
-		_require_cmd uv "Install uv; it fetches poswap from translate-toolkit."
+		_require_cmd uv "Install uv; it fetches translate-toolkit."
 		cmd_compile
 		;;
 	*)
