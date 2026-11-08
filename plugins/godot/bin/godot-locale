@@ -8,13 +8,17 @@
 #   godot-locale validate            # every '.pot' and '.po' compiles and keeps the
 #                                    # placeholders its English text declares
 #   godot-locale update              # merge 'messages.pot' into every '.po'
-#   godot-locale compile             # build the '.mo' files the engine loads
+#   godot-locale compile             # build the '.mo' files the engine loads, leaving
+#                                    # out fuzzy translations nobody reviewed
 #   godot-locale compile --verify    # also assert the transform is deterministic
 #
 # Set LOCALE_DIR to the catalogue's directory; it defaults to 'project/locale'.
 #
-# Dependencies: msgfmt, msgmerge (gettext), and uv, which fetches poswap and pofilter
-# from translate-toolkit.
+# Every '.po' but 'en_US.po' is keyed by English text, so translators see English.
+# 'update' swaps it from the message IDs, and 'compile' swaps it back.
+#
+# Dependencies: msgfmt, msgmerge (gettext), and uv, which fetches translate-toolkit for
+# poswap, pofilter and the reverse swap.
 #
 # NOTE: gettext wraps long and non-ASCII '.po' lines differently between releases, so
 # 'update' and 'compile' rewrite a catalogue that CI produced with another version.
@@ -165,19 +169,78 @@ cmd_update() {
 	done
 }
 
+# Rewrite a translator's '.po', keyed by English text, as one keyed by message ID. Each
+# 'en_US.po' entry takes the translation of the entry with the same context and English
+# text, and the result keeps the translator file's header.
+#
+# NOTE: 'poswap --reverse' pairs entries by English text alone, which gives every key
+# that shares its English text with another the first one's translation.
+#
+# Arguments:
+#   $1 - the 'en_US.po' file
+#   $2 - the translator's '.po' file
+#   $3 - output file path
+_reverse_swap() {
+	_toolkit python -I - "$@" <<'EOF'
+import sys
+
+from translate.storage import po
+
+en_path, translated_path, out_path = sys.argv[1:4]
+
+with open(en_path, "rb") as fh:
+    english = po.pofile(fh)
+with open(translated_path, "rb") as fh:
+    translated = po.pofile(fh)
+
+
+# Returns a source or target as a tuple of its forms, so plurals compare whole.
+def text(value):
+    return tuple(getattr(value, "strings", [value]))
+
+
+# Returns the text 'update' keys an 'en_US.po' entry by, which is its reviewed English
+# text or, without one, its message ID.
+def english_text(unit):
+    if unit.target and not unit.isfuzzy():
+        return text(unit.target)
+    return text(unit.source)
+
+
+translations = {}
+for unit in translated.units:
+    if unit.isheader() or unit.isobsolete():
+        continue
+    # NOTE: A fuzzy translation is a guess nobody reviewed; leave it out, so the game
+    # shows the English text until someone does.
+    if unit.target and not unit.isfuzzy():
+        translations[(unit.getcontext(), text(unit.source))] = unit.target
+
+units = [translated.header()] if translated.header() else []
+for unit in english.units:
+    if unit.isheader() or unit.isobsolete():
+        continue
+    unit.target = translations.get((unit.getcontext(), english_text(unit)), "")
+    unit.markfuzzy(False)
+    units.append(unit)
+
+# NOTE: msgfmt drops a fuzzy header, and the engine reads the plural forms from it.
+if units and units[0].isheader():
+    units[0].markfuzzy(False)
+
+translated.units = units
+with open(out_path, "wb") as fh:
+    translated.serialize(fh)
+EOF
+}
+
 _compile_non_english_po() {
 	local f="$1"
 	local mo
 	mo="$(get_mo_filepath "$f")"
 
-	# Reverse poswap so msgids match the template for compilation.
-	_toolkit poswap --reverse "$EN_US_PO" -t "$f" -o "${f}.tmp"
-
-	# poswap drops the header; merge it back from the original.
-	msgmerge "$f" "${f}.tmp" -o "${f}.tmp"
-
-	# NOTE: Merging the header marks some translations fuzzy; use -f to keep them.
-	msgfmt --no-hash -f "${f}.tmp" -o "$mo"
+	_reverse_swap "$EN_US_PO" "$f" "${f}.tmp"
+	msgfmt --no-hash "${f}.tmp" -o "$mo"
 	rm "${f}.tmp"
 }
 
@@ -231,8 +294,7 @@ case "$COMMAND" in
 		;;
 	compile)
 		_require_cmd msgfmt "Install gettext."
-		_require_cmd msgmerge "Install gettext."
-		_require_cmd uv "Install uv; it fetches poswap from translate-toolkit."
+		_require_cmd uv "Install uv; it fetches translate-toolkit."
 		cmd_compile
 		;;
 	*)
