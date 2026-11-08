@@ -6,7 +6,10 @@ argument-hint: "validate | update | compile [--verify]"
 ---
 
 The catalogue is keyed by message ID, so a translation can silently drop a placeholder
-its English text declares. `validate` is what catches that; gettext cannot.
+its English text declares. `validate` is what catches that; gettext cannot. It checks
+printf placeholders such as `%s` and named ones such as `{action}`. A translator must
+keep every one, and may reorder only the named ones, since `%s` is filled in order and
+`validate` cannot see two swapped.
 
 ## Running it
 
