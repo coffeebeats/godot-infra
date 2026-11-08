@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # plugins/godot/bin/godot-locale
 #
-# Manages a Godot project's gettext catalogue: updating '.po' files from the message
+# Manages a Godot project's gettext catalogue, updating '.po' files from the message
 # template, compiling '.po' to '.mo', and validating what is there. Run it from the
 # project root:
 #
@@ -53,8 +53,8 @@ _require_cmd() {
 	fi
 }
 
-# NOTE: Pin translate-toolkit exactly. poswap's output lands in committed '.po' files, so
-# a version bump rewrites catalogues and has to be its own commit.
+# NOTE: Pin translate-toolkit exactly. poswap's output lands in committed '.po' files,
+# so a version bump rewrites catalogues and has to be its own commit.
 TRANSLATE_TOOLKIT="translate-toolkit==3.20.0"
 
 # Run a translate-toolkit command without depending on the project's environment, so a
@@ -101,10 +101,8 @@ _verify_stable() {
 # pofilter exits 0 whatever it finds and writes a file only for a catalogue it has
 # findings for, so what it leaves in the report directory is the whole signal.
 #
-# NOTE: 'en_US.po' is excluded because it is keyed by message ID rather than by English
-# text, so an entry whose translation carries a '%s' reads as a mismatch against a key
-# that cannot. Every locale poswap has rewritten is checked, which is every locale a
-# translator edits.
+# NOTE: 'en_US.po' is excluded because it is keyed by message ID, so a '%s' in its
+# English text reads as a mismatch against a key that cannot carry one.
 _check_placeholders() {
 	local f
 
@@ -151,11 +149,9 @@ _update_non_english_po() {
 }
 
 cmd_update() {
-	# Update en_US.po from the message template.
 	echo "Updating: $EN_US_PO"
 	msgmerge --update --backup=none "$EN_US_PO" "$POT_FILE"
 
-	# Update non-English .po files via poswap.
 	for f in "$LOCALE_DIR"/*.po; do
 		[ "$(basename "$f")" = "en_US.po" ] && continue
 
@@ -245,11 +241,9 @@ _compile_non_english_po() {
 }
 
 cmd_compile() {
-	# Compile en_US.po.
 	echo "Compiling: $EN_US_PO"
 	msgfmt --no-hash "$EN_US_PO" -o "$(get_mo_filepath "$EN_US_PO")"
 
-	# Compile non-English .po files.
 	for f in "$LOCALE_DIR"/*.po; do
 		[ "$(basename "$f")" = "en_US.po" ] && continue
 
@@ -270,7 +264,6 @@ if [ ! -d "$LOCALE_DIR" ]; then
 	exit 1
 fi
 
-# Parse arguments.
 COMMAND="${1:-}"
 shift || true
 
