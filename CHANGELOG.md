@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.23.0 (2026-11-08)
+
+## What's Changed
+* feat(plugins): make `godot-locale validate` check `{name}` placeholders by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/696
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.22.2...v6.23.0
+
 ## 6.22.2 (2026-11-08)
 
 ## What's Changed
