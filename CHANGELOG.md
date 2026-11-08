@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.22.2 (2026-11-08)
+
+## What's Changed
+* fix(plugins): make `godot-locale compile` keep each context's translation and drop fuzzy guesses by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/694
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.22.1...v6.22.2
+
 ## 6.22.1 (2026-11-01)
 
 ## What's Changed
