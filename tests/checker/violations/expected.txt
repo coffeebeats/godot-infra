@@ -46,6 +46,7 @@
   res://resource-loader/bypasses.gd:14: [resource-loader] blocking `load()`; call `StdLoader.load_now`, which never waits on an unrelated load
   res://resource-loader/bypasses.gd:15: [resource-loader] blocking `ResourceLoader.load()`; call `StdLoader.load_now`, which never waits on an unrelated load
   res://resource-loader/own_load.gd:20: [resource-loader] `load_threaded_get_status` outside the loader; request it through `StdLoader`
+  res://resource-loader/own_load.gd:24: [resource-loader] blocking `ResourceLoader.load()`; call `StdLoader.load_now`, which never waits on an unrelated load
   res://script-order/misordered.tscn:7: [script-order] speed assigned before `script =`; silently dropped
   res://script-order/reordered.tscn:7: [script-order] speed assigned before `script =`; silently dropped
   res://script-order/stale_path.tscn:3: [path-ref] path names res://script-order/moved_away.gd but uid resolves to res://script-order/holder.gd
@@ -64,7 +65,7 @@
   res://self-preload/static_self.gd:8: [self-preload] loads res://self-preload/static_outer.tscn, which loads this script back while it compiles; export it and set it in the scene
   res://self-preload/sub/rel_wrong.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
   res://uid/no_uid.tres:1: [uid] no uid in header; re-run with --fix to assign one
-checked 70 file(s), 66 problem(s)
+checked 70 file(s), 67 problem(s)
 excluded 1 file(s) through res://.gdcheckrc
 skipped the loading rules for 5 file(s): res://absent.gdextension not loaded
   res://gated/holds_user.tscn

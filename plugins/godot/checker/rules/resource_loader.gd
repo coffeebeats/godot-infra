@@ -10,8 +10,8 @@
 ##   whatever the loader has in flight, where `StdLoader.load_now` reports a slow load
 ##   and never waits on an unrelated one.
 ##
-## A file declaring its own `func load(` is spared the second, since a bare call there
-## is its own method.
+## A file declaring its own `func load(` is spared only a bare `load()`, since a bare
+## call there is its own method; its `ResourceLoader.load()` is still reported.
 ##
 ## NOTE: The rule covers no file until `.gdcheckrc` lists under `allow` the files that
 ## implement the loader, since a project with no loader has nothing to call instead.
@@ -69,10 +69,12 @@ func check(file: SourceFile) -> Array[Problem]:
 		var message := MESSAGE_THREADED % found.get_string()
 		problems.append(Problem.new(file.path, line, name, message))
 
-	if _declares_load.search(GDScriptText.blank(text)) != null:
-		return problems
+	var blocking := PackedStringArray(["load", "ResourceLoader.load"])
 
-	for loaded in GDScriptText.calls(text, ["load", "ResourceLoader.load"]):
+	if _declares_load.search(GDScriptText.blank(text)) != null:
+		blocking = PackedStringArray(["ResourceLoader.load"])
+
+	for loaded in GDScriptText.calls(text, blocking):
 		var message := MESSAGE_BLOCKING % loaded.name
 		problems.append(Problem.new(file.path, loaded.line, name, message))
 

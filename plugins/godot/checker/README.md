@@ -146,12 +146,13 @@ without its script or the script invalid. Scripts that only preload one another 
 fine, since the script cache allows the cycle. It is a rule of its own so that excluding
 a file from `preload` cannot turn it off.
 
-`resource-loader` holds a project with its own loader, such as std's `StdLoader`, to it.
-It reports `load_threaded_request`, `load_threaded_get` or `load_threaded_get_status`
-named in code or in a string, and a bare `load()` or `ResourceLoader.load()`, which
-blocks beside whatever the loader has in flight. A file declaring its own `func load(`
-is spared the latter. It covers nothing until `allow` lists the files the loader is
-implemented in, which it skips.
+`resource-loader` keeps a project with its own loader, such as std's `StdLoader`, from
+bypassing it. It reports `load_threaded_request`, `load_threaded_get` or
+`load_threaded_get_status` named in code or in a string, and a bare `load()` or
+`ResourceLoader.load()`, which blocks beside whatever the loader has in flight. A file
+declaring its own `func load(` is spared a bare `load()`, which calls that method, but
+not `ResourceLoader.load()`. It covers nothing until `allow` lists the files that
+implement the loader, and it skips those files.
 
 ## Export overrides
 

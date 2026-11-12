@@ -1,6 +1,6 @@
 ##
 ## A script declaring its own `load`, so a bare call to it is not the engine's. A
-## threaded load is still reported.
+## threaded load and `ResourceLoader.load` are still reported.
 ##
 
 extends RefCounted
@@ -18,3 +18,7 @@ func reload() -> void:
 
 func status() -> int:
 	return ResourceLoader.load_threaded_get_status(_path)
+
+
+func fetch() -> Resource:
+	return ResourceLoader.load(_path)
