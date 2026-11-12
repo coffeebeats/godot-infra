@@ -31,12 +31,17 @@
   res://preload/preloads.gd:20: [preload] preloads res://preload/model.gltf, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
   res://preload/preloads.gd:21: [preload] preload of a non-literal; preload one string literal
   res://preload/preloads.gd:22: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
-  res://preload/preloads.gd:28: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
-  res://preload/preloads.gd:29: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
-  res://preload/preloads.gd:30: [preload] preloads res://preload/it's.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
+  res://preload/preloads.gd:28: [preload] preloads res://preload/binary.res, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
+  res://preload/preloads.gd:29: [preload] preloads res://preload/binary.scn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
+  res://preload/preloads.gd:30: [preload] preloads res://preload/wraps_built_in.tres, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
+  res://preload/preloads.gd:34: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
+  res://preload/preloads.gd:35: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
+  res://preload/preloads.gd:36: [preload] preloads res://preload/it's.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
   res://preload/static_loads.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
   res://preload/static_loads.gd:11: [preload] `ResourceLoader.load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
-  res://preload/static_loads.gd:18: [preload] `ResourceLoader.load_threaded_get_status()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
+  res://preload/static_loads.gd:15: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
+  res://preload/static_loads.gd:23: [preload] `ResourceLoader.load_threaded_get_status()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
+  res://preload/sub/up.gd:7: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
   res://resource-loader/bypasses.gd:12: [resource-loader] `load_threaded_request` outside the loader; request it through `StdLoader`
   res://resource-loader/bypasses.gd:13: [resource-loader] `load_threaded_get` outside the loader; request it through `StdLoader`
   res://resource-loader/bypasses.gd:14: [resource-loader] blocking `load()`; call `StdLoader.load_now`, which never waits on an unrelated load
@@ -59,7 +64,7 @@
   res://self-preload/static_self.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
   res://self-preload/static_self.gd:8: [self-preload] loads res://self-preload/static_outer.tscn, which loads this script back while it compiles; export it and set it in the scene
   res://self-preload/sub/rel_wrong.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
-checked 70 file(s), 61 problem(s)
+checked 72 file(s), 66 problem(s)
 excluded 1 file(s) through res://.gdcheckrc
 skipped the loading rules for 5 file(s): res://absent.gdextension not loaded
   res://gated/holds_user.tscn

@@ -11,6 +11,11 @@ static var listed: Array[Resource] = [
 	ResourceLoader.load("res://preload/data.tres"),
 ]
 
+static var handlers := {
+	"inline": func(): return load("res://preload/data.tres"),
+	"named": _load_data,
+}
+
 var later: Resource = load("res://preload/data.tres")
 
 
@@ -21,3 +26,7 @@ static func _static_init() -> void:
 
 static func reload() -> void:
 	data = load("res://preload/data.tres")
+
+
+static func _load_data() -> Resource:
+	return load("res://preload/data.tres")

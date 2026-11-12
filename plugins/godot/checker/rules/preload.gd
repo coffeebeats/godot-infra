@@ -27,6 +27,13 @@ const ScriptClosure := preload("../lib/script_closure.gd")
 
 # -- DEFINITIONS --------------------------------------------------------------------- #
 
+## EXTRA_STATIC_LOADS are the calls reported in a static initializer beyond
+## `ScriptClosure.STATIC_LOADS`, which the closure need not follow.
+const EXTRA_STATIC_LOADS: PackedStringArray = [
+	"ResourceLoader.load_threaded_get",
+	"ResourceLoader.load_threaded_get_status",
+]
+
 ## MESSAGE_BUILT_IN reports a built-in script.
 const MESSAGE_BUILT_IN := "holds a built-in script; save it as a .gd file"
 
@@ -45,18 +52,6 @@ const MESSAGE_STATIC_LOAD := (
 	"`%s()` in a static initializer, which runs while the script cache is locked;"
 	+ " preload a script-free file or load it later"
 )
-
-## STATIC_LOADS are the calls that load a resource, reported in a static initializer
-## whatever they load. `.load_now` is the method of that name on any receiver.
-const STATIC_LOADS: PackedStringArray = [
-	"load",
-	"ResourceLoader.load",
-	"ResourceLoader.load_threaded_get",
-	"ResourceLoader.load_threaded_get_status",
-	"ResourceLoader.load_threaded_request",
-	"load_now",
-	".load_now",
-]
 
 # -- PUBLIC METHODS (OVERRIDES) ------------------------------------------------------ #
 
@@ -86,9 +81,10 @@ func check(file: SourceFile) -> Array[Problem]:
 			problems.append(Problem.new(file.path, preloaded.line, name, message))
 
 	var spans := GDScriptText.static_spans(text)
+	var names := ScriptClosure.STATIC_LOADS + EXTRA_STATIC_LOADS
 
-	for loaded in GDScriptText.calls(text, STATIC_LOADS):
-		if _within(loaded.start, spans):
+	for loaded in GDScriptText.calls(text, names):
+		if ScriptClosure.within(loaded.start, spans):
 			var message := MESSAGE_STATIC_LOAD % String(loaded.name).trim_prefix(".")
 			problems.append(Problem.new(file.path, loaded.line, name, message))
 
@@ -108,15 +104,6 @@ func _check_resource(file: SourceFile) -> Array[Problem]:
 			problems.append(Problem.new(file.path, i + 1, name, MESSAGE_BUILT_IN))
 
 	return problems
-
-
-## _within reports whether `offset` falls inside one of `spans`.
-func _within(offset: int, spans: Array[Vector2i]) -> bool:
-	for span in spans:
-		if offset >= span.x and offset < span.y:
-			return true
-
-	return false
 
 
 # -- ENGINE METHODS (OVERRIDES) ------------------------------------------------------ #

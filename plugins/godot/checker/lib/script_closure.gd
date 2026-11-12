@@ -115,9 +115,9 @@ static func is_script(path: String) -> bool:
 	return path.get_extension() in SCRIPT_EXTENSIONS
 
 
-## is_script_bearing reports whether loading `path` loads a script: it is one, or it or
-## any file it loads is a scene or resource holding a built-in script, a binary scene or
-## resource, or an imported scene.
+## is_script_bearing reports whether loading `path` loads a script, because `path` is
+## one or because it or any file it loads is a scene or resource holding a built-in
+## script, a binary scene or resource, or an imported scene.
 static func is_script_bearing(path: String) -> bool:
 	if path in _bearing:
 		return _bearing[path]

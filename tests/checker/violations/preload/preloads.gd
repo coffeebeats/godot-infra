@@ -23,6 +23,12 @@ const Remarked := preload(
 	"scene.tscn"  # a comment beside the literal does not hide it
 )
 
+# A binary scene or resource cannot be shown script-free without loading it, and a
+# resource can carry a scene holding a built-in script.
+const Binary := preload("binary.res")
+const BinaryScene := preload("binary.scn")
+const WrapsBuiltIn := preload("wraps_built_in.tres")
+
 # A raw string, a triple-quoted one and one holding the other quote are each one
 # literal.
 const Raw := preload(r"scene.tscn")

@@ -1,0 +1,6 @@
+[gd_resource type="Resource" format=3 uid="uid://cib22xbqmdiav"]
+
+[ext_resource type="PackedScene" uid="uid://b6thy9qs51de" path="res://preload/built_in.tscn" id="1_built_in"]
+
+[resource]
+metadata/scene = ExtResource("1_built_in")

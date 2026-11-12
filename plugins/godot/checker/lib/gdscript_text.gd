@@ -70,9 +70,8 @@ static var _string_literal := RegEx.create_from_string(STRING_LITERAL_PATTERN)
 
 
 ## blank returns the source with every comment, and every string literal unless
-## `keep_strings`, overwritten by spaces. Unlike `mask` it moves nothing, so an offset
-## found in it points at the same character of the source once that source's line
-## endings are normalized to `\n`.
+## `keep_strings`, overwritten by spaces. Unlike `mask` it keeps every offset, counted
+## with the source's line endings normalized to `\n`.
 static func blank(text: String, keep_strings: bool = false) -> String:
 	var source := text.replace("\r\n", "\n")
 	var blanked := ""
@@ -92,15 +91,13 @@ static func blank(text: String, keep_strings: bool = false) -> String:
 	return blanked + source.substr(cursor)
 
 
-## calls returns each call to one of `names` in the source, outside comments and
-## strings. A plain name, such as `load` or `ResourceLoader.load`, matches only where
-## it is not itself a member or a declaration, and a name opening with `.`, such as
-## `.load_now`, matches a method of that name on any receiver.
+## calls returns each call to one of `names` outside comments and strings, as a
+## dictionary of its `name` as listed, its `line`, the `argument` text between its
+## parentheses, and the `start` and `end` offsets of the whole call, counted with line
+## endings normalized to `\n`. A call whose parentheses never close is left out.
 ##
-## Each call is a dictionary holding its `name` as listed, its `line`, the `argument`
-## text between its parentheses as written, and the `start` and `end` offsets of the
-## whole call in the source with line endings normalized to `\n`. A call whose
-## parentheses never close is left out.
+## NOTE: A plain name, such as `ResourceLoader.load`, never matches a member or a
+## declaration; a name opening with `.`, such as `.load_now`, matches on any receiver.
 static func calls(text: String, names: PackedStringArray) -> Array[Dictionary]:
 	var source := text.replace("\r\n", "\n")
 	var blanked := blank(source)
@@ -202,10 +199,9 @@ static func parameters(argument: String) -> PackedStringArray:
 	return found
 
 
-## static_spans returns where the source runs while the script cache is still locked,
-## as each span's start and end offset in a `Vector2i`: every `static var` declaration
-## and the body of `_static_init`. Offsets count in the source with line endings
-## normalized to `\n`.
+## static_spans returns each `static var` declaration and the body of `_static_init`,
+## which run while the script cache is still locked, as start and end offsets in a
+## `Vector2i`, counted with line endings normalized to `\n`.
 static func static_spans(text: String) -> Array[Vector2i]:
 	var lines := blank(text).split("\n")
 	var spans: Array[Vector2i] = []

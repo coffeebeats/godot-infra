@@ -121,8 +121,8 @@ and are on in every project, since they state engine facts.
 `preload` reports, in a script:
 
 - a `preload` of a file that carries a script: a scene or resource that holds one or
-  loads one through its `[ext_resource]` headers, to any depth, a binary `.scn` or
-  `.res`, which cannot be proven free of one without loading it, and an imported scene,
+  loads one through its `[ext_resource]` headers to any depth; a binary `.scn` or
+  `.res`, which cannot be proven free of one without loading it; or an imported scene,
   whose importer can attach one. Export the `PackedScene` or `Resource` and set it in
   the scene instead; a scene's own dependencies are waited on from the loader, not from
   a compile. A script is fine to preload, since it comes from the script cache.
@@ -145,6 +145,12 @@ that scene. That fails with no second thread involved, leaving the scene cached
 without its script or the script invalid. Scripts that only preload one another are
 fine, since the script cache allows the cycle. It is a rule of its own so that excluding
 a file from `preload` cannot turn it off.
+
+Both rules report a load in a lambda inside a static initializer's brackets, though its
+body runs only when something calls it, since the checker cannot tell whether that
+happens while the script compiles. Store a named `static func` instead, as
+`{"a": _load_a}` rather than `{"a": func(): return load(...)}`, and call it only once
+the script has compiled, since the checker does not follow the call.
 
 `resource-loader` keeps a project with its own loader, such as std's `StdLoader`, from
 bypassing it. It reports `load_threaded_request`, `load_threaded_get` or
