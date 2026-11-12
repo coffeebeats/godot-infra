@@ -5,9 +5,10 @@
 ## them carries a script. A script that preloads such a file makes its own compile wait
 ## on the resource loader.
 ##
-## A scene or resource loads each `[ext_resource]` target, and a script loads what it
-## preloads apart from other scripts, which come from the script cache rather than the
-## loader. A target resolves by its uid first and its path second, as the engine does,
+## A scene or resource loads each `[ext_resource]` target. A script loads what it
+## preloads and what its static initializers load, other scripts included; a script
+## comes from the script cache rather than the loader, but compiling it runs its own
+## loads. A target resolves by its uid first and its path second, as the engine does,
 ## and one that resolves to no file is left out.
 ##
 ## NOTE: This 'Object' should *not* be instanced and/or added to the 'SceneTree'. It is
@@ -37,6 +38,16 @@ const IMPORTED_SCENE := 'importer="scene"'
 ## SCRIPT_EXTENSIONS are the GDScript formats.
 const SCRIPT_EXTENSIONS: Array[String] = ["gd", "gdc"]
 
+## STATIC_LOADS are the calls that load a resource, followed in a static initializer.
+## `.load_now` is the method of that name on any receiver.
+const STATIC_LOADS: PackedStringArray = [
+	"load",
+	"ResourceLoader.load",
+	"ResourceLoader.load_threaded_request",
+	"load_now",
+	".load_now",
+]
+
 ## TEXT_EXTENSIONS are the text scene and resource formats.
 const TEXT_EXTENSIONS: Array[String] = ["tres", "tscn"]
 
@@ -52,7 +63,8 @@ static var _closures: Dictionary = {}
 
 
 ## closure returns, as the keys of a dictionary, every file that loading `path` loads,
-## to any depth. `path` is among them only when a cycle leads back to it.
+## to any depth, each mapped to whether a scene or resource loads it rather than only
+## scripts. `path` is among them only when a cycle leads back to it.
 static func closure(path: String) -> Dictionary:
 	if path in _closures:
 		return _closures[path]
@@ -61,10 +73,14 @@ static func closure(path: String) -> Dictionary:
 	var pending: Array[String] = [path]
 
 	while not pending.is_empty():
-		for dependency in dependencies(pending.pop_back()):
+		var loading: String = pending.pop_back()
+		var by_resource := not is_script(loading)
+
+		for dependency in dependencies(loading):
 			if dependency not in reached:
-				reached[dependency] = true
 				pending.append(dependency)
+
+			reached[dependency] = reached.get(dependency, false) or by_resource
 
 	_closures[path] = reached
 
@@ -77,11 +93,9 @@ static func dependencies(path: String) -> PackedStringArray:
 	var extension := path.get_extension()
 
 	if extension in SCRIPT_EXTENSIONS:
-		var text := FileAccess.get_file_as_string(path)
-
-		for preloaded in GDScriptText.calls(text, ["preload"]):
-			var target := resolve(path, GDScriptText.literal(preloaded.argument))
-			if target != "" and not is_script(target):
+		for loaded in loads(FileAccess.get_file_as_string(path)):
+			var target := target_of(path, loaded)
+			if target != "":
 				found.append(target)
 
 	elif extension in TEXT_EXTENSIONS:
@@ -121,6 +135,20 @@ static func is_script_bearing(path: String) -> bool:
 	return bearing
 
 
+## loads returns each call in the script source `text` that loads a file while the
+## script compiles, which is every `preload` and each of `STATIC_LOADS` in a static
+## initializer.
+static func loads(text: String) -> Array[Dictionary]:
+	var found := GDScriptText.calls(text, ["preload"])
+	var spans := GDScriptText.static_spans(text)
+
+	for loaded in GDScriptText.calls(text, STATIC_LOADS):
+		if within(loaded.start, spans):
+			found.append(loaded)
+
+	return found
+
+
 ## resolve returns the file a `preload` or `load` in the script at `script_path` names
 ## with `target`, a `res://` or `uid://` path or one relative to the script, or an empty
 ## string when it names no file.
@@ -139,6 +167,25 @@ static func resolve(script_path: String, target: String) -> String:
 		return ""
 
 	return resolved
+
+
+## target_of returns the file that `loaded`, a call from `loads` in the script at
+## `script_path`, names, or an empty string when it names no file.
+static func target_of(script_path: String, loaded: Dictionary) -> String:
+	var parameters := GDScriptText.parameters(loaded.argument)
+	if parameters.is_empty():
+		return ""
+
+	return resolve(script_path, GDScriptText.literal(parameters[0]))
+
+
+## within reports whether `offset` falls inside one of `spans`.
+static func within(offset: int, spans: Array[Vector2i]) -> bool:
+	for span in spans:
+		if offset >= span.x and offset < span.y:
+			return true
+
+	return false
 
 
 # -- PRIVATE METHODS ----------------------------------------------------------------- #

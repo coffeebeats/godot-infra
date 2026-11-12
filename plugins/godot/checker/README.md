@@ -140,9 +140,11 @@ the tests, before any can start a load, so a project usually adds
 `[preload] excludes=["res://*_test.gd"]`.
 
 `self-preload` reports a `preload`, or a load in a static initializer, of a file that
-loads the script back, such as the scene whose root carries it. It fails with no second
-thread: the scene is cached without its script, or the script is left invalid. It is a
-rule of its own so that excluding a file from `preload` cannot turn it off.
+loads the script back, such as the scene whose root carries it or a script preloading
+that scene. That fails with no second thread involved, leaving the scene cached
+without its script or the script invalid. Scripts that only preload one another are
+fine, since the script cache allows the cycle. It is a rule of its own so that excluding
+a file from `preload` cannot turn it off.
 
 `resource-loader` holds a project with its own loader, such as std's `StdLoader`, to it.
 It reports `load_threaded_request`, `load_threaded_get` or `load_threaded_get_status`
