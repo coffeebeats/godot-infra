@@ -26,7 +26,11 @@ const GDScriptText := preload("../lib/gdscript_text.gd")
 # -- DEFINITIONS --------------------------------------------------------------------- #
 
 ## DECLARES_LOAD_PATTERN matches a declaration of a method named `load`.
-const DECLARES_LOAD_PATTERN := "(?m)^\\s*(?:static\\s+)?func\\s+load\\s*\\("
+const DECLARES_LOAD_PATTERN := (
+	"(?m)^\\s*"
+	+ GDScriptText.LEADING_ANNOTATIONS
+	+ "(?:static\\s+)?func\\s+load\\s*\\("
+)
 
 ## MESSAGE_BLOCKING reports a blocking load, named by the placeholder.
 const MESSAGE_BLOCKING := (

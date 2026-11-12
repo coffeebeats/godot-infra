@@ -26,12 +26,18 @@
   res://path-ref/references.tres:7: [path-ref] path does not exist
   res://path-ref/references.tres:8: [path-ref] unknown uid; if its target is new, run `godot --import --headless`
   res://path-ref/references.tres:9: [path-ref] reference this as uid://bcss4jk47ku53; a res:// string is dropped on a move
+  res://preload/annotated_static.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
+  res://preload/annotated_static.gd:12: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
   res://preload/built_in.tscn:3: [preload] holds a built-in script; save it as a .gd file
   res://preload/preloads.gd:15: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
   res://preload/preloads.gd:16: [preload] preloads res://preload/outer.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
   res://preload/preloads.gd:17: [preload] preloads res://preload/custom.tres, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
   res://preload/preloads.gd:20: [preload] preloads res://preload/model.gltf, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
   res://preload/preloads.gd:21: [preload] preload of a non-literal; preload one string literal
+  res://preload/preloads.gd:22: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
+  res://preload/preloads.gd:28: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
+  res://preload/preloads.gd:29: [preload] preloads res://preload/scene.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
+  res://preload/preloads.gd:30: [preload] preloads res://preload/it's.tscn, which carries a script, so compiling this script can wait on another thread's load; export it and set it in the scene
   res://preload/static_loads.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
   res://preload/static_loads.gd:11: [preload] `ResourceLoader.load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
   res://preload/static_loads.gd:18: [preload] `ResourceLoader.load_threaded_get_status()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
@@ -58,7 +64,7 @@
   res://self-preload/static_self.gd:8: [self-preload] loads res://self-preload/static_outer.tscn, which loads this script back while it compiles; export it and set it in the scene
   res://self-preload/sub/rel_wrong.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
   res://uid/no_uid.tres:1: [uid] no uid in header; re-run with --fix to assign one
-checked 67 file(s), 60 problem(s)
+checked 70 file(s), 66 problem(s)
 excluded 1 file(s) through res://.gdcheckrc
 skipped the loading rules for 5 file(s): res://absent.gdextension not loaded
   res://gated/holds_user.tscn

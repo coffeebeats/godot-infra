@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://deoo7ne0cxake"]
+
+[ext_resource type="Script" uid="uid://crwk3uhlec44" path="res://preload/holder.gd" id="1_holder"]
+
+[node name="Apostrophe" type="Node"]
+script = ExtResource("1_holder")

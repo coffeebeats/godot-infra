@@ -13,6 +13,10 @@ extends Object
 
 # -- DEFINITIONS --------------------------------------------------------------------- #
 
+## LEADING_ANNOTATIONS matches the annotations, such as `@warning_ignore(...)`, that may
+## precede a declaration on its line.
+const LEADING_ANNOTATIONS := "(?:@\\w+(?:\\([^)]*\\))?\\s*)*"
+
 ## NAME_BOUNDARY keeps a name from matching as a member, a node path, or the tail of a
 ## longer identifier.
 const NAME_BOUNDARY := "(?<![\\w.$%])"
@@ -26,16 +30,24 @@ const NON_CODE_PATTERN := (
 )
 
 ## STATIC_FUNC_PATTERN matches the line declaring `_static_init`, which runs as soon as
-## the script compiles, while the script cache is still locked.
-const STATIC_FUNC_PATTERN := "^static\\s+func\\s+_static_init\\s*\\("
+## the script compiles, while the script cache is still locked. Annotations may precede
+## it on the same line.
+const STATIC_FUNC_PATTERN := (
+	"^" + LEADING_ANNOTATIONS + "static\\s+func\\s+_static_init\\s*\\("
+)
 
 ## STATIC_VAR_PATTERN matches the line declaring a `static var`, whose initializer runs
-## when `_static_init` does.
-const STATIC_VAR_PATTERN := "^static\\s+var\\b"
+## when `_static_init` does. Annotations may precede it on the same line.
+const STATIC_VAR_PATTERN := "^" + LEADING_ANNOTATIONS + "static\\s+var\\b"
 
 ## STRING_LITERAL_PATTERN matches an expression that is one string literal, quoted
-## either way, and captures its text as its second group.
-const STRING_LITERAL_PATTERN := "^\\s*([\\x22\\x27])([^\\x22\\x27\\\\\\n]*)\\1\\s*$"
+## either way, triple-quoted or raw, and captures its text as whichever of its four
+## groups took part.
+const STRING_LITERAL_PATTERN := (
+	"^\\s*(?:r?\\x22{3}((?:(?!\\x22{3})[^\\\\])*)\\x22{3}"
+	+ "|r?\\x27{3}((?:(?!\\x27{3})[^\\\\])*)\\x27{3}"
+	+ "|r?\\x22([^\\x22\\\\\\n]*)\\x22|r?\\x27([^\\x27\\\\\\n]*)\\x27)\\s*$"
+)
 
 # -- INITIALIZATION ------------------------------------------------------------------ #
 
@@ -129,13 +141,18 @@ static func calls(text: String, names: PackedStringArray) -> Array[Dictionary]:
 
 
 ## literal returns the text of the string literal `expression` consists of, or an empty
-## string when it is anything else, such as a constant or a concatenation.
+## string when it is anything else, such as a constant or a concatenation. A comment
+## beside the literal is ignored.
 static func literal(expression: String) -> String:
-	var found := _string_literal.search(expression)
+	var found := _string_literal.search(blank(expression, true))
 	if found == null:
 		return ""
 
-	return found.get_string(2)
+	for group in range(1, 5):
+		if found.get_start(group) >= 0:
+			return found.get_string(group)
+
+	return ""
 
 
 ## mask returns the source with every comment and string literal blanked out, so a scan

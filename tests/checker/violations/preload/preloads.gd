@@ -19,6 +19,15 @@ const Custom := preload(
 )
 const Model := preload("model.gltf")
 const ByConstant := preload(PATH)
+const Remarked := preload(
+	"scene.tscn"  # a comment beside the literal does not hide it
+)
+
+# A raw string, a triple-quoted one and one holding the other quote are each one
+# literal.
+const Raw := preload(r"scene.tscn")
+const Triple := preload("""scene.tscn""")
+const Apostrophe := preload("it's.tscn")
 
 # const Commented := preload("scene.tscn")
 var quoted := 'preload("scene.tscn")'
