@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.24.0 (2026-11-12)
+
+## What's Changed
+* feat(checker): add `preload` and `self-preload` rules, and an opt-in `resource-loader` rule, so no script compile waits on a threaded load by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/698
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.23.0...v6.24.0
+
 ## 6.23.0 (2026-11-08)
 
 ## What's Changed
