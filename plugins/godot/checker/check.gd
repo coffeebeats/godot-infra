@@ -47,6 +47,9 @@ const SourceFile := preload("core/source_file.gd")
 const RULES: Array[Script] = [
 	preload("rules/compile.gd"),
 	preload("rules/logging.gd"),
+	preload("rules/preload.gd"),
+	preload("rules/self_preload.gd"),
+	preload("rules/resource_loader.gd"),
 	preload("rules/uid.gd"),
 	preload("rules/path_ref.gd"),
 	preload("rules/load.gd"),

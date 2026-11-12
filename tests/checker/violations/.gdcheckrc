@@ -1,5 +1,6 @@
 ; Configures the checker for this case: an exclusion under `[all]` and one under a single
-; rule, an extension that never loads, and the `logging` rule turned on.
+; rule, an extension that never loads, and the `logging` and `resource-loader` rules
+; turned on.
 
 [all]
 
@@ -13,3 +14,8 @@ disallow_engine_output=true
 [nodepath]
 
 excludes=["res://nodepath/excluded.tscn"]
+
+[resource-loader]
+
+allow=["res://resource-loader/loader.gd"]
+excludes=["res://preload/*", "res://self-preload/*"]
