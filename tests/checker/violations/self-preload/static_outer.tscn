@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://d7xk6k2ays2b"]
+
+[ext_resource type="PackedScene" uid="uid://d3on9puj5x5x" path="res://self-preload/static_self.tscn" id="1_inner"]
+
+[node name="StaticOuter" type="Node"]
+
+[node name="Inner" parent="." instance=ExtResource("1_inner")]

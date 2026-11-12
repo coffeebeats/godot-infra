@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c8clo07bsk57"]
+
+[ext_resource type="Script" uid="uid://dzlrvrp7pnuc" path="res://self-preload/self.gd" id="1_self"]
+
+[node name="Self" type="Node"]
+script = ExtResource("1_self")

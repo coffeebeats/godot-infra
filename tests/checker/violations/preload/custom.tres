@@ -1,0 +1,7 @@
+[gd_resource type="Resource" format=3 uid="uid://cev8n5m2w50s"]
+
+[ext_resource type="Script" uid="uid://cufhx1pqt533" path="res://preload/custom_resource.gd" id="1_custom"]
+
+[resource]
+script = ExtResource("1_custom")
+amount = 3

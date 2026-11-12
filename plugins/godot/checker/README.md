@@ -21,6 +21,9 @@ Where the plugin's `bin/` is not on `PATH`, as under Codex, run
 | --- | --- | --- | --- |
 | `compile` | `.gd` | a script that does not compile, a promoted warning included, with each error the engine raised | |
 | `logging` | `.gd` | a bare `print` or `push_error` in a project that disallows engine output | |
+| `preload` | `.gd` `.tscn` `.tres` | a `preload` of a scene or resource carrying a script, a `preload` it cannot follow, a load in a static initializer, and a built-in script | |
+| `self-preload` | `.gd` | a `preload`, or a load in a static initializer, of a file that loads the script back | |
+| `resource-loader` | `.gd` | a threaded load outside the project's loader, and a bare `load()`, in a project that names its loader | |
 | `uid` | `.tscn` `.tres` | a header carrying no `uid=` | yes |
 | `path-ref` | `.tscn` `.tres` | a reference that does not resolve, a `res://` string that should be a uid, and a dependency whose `path` disagrees with its `uid` | yes |
 | `load` | `.tscn` `.tres` | a file that does not parse or instantiate, and a scene node instantiated missing, as another class, or without its script, with the first error the engine raised | |
@@ -32,11 +35,12 @@ Where the plugin's `bin/` is not on `PATH`, as under Codex, run
 Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
 directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
 `export-overrides` and `export-ref` are the exceptions; each covers one file and reads
-the whole project, `addons/` included. `logging` covers nothing until `.gdcheckrc` turns
-it on. The checker exits 1 for a problem or a repair alike; the `--report` file tells
-them apart, and `check.gd`'s header lists what it holds. An error in the checker's own
-scripts fails the run too: one raised while a rule checks a file is a problem on that
-file, and one that stops the run exits 1 with a line saying so.
+the whole project, `addons/` included. `logging` and `resource-loader` cover nothing
+until `.gdcheckrc` turns them on. The checker exits 1 for a problem or a repair alike;
+the `--report` file tells them apart, and `check.gd`'s header lists what it holds. An
+error in the checker's own scripts fails the run too: one raised while a rule checks a
+file is a problem on that file, and one that stops the run exits 1 with a line saying
+so.
 
 The checker reads uids from the cache the last import wrote, and a script process never
 rebuilds it. Run `godot --import --headless` after `--fix` and after creating or moving
@@ -62,6 +66,12 @@ disallow_engine_output=true
 
 [nodepath]
 excludes=["res://project/menus/legacy.tscn"]
+
+[preload]
+excludes=["res://*_test.gd"]
+
+[resource-loader]
+allow=["res://addons/std/load/*"]
 ```
 
 Section `[all]` applies to every rule, and any other section to the rule it names, as
@@ -73,6 +83,9 @@ Section `[all]` applies to every rule, and any other section to the rule it name
 - `extensions`, under `[all]` only, maps each GDExtension the project uses to the global
   names it defines.
 - `disallow_engine_output`, under `[logging]` only, turns that rule on; see below.
+- `allow`, under `[resource-loader]` only, lists the `res://` globs of the files that
+  implement the project's loader, and turns that rule on; see
+  [Loading](#loading).
 
 An invalid config is reported against `res://.gdcheckrc`, and nothing else is checked.
 
@@ -96,6 +109,47 @@ them under `[logging] excludes`:
 - **The sink the logger pushes through**, which is implemented on `push_error` and
   `push_warning`.
 - **CLI tooling**, whose stdout is its product and whose caller parses it.
+
+## Loading
+
+Godot 4.6 to 4.8 deadlock when a thread compiling a GDScript waits in the resource
+loader for something another thread is loading, and that load needs the script cache.
+A compile holds the cache's lock throughout, so whatever a script loads while it
+compiles must never wait on another thread. `preload` and `self-preload` keep it so,
+and are on in every project, since they state engine facts.
+
+`preload` reports, in a script:
+
+- a `preload` of a file that carries a script: a scene or resource that holds one or
+  loads one through its `[ext_resource]` headers, to any depth, a binary `.scn` or
+  `.res`, which cannot be proven free of one without loading it, and an imported scene,
+  whose importer can attach one. Export the `PackedScene` or `Resource` and set it in
+  the scene instead; a scene's own dependencies are waited on from the loader, not from
+  a compile. A script is fine to preload, since it comes from the script cache.
+- a `preload` of anything but one string literal, which cannot be followed.
+- any load in a `static var` initializer or in `_static_init`, which run before the lock
+  is released: `load`, `ResourceLoader.load`, its threaded calls, and a method named
+  `load_now`.
+
+In a scene or resource it reports a built-in script, which compiles on whichever thread
+loads its file and cannot be followed here.
+
+A script compiled only at boot, such as an autoload, is reported though nothing can be
+loading then; an export is the fix either way. GUT loads a test script while it collects
+the tests, before any can start a load, so a project usually adds
+`[preload] excludes=["res://*_test.gd"]`.
+
+`self-preload` reports a `preload`, or a load in a static initializer, of a file that
+loads the script back, such as the scene whose root carries it. It fails with no second
+thread: the scene is cached without its script, or the script is left invalid. It is a
+rule of its own so that excluding a file from `preload` cannot turn it off.
+
+`resource-loader` holds a project with its own loader, such as std's `StdLoader`, to it.
+It reports `load_threaded_request`, `load_threaded_get` or `load_threaded_get_status`
+named in code or in a string, and a bare `load()` or `ResourceLoader.load()`, which
+blocks beside whatever the loader has in flight. A file declaring its own `func load(`
+is spared the latter. It covers nothing until `allow` lists the files the loader is
+implemented in, which it skips.
 
 ## Export overrides
 
