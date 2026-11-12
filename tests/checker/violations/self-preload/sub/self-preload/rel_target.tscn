@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://3und2h7yi5g9"]
+
+[ext_resource type="Script" uid="uid://uxffyd383h9i" path="res://self-preload/sub/rel_wrong.gd" id="1_wrong"]
+
+[node name="RelTarget" type="Node"]
+script = ExtResource("1_wrong")

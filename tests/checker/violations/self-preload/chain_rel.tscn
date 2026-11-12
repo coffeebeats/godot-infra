@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b6xo3qyll61et"]
+
+[ext_resource type="Script" uid="uid://bi9742adsfnws" path="res://self-preload/chain_rel.gd" id="1_chain"]
+
+[node name="ChainRel" type="Node"]
+script = ExtResource("1_chain")

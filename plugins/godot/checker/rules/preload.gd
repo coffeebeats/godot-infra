@@ -77,7 +77,7 @@ func check(file: SourceFile) -> Array[Problem]:
 			)
 			continue
 
-		var resolved := ScriptClosure.resolve(file.path, target)
+		var resolved := ScriptClosure.resolve(file.path, target, true)
 		if resolved.is_empty() or ScriptClosure.is_script(resolved):
 			continue
 

@@ -149,10 +149,10 @@ static func loads(text: String) -> Array[Dictionary]:
 	return found
 
 
-## resolve returns the file a `preload` or `load` in the script at `script_path` names
-## with `target`, a `res://` or `uid://` path or one relative to the script, or an empty
-## string when it names no file.
-static func resolve(script_path: String, target: String) -> String:
+## resolve returns the file a `res://`, `uid://` or relative `target` names, or an empty
+## string when it names none. A relative `target` reads from the folder of `script_path`
+## when `from_script` is set, as `preload` does, and from `res://` otherwise.
+static func resolve(script_path: String, target: String, from_script: bool) -> String:
 	if target.is_empty():
 		return ""
 
@@ -161,7 +161,8 @@ static func resolve(script_path: String, target: String) -> String:
 	if target.begins_with("uid://"):
 		resolved = ResourceText.uid_path(target)
 	elif not target.contains("://"):
-		resolved = script_path.get_base_dir().path_join(target).simplify_path()
+		var base := script_path.get_base_dir() if from_script else "res://"
+		resolved = base.path_join(target).simplify_path()
 
 	if resolved.is_empty() or not FileAccess.file_exists(resolved):
 		return ""
@@ -176,7 +177,9 @@ static func target_of(script_path: String, loaded: Dictionary) -> String:
 	if parameters.is_empty():
 		return ""
 
-	return resolve(script_path, GDScriptText.literal(parameters[0]))
+	return resolve(
+		script_path, GDScriptText.literal(parameters[0]), loaded.name == "preload"
+	)
 
 
 ## within reports whether `offset` falls inside one of `spans`.
