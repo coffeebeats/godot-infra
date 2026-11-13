@@ -24,6 +24,7 @@ Where the plugin's `bin/` is not on `PATH`, as under Codex, run
 | `preload` | `.gd` `.tscn` `.tres` | a `preload` of a scene or resource carrying a script, a `preload` it cannot follow, a load in a static initializer, and a built-in script | |
 | `self-preload` | `.gd` | a `preload`, or a load in a static initializer, of a file that loads the script back | |
 | `resource-loader` | `.gd` | a threaded load outside the project's loader, and a bare `load()`, in a project that names its loader | |
+| `disable-3d` | `.gd` | a 3D class, or a load of a 3D-only script as the script compiles, in a project whose 2D builds leave out 3D | |
 | `uid` | `.tscn` `.tres` | a header carrying no `uid=` | yes |
 | `path-ref` | `.tscn` `.tres` | a reference that does not resolve, a `res://` string that should be a uid, and a dependency whose `path` disagrees with its `uid` | yes |
 | `load` | `.tscn` `.tres` | a file that does not parse or instantiate, and a scene node instantiated missing, as another class, or without its script, with the first error the engine raised | |
@@ -35,12 +36,12 @@ Where the plugin's `bin/` is not on `PATH`, as under Codex, run
 Every rule covers the whole project apart from `addons/`, `script_templates/`, hidden
 directories, any directory holding a `.gdignore`, and the files `.gdcheckrc` excludes.
 `export-overrides` and `export-ref` are the exceptions; each covers one file and reads
-the whole project, `addons/` included. `logging` and `resource-loader` cover nothing
-until `.gdcheckrc` turns them on. The checker exits 1 for a problem or a repair alike;
-the `--report` file tells them apart, and `check.gd`'s header lists what it holds. An
-error in the checker's own scripts fails the run too: one raised while a rule checks a
-file is a problem on that file, and one that stops the run exits 1 with a line saying
-so.
+the whole project, `addons/` included. `logging`, `resource-loader` and `disable-3d`
+cover nothing until `.gdcheckrc` turns them on. The checker exits 1 for a problem or a
+repair alike; the `--report` file tells them apart, and `check.gd`'s header lists what
+it holds. An error in the checker's own scripts fails the run too: one raised while a
+rule checks a file is a problem on that file, and one that stops the run exits 1 with a
+line saying so.
 
 The checker reads uids from the cache the last import wrote, and a script process never
 rebuilds it. Run `godot --import --headless` after `--fix` and after creating or moving
@@ -60,6 +61,10 @@ format of `project.godot`, not the YAML of `.gdlintrc` and `.gdformatrc`.
 [all]
 excludes=["res://project/scratch/*"]
 extensions={"res://addons/godotsteam/godotsteam.gdextension": ["Steam"]}
+
+[disable-3d]
+disallow_3d_classes=true
+scripts_3d=["res://project/map/3d/*", "res://*_3d.gd"]
 
 [logging]
 disallow_engine_output=true
@@ -82,6 +87,9 @@ Section `[all]` applies to every rule, and any other section to the rule it name
   the edit hook stays quiet on it. Under a rule's section, only that rule skips it.
 - `extensions`, under `[all]` only, maps each GDExtension the project uses to the global
   names it defines.
+- `disallow_3d_classes`, under `[disable-3d]` only, turns that rule on, and
+  `scripts_3d` lists the `res://` globs of the scripts only a 3D game loads; see
+  [Builds without 3D](#builds-without-3d).
 - `disallow_engine_output`, under `[logging]` only, turns that rule on; see below.
 - `allow`, under `[resource-loader]` only, lists the `res://` globs of the files that
   implement the project's loader, and turns that rule on; see
@@ -285,6 +293,37 @@ The walk follows a dependency's uid, and its path only when the uid resolves to 
 as the engine does. The skipped files are listed. Text-only rules still run. A script
 referring to a skipped one only by its `class_name` is not followed.
 
+## Builds without 3D
+
+A 2D game's export template is often built with `disable_3d`, which drops `Node3D` and
+everything inheriting from it, most classes named with `3D`, the XR and glTF classes,
+the primitive meshes and `WorldEnvironment`. The engine then fails to parse a script
+naming one, along with every script depending on it. The editor keeps 3D, so nothing
+shows until a 2D export boots.
+
+`disable-3d` reports, in a script:
+
+- a 3D class named in code. An engine class counts when its name holds `3D` or opens
+  with `FBX`, `GLTF`, `OpenXR` or `XR`, or when it inherits from a root `disable_3d`
+  drops, unless 2D builds still register it, as they do `Texture3D` and `AStar3D`. The
+  lists follow the 4.7.2 engine; a listed class an older engine lacks matches nothing.
+- a project's 3D class, meaning a global class whose name holds `3D` or whose script
+  `scripts_3d` matches. The prefixes name engine modules, so a project's `XRayScanner`
+  passes.
+- an `extends` or `preload` of a 3D-only script, or a load of one in a static
+  initializer, since each loads it as the script compiles. A path is followed bare,
+  relative, as `res://` or as `uid://`.
+
+It passes over comments, strings, node paths such as `$Camera3D` or `$A/Camera3D`, and
+anything dotted, so `node.is_class(&"Node3D")` tests a node without naming the class. A
+`load()` outside a static initializer runs later, when the game can choose not to, and
+is left alone. The 3D-only scripts are skipped. A project's tests run on the editor's
+full build, so a project usually adds `excludes=["res://*_test.gd"]` under
+`[disable-3d]`.
+
+A 2D-only class the match catches by its name belongs in the rule's allowlist, which
+takes a release of this repository.
+
 ## Warnings
 
 A warning set to level 2 in `project.godot` is raised as a parse error, so `compile`
@@ -304,8 +343,9 @@ value of the wrong type, and an error a script raises in `_init` still pass it; 
 catches the last.
 
 Nothing here sees what a stripped export template removes, since the checker runs on an
-editor build that still defines it. Booting the packaged game finds that, which is the
-`boot` job in `publish-game.yaml`.
+editor build that still defines it; `disable-3d` predicts the one module a 2D build
+most often leaves out, from names alone. Booting the packaged game finds the rest, which
+is the `boot` job in `publish-game.yaml`.
 
 ## The edit hook
 

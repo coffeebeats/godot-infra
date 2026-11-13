@@ -1,5 +1,46 @@
   res://compile/broken.gd:10: [compile] Parse Error: Function "undeclared_function()" not found in base self.
   res://compile/broken.gd:11: [compile] Parse Error: Function "undeclared_function()" not found in base self.
+  res://disable-3d/extends_script.gd:6: [disable-3d] extends res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/extends_script.gd:9: [disable-3d] extends res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/extends_script.gd:13: [disable-3d] extends res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/extends_script.gd:17: [disable-3d] extends res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/extends_script.gd:19: [disable-3d] extends res://disable-3d/layer_3d.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/extends_script.gd:23: [disable-3d] extends res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/lists.gd:11: [disable-3d] `FogMaterial` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"FogMaterial")`
+  res://disable-3d/lists.gd:12: [disable-3d] `ImporterMesh` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"ImporterMesh")`
+  res://disable-3d/lists.gd:13: [disable-3d] `LightmapGIData` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"LightmapGIData")`
+  res://disable-3d/lists.gd:14: [disable-3d] `Lightmapper` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"Lightmapper")`
+  res://disable-3d/lists.gd:15: [disable-3d] `MeshLibrary` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"MeshLibrary")`
+  res://disable-3d/lists.gd:16: [disable-3d] `Node3D` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"Node3D")`
+  res://disable-3d/lists.gd:17: [disable-3d] `PanoramaSkyMaterial` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"PanoramaSkyMaterial")`
+  res://disable-3d/lists.gd:18: [disable-3d] `PhysicalSkyMaterial` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"PhysicalSkyMaterial")`
+  res://disable-3d/lists.gd:19: [disable-3d] `PrimitiveMesh` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"PrimitiveMesh")`
+  res://disable-3d/lists.gd:20: [disable-3d] `ProceduralSkyMaterial` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"ProceduralSkyMaterial")`
+  res://disable-3d/lists.gd:21: [disable-3d] `Skin` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"Skin")`
+  res://disable-3d/lists.gd:22: [disable-3d] `SkinReference` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"SkinReference")`
+  res://disable-3d/lists.gd:23: [disable-3d] `VoxelGIData` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"VoxelGIData")`
+  res://disable-3d/lists.gd:24: [disable-3d] `WorldEnvironment` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"WorldEnvironment")`
+  res://disable-3d/named_extends.gd:6: [disable-3d] extends res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/names_classes.gd:11: [disable-3d] `Node3D` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"Node3D")`
+  res://disable-3d/names_classes.gd:14: [disable-3d] `Camera3D` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"Camera3D")`
+  res://disable-3d/names_classes.gd:15: [disable-3d] `BoxMesh` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"BoxMesh")`
+  res://disable-3d/names_classes.gd:16: [disable-3d] `GLTFDocument` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"GLTFDocument")`
+  res://disable-3d/names_classes.gd:17: [disable-3d] `XRServer` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"XRServer")`
+  res://disable-3d/names_classes.gd:18: [disable-3d] `WorldEnvironment` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"WorldEnvironment")`
+  res://disable-3d/names_classes.gd:19: [disable-3d] `FixtureLayer3D` is a 3D class, declared in res://disable-3d/layer_3d.gd, so an engine built with `disable_3d` fails to parse this script; name it only in a 3D-only script
+  res://disable-3d/names_classes.gd:20: [disable-3d] `FixtureDepthScene` is a 3D class, declared in res://disable-3d/only_3d/scene.gd, so an engine built with `disable_3d` fails to parse this script; name it only in a 3D-only script
+  res://disable-3d/names_classes.gd:22: [disable-3d] `XRServer` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"XRServer")`
+  res://disable-3d/names_classes.gd:23: [disable-3d] `XRServer` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"XRServer")`
+  res://disable-3d/names_classes.gd:28: [disable-3d] `XRServer` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"XRServer")`
+  res://disable-3d/names_classes.gd:29: [disable-3d] `Camera3D` is absent from an engine built with `disable_3d`, which then fails to parse this script; name it only in a 3D-only script, or test a node with `is_class(&"Camera3D")`
+  res://disable-3d/preloads_scripts.gd:8: [disable-3d] preloads res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/preloads_scripts.gd:9: [disable-3d] preloads res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/preloads_scripts.gd:10: [disable-3d] preloads res://disable-3d/layer_3d.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/preloads_scripts.gd:11: [disable-3d] preloads res://disable-3d/layer_3d.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/preloads_scripts.gd:12: [disable-3d] preloads res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/preloads_scripts.gd:13: [disable-3d] preloads res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/static_load.gd:7: [disable-3d] loads while compiling res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
+  res://disable-3d/tool_extends.gd:6: [disable-3d] extends res://disable-3d/only_3d/scene.gd, a 3D-only script, so an engine built with `disable_3d` fails to parse this script too
   res://export_overrides.cfg:13: [export-overrides] [*-linux-*] matches no preset
   res://export_overrides.cfg:5: [export-overrides] [*] `no-such-directory` names no file or directory in the project
   res://export_overrides.cfg:5: [export-overrides] [*] `*.nothing` matches no file
@@ -64,7 +105,7 @@
   res://self-preload/static_self.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
   res://self-preload/static_self.gd:8: [self-preload] loads res://self-preload/static_outer.tscn, which loads this script back while it compiles; export it and set it in the scene
   res://self-preload/sub/rel_wrong.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
-checked 75 file(s), 66 problem(s)
+checked 88 file(s), 107 problem(s)
 excluded 1 file(s) through res://.gdcheckrc
 skipped the loading rules for 7 file(s): res://absent.gdextension not loaded
   res://gated/extends_inner.gd
