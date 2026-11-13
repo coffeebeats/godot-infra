@@ -3,6 +3,7 @@ logging          gd           res://
 preload          gd tscn tres res://
 self-preload     gd           res://
 resource-loader               res://
+disable-3d                    res://
 uid              tscn tres    res://                                        fixable
 path-ref         tscn tres    res://                                        fixable
 load             tscn tres    res://

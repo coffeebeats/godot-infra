@@ -13,14 +13,7 @@ extends RefCounted
 const Config := preload("config.gd")
 const GDScriptText := preload("../lib/gdscript_text.gd")
 const ResourceText := preload("../lib/resource_text.gd")
-
-# -- DEFINITIONS --------------------------------------------------------------------- #
-
-## SCRIPT_DEPENDENCY_PATTERN captures the path or uid a script `preload`s or `extends`.
-const SCRIPT_DEPENDENCY_PATTERN := (
-	"(?m)(?:\\bpreload\\s*\\(\\s*|^(?:class_name\\s+\\w+\\s+)?extends\\s+)"
-	+ "[\\x22\\x27]([^\\x22\\x27]+)[\\x22\\x27]"
-)
+const ScriptClosure := preload("../lib/script_closure.gd")
 
 # -- CONFIGURATION ------------------------------------------------------------------- #
 
@@ -33,8 +26,6 @@ var missing: Dictionary = {}
 ## _blocked_cache maps each file a walk has settled to whether it reaches a script using
 ## a name from an extension that did not load; see `blocks`.
 var _blocked_cache: Dictionary = {}
-
-var _script_dependency := RegEx.create_from_string(SCRIPT_DEPENDENCY_PATTERN)
 
 ## _names matches a use of any name in `missing`, or is null when nothing is missing.
 var _names: RegEx = null
@@ -99,16 +90,15 @@ func _dependencies(path: String, text: String) -> PackedStringArray:
 	var found := PackedStringArray()
 
 	if path.get_extension() == "gd":
-		for result: RegExMatch in _script_dependency.search_all(text):
-			var target := result.get_string(1)
-
-			if target.begins_with("uid://"):
-				target = ResourceText.uid_path(target)
-			elif not target.contains("://"):
-				target = path.get_base_dir().path_join(target).simplify_path()
+		for loaded in GDScriptText.calls(text, ["preload"]):
+			var target := ScriptClosure.target_of(path, loaded)
 
 			if target != "":
 				found.append(target)
+
+		for extended in ScriptClosure.extended_scripts(path, text):
+			if extended.target != "":
+				found.append(extended.target)
 
 		return found
 

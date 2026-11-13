@@ -1,11 +1,16 @@
 ; Configures the checker for this case: an exclusion under `[all]` and one under a single
-; rule, an extension that never loads, and the `logging` and `resource-loader` rules
-; turned on.
+; rule, an extension that never loads, and the `logging`, `resource-loader` and
+; `disable-3d` rules turned on.
 
 [all]
 
 excludes=["res://scratch/*"]
 extensions={"res://absent.gdextension": ["AbsentApi"]}
+
+[disable-3d]
+
+disallow_3d_classes=true
+scripts_3d=["res://disable-3d/only_3d/*", "res://*_3d.gd"]
 
 [logging]
 
@@ -15,7 +20,11 @@ disallow_engine_output=true
 
 excludes=["res://nodepath/excluded.tscn"]
 
+[preload]
+
+excludes=["res://disable-3d/static_load.gd"]
+
 [resource-loader]
 
 allow=["res://resource-loader/loader.gd"]
-excludes=["res://preload/*", "res://self-preload/*"]
+excludes=["res://disable-3d/*", "res://preload/*", "res://self-preload/*"]

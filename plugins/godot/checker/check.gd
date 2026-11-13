@@ -50,6 +50,7 @@ const RULES: Array[Script] = [
 	preload("rules/preload.gd"),
 	preload("rules/self_preload.gd"),
 	preload("rules/resource_loader.gd"),
+	preload("rules/disable_3d.gd"),
 	preload("rules/uid.gd"),
 	preload("rules/path_ref.gd"),
 	preload("rules/load.gd"),
