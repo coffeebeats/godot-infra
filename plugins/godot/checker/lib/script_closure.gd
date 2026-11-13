@@ -35,6 +35,14 @@ const BUILT_IN_SCRIPT := '[sub_resource type="GDScript"'
 ## script through its root script, a script class as its root type, or a node's script.
 const IMPORTED_SCENE := 'importer="scene"'
 
+## EXTENDS_PATTERN matches a declaration of what a script, or a class inside it,
+## extends, and captures the rest of its line.
+const EXTENDS_PATTERN := (
+	"(?m)^[ \\t]*"
+	+ GDScriptText.LEADING_ANNOTATIONS
+	+ "(?:class(?:_name)?\\s+\\w+\\s+)?extends\\b([^\\n]*)"
+)
+
 ## SCRIPT_EXTENSIONS are the GDScript formats.
 const SCRIPT_EXTENSIONS: Array[String] = ["gd", "gdc"]
 
@@ -58,6 +66,15 @@ static var _bearing: Dictionary = {}
 
 ## _closures maps each file whose closure was walked to that closure.
 static var _closures: Dictionary = {}
+
+## _inner_class_path matches the `.Inner` names that follow the path in an `extends`
+## of an inner class of a script, such as `extends "res://a.gd".Inner`.
+static var _inner_class_path := RegEx.create_from_string(
+	"(?<=[\\x22\\x27])(?:\\s*\\.\\s*\\w+)+\\s*$"
+)
+
+## _extends is `EXTENDS_PATTERN`, compiled once for every caller.
+static var _extends := RegEx.create_from_string(EXTENDS_PATTERN)
 
 # -- PUBLIC METHODS ------------------------------------------------------------------ #
 
@@ -106,6 +123,38 @@ static func dependencies(path: String) -> PackedStringArray:
 			var target := ResourceText.dependency(line)
 			if target != "" and FileAccess.file_exists(target):
 				found.append(target)
+
+	return found
+
+
+## extended_scripts returns each file the script source `text`, read from `script_path`,
+## extends by path or uid in any of its classes, as a dictionary of its `target` and
+## `line`. A declaration extending a class, or a missing file, has an empty `target`.
+static func extended_scripts(script_path: String, text: String) -> Array[Dictionary]:
+	# NOTE: Declarations are matched with strings and comments blanked, and paths read
+	# with only comments blanked; both copies keep the source's offsets.
+	var blanked := GDScriptText.blank(text)
+	var with_strings := GDScriptText.blank(text, true)
+	var found: Array[Dictionary] = []
+
+	for declared: RegExMatch in _extends.search_all(blanked):
+		var start := declared.get_start(1)
+		var length := declared.get_end(1) - start
+
+		# NOTE: A class's body may follow its `:` on the same line, so the expression
+		# ends at the first `:` outside a string.
+		var colon := blanked.substr(start, length).find(":")
+		if colon >= 0:
+			length = colon
+
+		# NOTE: An inner class path is dropped, as the file is what is extended.
+		var expression := with_strings.substr(start, length)
+		var literal := GDScriptText.literal(_inner_class_path.sub(expression, ""))
+		# NOTE: The match may start on an earlier line, as `class_name` or an annotation
+		# can precede `extends` across a newline, so the capture sets the line.
+		var line := blanked.substr(0, start).count("\n") + 1
+
+		found.append({"target": resolve(script_path, literal, true), "line": line})
 
 	return found
 

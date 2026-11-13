@@ -64,9 +64,11 @@
   res://self-preload/static_self.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
   res://self-preload/static_self.gd:8: [self-preload] loads res://self-preload/static_outer.tscn, which loads this script back while it compiles; export it and set it in the scene
   res://self-preload/sub/rel_wrong.gd:8: [preload] `load()` in a static initializer, which runs while the script cache is locked; preload a script-free file or load it later
-checked 72 file(s), 66 problem(s)
+checked 75 file(s), 66 problem(s)
 excluded 1 file(s) through res://.gdcheckrc
-skipped the loading rules for 5 file(s): res://absent.gdextension not loaded
+skipped the loading rules for 7 file(s): res://absent.gdextension not loaded
+  res://gated/extends_inner.gd
+  res://gated/extends_user.gd
   res://gated/holds_user.tscn
   res://gated/preloads_by_uid.gd
   res://gated/preloads_user.gd
