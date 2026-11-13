@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.25.0 (2026-11-13)
+
+## What's Changed
+* feat(checker): add an opt-in `disable-3d` rule that reports what a 2D build without 3D fails to parse by @coffeebeats in https://github.com/coffeebeats/godot-infra/pull/700
+
+
+**Full Changelog**: https://github.com/coffeebeats/godot-infra/compare/v6.24.0...v6.25.0
+
 ## 6.24.0 (2026-11-12)
 
 ## What's Changed
